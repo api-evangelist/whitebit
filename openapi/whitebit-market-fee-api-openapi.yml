@@ -1,0 +1,299 @@
+openapi: 3.2.0
+info:
+  title: Private HTTP API V4 - Collateral Trading Market Fee API
+  description: 'WhiteBIT Private HTTP API V4 for collateral/margin trading operations.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.
+
+
+    Authentication required for all endpoints.'
+  version: 4.0.0
+  license:
+    name: WhiteBIT Terms of Service
+    url: https://whitebit.com/terms
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Market Fee
+  description: Endpoints for querying trading fees
+paths:
+  /api/v4/market/fee:
+    post:
+      summary: Query Market Fees
+      operationId: getMarketFee
+      description: 'Returns the account''s default spot and futures maker and taker fees, plus any custom per-market overrides.
+
+
+        The `maker` and `taker` fields represent default spot trading fees. The `futures_maker` and `futures_taker` fields represent default futures trading fees. The `custom_fee` object lists per-market overrides, keyed by market name.
+
+
+        The `rpi_maker_fee_premium` and `futures_rpi_maker_fee_premium` fields carry the Retail Price Improvement (RPI) premiums applied on top of the maker rates when RPI orders execute. The endpoint returns them for every account, regardless of whether the RPI order mode is enabled.
+
+
+        The system calculates the effective futures fee as the lower value between the user-specific custom fee and the market-specific fee.
+
+
+        When the market fee is lower than the assigned custom fee, the system returns the market fee.
+
+
+        Example: If the custom futures taker fee equals `0.026` and the market fee equals `0.02`, the response returns `0.02`.'
+      tags:
+      - Market Fee
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      parameters:
+      - name: market
+        in: query
+        required: false
+        description: 'Optional. Currently ignored by the API — all market fees are returned regardless of the value provided. Retained for backward compatibility. Example: BTC_USDT'
+        schema:
+          type: string
+          example: BTC_USDT
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                x-fern-type-name: GetMarketFeeResponse
+                properties:
+                  error:
+                    type:
+                    - string
+                    - 'null'
+                    example: null
+                  taker:
+                    type: string
+                    description: Taker fee percentage
+                    example: '0.1'
+                  maker:
+                    type: string
+                    description: Maker fee percentage
+                    example: '0.1'
+                  futures_taker:
+                    type: string
+                    description: 'Default effective futures taker fee percentage. The system returns the lower value between the custom fee (if assigned) and the default market fee.
+
+                      '
+                    example: '0.035'
+                  futures_maker:
+                    type: string
+                    description: 'Default effective futures maker fee percentage. The system returns the lower value between the custom fee (if assigned) and the default market fee.
+
+                      '
+                    example: '0.01'
+                  rpi_maker_fee_premium:
+                    type:
+                    - string
+                    - 'null'
+                    description: 'Additional maker fee percentage applied on top of the `maker` rate when a [Retail Price Improvement (RPI)](/glossary#retail-price-improvement-rpi) order executes on a spot or margin market. The effective RPI maker rate equals `maker` plus `rpi_maker_fee_premium`. The field returns `null` when no premium is configured for the account; a premium configured as zero is returned as `"0"`, not `null`.
+
+                      '
+                    example: '0.015'
+                  futures_rpi_maker_fee_premium:
+                    type:
+                    - string
+                    - 'null'
+                    description: 'Additional maker fee percentage applied on top of the `futures_maker` rate when a [Retail Price Improvement (RPI)](/glossary#retail-price-improvement-rpi) order executes on a futures market. The effective futures RPI maker rate equals `futures_maker` plus `futures_rpi_maker_fee_premium`. The field returns `null` when no premium is configured for the account; a premium configured as zero is returned as `"0"`, not `null`.
+
+                      '
+                    example: '0.01'
+                  custom_fee:
+                    type: object
+                    description: 'Per-market fee overrides, keyed by market name. Each value contains the market''s custom `taker` and `maker` rates.
+
+                      '
+                    additionalProperties:
+                      type: object
+                      properties:
+                        taker:
+                          type: string
+                          description: Custom taker fee percentage for the market
+                          example: '0.055'
+                        maker:
+                          type: string
+                          description: Custom maker fee percentage for the market
+                          example: '0.01'
+                    example:
+                      BTC_PERP:
+                        taker: '0.055'
+                        maker: '0.01'
+                      ETH_PERP:
+                        taker: '0.055'
+                        maker: '0.01'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v4/market/fee/single:
+    post:
+      summary: Query Market Fee For A Single Market
+      operationId: getMarketFeeSingle
+      description: 'Returns the account''s effective maker and taker fee for one market. Use this endpoint when only one market matters; `POST /api/v4/market/fee` returns the account''s default fees and every custom override at once.
+
+
+        The response reports the fee that applies to the requested market — the market''s own fee, the account''s default trading fee when the default is lower than the market fee, or the custom fee assigned for the market.
+
+
+        `rpi_maker_fee_premium` carries the Retail Price Improvement (RPI) premium on spot and margin markets, and `futures_rpi_maker_fee_premium` carries it on futures markets, where `rpi_maker_fee_premium` repeats the futures value for backward compatibility and is deprecated — read `futures_rpi_maker_fee_premium` for futures markets. The endpoint returns both fields for every account, regardless of whether the RPI order mode is enabled.'
+      tags:
+      - Market Fee
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Market to return the fee for. The market must be a spot, margin, or futures market available for trading in the caller''s region. Example: BTC_USDT'
+                  example: BTC_USDT
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                x-fern-type-name: GetMarketFeeSingleResponse
+                properties:
+                  error:
+                    type:
+                    - string
+                    - 'null'
+                    example: null
+                  taker:
+                    type: string
+                    description: Effective taker fee percentage for the requested market
+                    example: '0.1'
+                  maker:
+                    type: string
+                    description: Effective maker fee percentage for the requested market
+                    example: '0.1'
+                  rpi_maker_fee_premium:
+                    type:
+                    - string
+                    - 'null'
+                    description: 'Additional maker fee percentage applied on top of `maker` when a [Retail Price Improvement (RPI)](/glossary#retail-price-improvement-rpi) order executes on a spot or margin market. The effective RPI maker rate equals `maker` plus this premium. On futures markets the field repeats `futures_rpi_maker_fee_premium` for backward compatibility and is deprecated — read `futures_rpi_maker_fee_premium` instead. The field returns `null` when no premium is configured for the account; a premium configured as zero is returned as `"0"`, not `null`.
+
+                      '
+                    example: '0.015'
+                  futures_rpi_maker_fee_premium:
+                    type:
+                    - string
+                    - 'null'
+                    description: 'Additional maker fee percentage applied on top of `maker` when a [Retail Price Improvement (RPI)](/glossary#retail-price-improvement-rpi) order executes on a futures market. The effective RPI maker rate equals `maker` plus this premium. The field returns `null` on spot and margin markets, or when no futures premium is configured for the account; a premium configured as zero is returned as `"0"`, not `null`.
+
+                      '
+                    example: '0.01'
+              examples:
+                spot:
+                  summary: Spot market (BTC_USDT)
+                  value:
+                    error: null
+                    taker: '0.1'
+                    maker: '0.1'
+                futures:
+                  summary: Futures market (BTC_PERP)
+                  value:
+                    error: null
+                    taker: '0.055'
+                    maker: '-0.02'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                market30:
+                  summary: Market field is required
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field is required.
+                market31:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Error code
+          example: 30
+        message:
+          type: string
+          description: Error message
+          example: Validation failed
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Detailed error information
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

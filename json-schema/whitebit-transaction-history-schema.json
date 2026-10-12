@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/whitebit/main/json-schema/whitebit-transaction-history-schema.json",
+  "title": "TransactionHistory",
+  "x-generated": "2026-10-13",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/TransactionHistory",
+  "type": "object",
+  "properties": {
+    "address": {
+      "type": "string",
+      "description": "Deposit/Withdraw address"
+    },
+    "unique_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Unique Id of deposit/withdraw. Unique per user."
+    },
+    "createdAt": {
+      "type": "integer",
+      "description": "Timestamp of deposit/withdraw"
+    },
+    "currency": {
+      "type": "string",
+      "description": "Deposit/Withdraw currency full name"
+    },
+    "ticker": {
+      "type": "string",
+      "description": "Deposit/Withdraw currency [ticker](/glossary#ticker)"
+    },
+    "method": {
+      "type": "integer",
+      "description": "Called method: 1 - deposit, 2 - withdraw"
+    },
+    "amount": {
+      "type": "string",
+      "description": "Amount of deposit/withdraw"
+    },
+    "description": {
+      "type": "string",
+      "description": "Deposit/Withdraw description"
+    },
+    "memo": {
+      "type": "string",
+      "description": "[Memo](/glossary#memodestination-tag) for deposit/withdraw"
+    },
+    "fee": {
+      "type": "string",
+      "description": "[Fee](/glossary#fee) for deposit/withdraw"
+    },
+    "status": {
+      "type": "integer",
+      "description": "Transaction status (see endpoint description for status codes)"
+    },
+    "network": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Network if currency is multinetwork"
+    },
+    "transactionHash": {
+      "type": "string",
+      "description": "Deposit/Withdraw transaction hash. A single hash can map to multiple records (e.g. several outputs to a WhiteBIT address in one on-chain transaction); use `transaction_id` to distinguish them."
+    },
+    "transaction_id": {
+      "type": "string",
+      "description": "Transaction UUID. Unique across the whole system and never reused."
+    },
+    "details": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Additional details for the transaction"
+    },
+    "confirmations": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Confirmation details for crypto transactions",
+      "properties": {
+        "actual": {
+          "type": "integer",
+          "description": "Actual number of confirmations"
+        },
+        "required": {
+          "type": "integer",
+          "description": "Required number of confirmations"
+        }
+      }
+    }
+  }
+}

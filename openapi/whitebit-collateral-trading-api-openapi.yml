@@ -1,0 +1,4634 @@
+openapi: 3.2.0
+info:
+  title: Private HTTP API V4 Collateral Trading API
+  description: 'WhiteBIT Private HTTP API V4 for collateral/margin trading operations.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.
+
+
+    Authentication required for all endpoints.'
+  version: 4.0.0
+  license:
+    name: WhiteBIT Terms of Service
+    url: https://whitebit.com/terms
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Collateral Trading
+  description: Endpoints for collateral/margin trading operations
+paths:
+  /api/v4/collateral-account/balance:
+    post:
+      summary: Collateral Account Balance
+      operationId: collateralAccountBalance
+      description: 'The endpoint returns the current collateral balance for one or all assets. The response maps each asset ticker to its collateral balance amount. Use the optional `ticker` parameter to filter results to a single asset.
+
+
+        The API does not cache the response.
+
+
+        Rate limit: 12000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticker:
+                  type: string
+                  description: '[Asset](/glossary#assets) to be filtered. For example: BTC
+
+
+                    If not specified, returns balances for all assets.
+
+                    '
+                  example: BTC
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              ticker: BTC
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns collateral balances by asset
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Object mapping asset tickers to collateral balance amounts. Each key is an asset ticker (e.g., `BTC`, `USDT`) and the value is the balance in that asset's native units.
+                additionalProperties:
+                  type: number
+                  description: Collateral balance in the asset's native units
+              example:
+                BTC: 1
+                USDT: 1000
+                ETH: 5.5
+        '422':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ticker30:
+                  summary: ticker is invalid
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - ticker is invalid.
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/balance-summary:
+    post:
+      summary: Collateral Account Balance Summary
+      operationId: collateralAccountBalanceSummary
+      description: 'The endpoint returns a detailed collateral balance summary with a per-asset breakdown. Each record includes the current balance, borrowed amount, and available balance with and without borrowing capacity. Use the optional `ticker` parameter to filter results to a single asset.
+
+
+        The API does not cache the response.
+
+
+        Rate limit: 12000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticker:
+                  type: string
+                  description: 'Filter by requested asset. For example: BTC
+
+
+                    If not specified, returns summary for all assets.
+
+                    '
+                  example: BTC
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              ticker: BTC
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns detailed balance information per asset
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    asset:
+                      type: string
+                      description: Asset ticker symbol
+                      example: BTC
+                    balance:
+                      type: string
+                      description: Total collateral balance for the asset, in the asset's native units
+                      example: '0.5'
+                    borrow:
+                      type: string
+                      description: Amount currently borrowed against the asset, in the asset's native units
+                      example: '0'
+                    availableWithoutBorrow:
+                      type: string
+                      description: Balance available for use without additional borrowing, in the asset's native units
+                      example: '0.5'
+                    availableWithBorrow:
+                      type: string
+                      description: Maximum balance available when borrowing capacity is included, in the asset's native units
+                      example: '123.456'
+              example:
+              - asset: BTC
+                balance: '0.5'
+                borrow: '0'
+                availableWithoutBorrow: '0.5'
+                availableWithBorrow: '123.456'
+              - asset: USDT
+                balance: '1000'
+                borrow: '0'
+                availableWithoutBorrow: '1000'
+                availableWithBorrow: '5000'
+        '422':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ticker30:
+                  summary: ticker is invalid
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - ticker is invalid.
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/collateral/limit:
+    post:
+      summary: Collateral Limit Order
+      operationId: createCollateralLimitOrder
+      description: 'The endpoint creates a limit order using collateral balance. The order executes at the specified price or better. Use `buy` to open or increase a long position and `sell` to open or increase a short position. To close a position, place an opposite-side order matching the position amount.
+
+
+        **Order validation rules** (per-market, from `GET /api/v4/public/markets`):
+
+        - `amount` must have at most `stockPrec` decimal places
+
+        - `price` must have at most `moneyPrec` decimal places
+
+        - `amount` must be ≥ `minAmount`
+
+        - `amount × price` must be ≥ `minTotal`
+
+        - `amount × price` must be ≤ `maxTotal` (when `maxTotal` is not `"0"`)
+
+
+        **Price and amount steps:** from September 18, 2026, `price` and an attached `stopLoss` or `takeProfit` price must be multiples of the market `tickSize`, and `amount` a multiple of `stepSize`. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.
+
+
+        For open long position use **buy**, for short **sell**. To close current position, place opposite order with current position amount.
+
+
+        - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - side
+              - amount
+              - price
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Available margin [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                side:
+                  type: string
+                  enum:
+                  - buy
+                  - sell
+                  description: 'Order type. Variables: ''buy'' / ''sell''. For open long position use **buy**, for short **sell**.'
+                  example: buy
+                amount:
+                  type: string
+                  description: Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+                  example: '0.01'
+                price:
+                  type: string
+                  description: Limit order price in [money](/glossary#money) currency. Minimum price step is market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+                  example: '40000'
+                clientOrderId:
+                  type: string
+                  description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+                  example: order1987111
+                stopLoss:
+                  type: string
+                  description: 'Stop loss price.
+
+
+                    When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
+
+                    '
+                  example: '50000'
+                takeProfit:
+                  type: string
+                  description: 'Take profit price.
+
+
+                    When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
+
+                    '
+                  example: '30000'
+                postOnly:
+                  type: boolean
+                  default: false
+                  description: 'When `true`, guarantees the order executes as a [maker](/glossary#maker) order. The system rejects the order if it would immediately match as taker. Default: `false`.'
+                  example: false
+                ioc:
+                  type: boolean
+                  default: false
+                  description: When `true`, the order executes all or part immediately and cancels any unfilled portion. Cannot be combined with `postOnly=true` or `rpi=true`.
+                  example: false
+                rpi:
+                  type: boolean
+                  default: false
+                  description: 'Enables Retail Price Improvement (RPI) mode.
+
+
+                    RPI orders are post-only by design and cannot be used with `ioc=true`. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
+
+                    '
+                  example: true
+                positionSide:
+                  type: string
+                  enum:
+                  - LONG
+                  - SHORT
+                  - BOTH
+                  description: 'Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+
+
+                    - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+
+                    - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account''s mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+
+                    '
+                  example: LONG
+                reduceOnly:
+                  type: boolean
+                  default: false
+                  description: When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+                  example: false
+                stp:
+                  type: string
+                  enum:
+                  - 'no'
+                  - cb
+                  - cn
+                  - co
+                  default: 'no'
+                  description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+                    Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+                    See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+                    '
+                  example: 'no'
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              side: buy
+              amount: '0.01'
+              price: '40000'
+              postOnly: false
+              ioc: false
+              clientOrderId: order1987111
+              stopLoss: '50000'
+              takeProfit: '30000'
+              positionSide: LONG
+              rpi: true
+              reduceOnly: false
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: integer
+                    description: Unique order identifier
+                    example: 4180284841
+                  clientOrderId:
+                    type: string
+                    description: Custom client order identifier. Empty string if not specified
+                    example: order1987111
+                  market:
+                    type: string
+                    description: Market name
+                    example: BTC_USDT
+                  side:
+                    type: string
+                    description: Order side
+                    enum:
+                    - buy
+                    - sell
+                    example: buy
+                  type:
+                    type: string
+                    description: Order type
+                    example: limit
+                  timestamp:
+                    type: number
+                    description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+                    example: 1595792396.165973
+                  dealMoney:
+                    type: string
+                    description: Amount in money currency that is finished
+                    example: '0'
+                  dealStock:
+                    type: string
+                    description: Amount in stock currency that is finished
+                    example: '0'
+                  amount:
+                    type: string
+                    description: Order amount
+                    example: '0.01'
+                  left:
+                    type: string
+                    description: Remaining amount that must be finished
+                    example: '0.001'
+                  dealFee:
+                    type: string
+                    description: Fee in money that is paid when order is finished
+                    example: '0'
+                  price:
+                    type: string
+                    description: Order price
+                    example: '40000'
+                  postOnly:
+                    type: boolean
+                    description: Post-only flag
+                    example: false
+                  ioc:
+                    type: boolean
+                    description: Immediate or cancel flag
+                    example: false
+                  status:
+                    $ref: '#/components/schemas/ActiveOrderStatus'
+                  stp:
+                    type: string
+                    description: 'Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.'
+                    example: 'no'
+                  oto:
+                    type:
+                    - object
+                    - 'null'
+                    description: OTO order data when stopLoss or takeProfit is specified
+                    properties:
+                      otoId:
+                        type: integer
+                        description: OTO order identifier
+                        example: 29457221
+                      stopLoss:
+                        type: string
+                        description: Stop loss order price
+                        example: '30000'
+                      takeProfit:
+                        type: string
+                        description: Take profit order price
+                        example: '50000'
+                  positionSide:
+                    type: string
+                    description: Position side
+                    enum:
+                    - LONG
+                    - SHORT
+                    - BOTH
+                    example: LONG
+                  rpi:
+                    type: boolean
+                    description: Retail Price Improvement flag
+                    example: true
+                  reduceOnly:
+                    type: boolean
+                    description: Reduce-only flag
+                    example: false
+              example:
+                orderId: 4180284841
+                clientOrderId: order1987111
+                market: BTC_USDT
+                side: buy
+                type: limit
+                timestamp: 1595792396.165973
+                dealMoney: '0'
+                dealStock: '0'
+                amount: '0.01'
+                left: '0.001'
+                dealFee: '0'
+                price: '40000'
+                postOnly: false
+                ioc: false
+                status: FILLED
+                stp: 'no'
+                oto:
+                  otoId: 29457221
+                  stopLoss: '30000'
+                  takeProfit: '50000'
+                positionSide: LONG
+                rpi: true
+                reduceOnly: false
+        '422':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `33` - price validation failed
+
+            - `36` - clientOrderId validation failed
+
+            - `37` - `ioc=true` cannot be combined with `postOnly=true`
+
+            - `40` - `ioc=true` cannot be combined with `rpi=true`
+
+            - `43` - `rpi=true` is not allowed for the account
+
+            - `10` - insufficient balance to place the order
+
+            - `111` - resulting position would exceed the market maximum
+
+            - `112` - pending orders value would exceed the allowed maximum
+
+            - `113` - position side cannot be changed while open positions or orders exist
+
+            - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+
+            - `115` - order would open a position in the opposite direction (one-way mode)
+
+            - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+
+            - `10011` - the market is a TradFi market and TradFi trading is restricted for the account
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/collateral/bulk:
+    post:
+      summary: Collateral bulk limit order
+      operationId: createCollateralBulkOrder
+      description: 'The endpoint creates multiple collateral limit orders in a single request. Each order in the `orders` array is validated and processed individually. The `stopOnFail` parameter controls whether processing stops at the first failure or continues through all orders. The response array contains a result or error object for each submitted order, in the same order as the request.
+
+
+        **Price and amount steps:** from September 18, 2026, the `price` of each order and any attached `stopLoss` or `takeProfit` price must be multiples of the market `tickSize`, and its `amount` a multiple of `stepSize`. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                orders:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      market:
+                        type: string
+                        description: 'Available margin [market](/glossary#market). Example: BTC_USDT'
+                        example: BTC_PERP
+                      side:
+                        type: string
+                        enum:
+                        - buy
+                        - sell
+                        description: 'Order type. Variables: ''buy'' / ''sell''.'
+                        example: buy
+                      amount:
+                        type: string
+                        description: Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+                        example: '0.02'
+                      price:
+                        type: string
+                        description: Limit order price in [money](/glossary#money) currency. Minimum price step is market-dependent.
+                        example: '40000'
+                      clientOrderId:
+                        type: string
+                        description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+                        example: ''
+                      stopLoss:
+                        type: string
+                        description: 'Stop loss price.
+
+
+                          When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
+
+                          '
+                        example: '50000'
+                      takeProfit:
+                        type: string
+                        description: 'Take profit price.
+
+
+                          When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
+
+                          '
+                        example: '30000'
+                      postOnly:
+                        type: boolean
+                        default: false
+                        description: 'Ensures the order adds liquidity and executes as maker. Default: `false`.'
+                        example: false
+                      ioc:
+                        type: boolean
+                        default: false
+                        description: 'Immediate-or-cancel (IOC) executes all or part of an order immediately and cancels any unfilled portion. Default: `false`.
+
+
+                          IOC does not support `rpi=true` because RPI uses post-only behavior by design.
+
+                          The API returns error code `40` when an order item sets both `ioc=true` and `rpi=true`.
+
+                          '
+                        example: false
+                      rpi:
+                        type: boolean
+                        default: false
+                        description: 'Enables Retail Price Improvement (RPI) mode. Default: `false`.
+
+
+                          RPI orders use post-only behavior by design. An RPI order does not support `ioc=true`.
+
+                          The API returns error code `40` when an order item sets both `rpi=true` and `ioc=true`.
+
+                          '
+                        example: true
+                      positionSide:
+                        type: string
+                        enum:
+                        - LONG
+                        - SHORT
+                        - BOTH
+                        description: 'Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+
+
+                          - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+
+                          - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account''s mode causes the trade service to reject the per-order item with error code `114` (`Hedge mode position side does not match`).
+
+                          '
+                        example: LONG
+                      reduceOnly:
+                        type: boolean
+                        default: false
+                        description: When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+                        example: false
+                stopOnFail:
+                  type: boolean
+                  default: false
+                  description: 'Controls how the bulk order processor handles failures.
+
+
+                    When true: Processing stops at the first order that fails validation or execution. Only orders up to (but not including) the failed order are processed.
+
+
+                    When false (default): All orders in the bulk request are processed regardless of individual failures. Each order result is returned in the response array.
+
+                    '
+                  example: true
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              orders:
+              - side: buy
+                amount: '0.02'
+                price: '40000'
+                market: BTC_PERP
+                postOnly: false
+                ioc: false
+                clientOrderId: ''
+                positionSide: LONG
+                rpi: true
+                reduceOnly: false
+              - side: sell
+                amount: '0.0001'
+                price: '41000'
+                market: BTC_USDT
+                postOnly: false
+                ioc: false
+                clientOrderId: ''
+                positionSide: LONG
+                rpi: true
+                reduceOnly: true
+              - side: sell
+                amount: '0.02'
+                price: '0.030'
+                market: ETH_BTC
+                postOnly: false
+                ioc: false
+                clientOrderId: ''
+                positionSide: LONG
+                rpi: true
+                reduceOnly: false
+              stopOnFail: true
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns array of order results
+          content:
+            application/json:
+              schema:
+                type: array
+                description: Array of order creation results. Each item contains either a successful result or an error.
+                items:
+                  type: object
+                  properties:
+                    result:
+                      type:
+                      - object
+                      - 'null'
+                      description: Order data when successful, null when failed
+                      properties:
+                        orderId:
+                          type: integer
+                          description: Unique order identifier
+                          example: 4326248250
+                        clientOrderId:
+                          type: string
+                          description: Custom client order identifier. Empty string if not specified
+                          example: ''
+                        market:
+                          type: string
+                          description: Market name
+                          example: BTC_USDT
+                        side:
+                          type: string
+                          description: Order side
+                          enum:
+                          - buy
+                          - sell
+                          example: buy
+                        type:
+                          type: string
+                          description: Order type
+                          example: limit
+                        timestamp:
+                          type: number
+                          description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+                          example: 1684916268.825564
+                        dealMoney:
+                          type: string
+                          description: Amount in money currency that is finished
+                          example: '641.988'
+                        dealStock:
+                          type: string
+                          description: Amount in stock currency that is finished
+                          example: '0.02'
+                        amount:
+                          type: string
+                          description: Order amount
+                          example: '0.02'
+                        left:
+                          type: string
+                          description: Remaining amount that must be finished
+                          example: '0'
+                        dealFee:
+                          type: string
+                          description: Fee in money that is paid when order is finished
+                          example: '1.283976'
+                        price:
+                          type: string
+                          description: Order price
+                          example: '40000'
+                        postOnly:
+                          type: boolean
+                          description: Post-only flag
+                          example: false
+                        ioc:
+                          type: boolean
+                          description: Immediate or cancel flag
+                          example: false
+                        status:
+                          type: string
+                          $ref: '#/components/schemas/ActiveOrderStatus'
+                        stp:
+                          type: string
+                          description: 'Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.'
+                          example: 'no'
+                        positionSide:
+                          type: string
+                          description: Position side
+                          enum:
+                          - LONG
+                          - SHORT
+                          - BOTH
+                          example: LONG
+                        rpi:
+                          type: boolean
+                          description: Retail Price Improvement flag
+                          example: true
+                        reduceOnly:
+                          type: boolean
+                          description: Reduce-only flag
+                          example: false
+                    error:
+                      type:
+                      - object
+                      - 'null'
+                      description: Error details when order creation failed, null when successful
+                      properties:
+                        code:
+                          type: integer
+                          description: Error code
+                          example: 32
+                        message:
+                          type: string
+                          description: Error message
+                          example: Validation failed
+                        errors:
+                          type: object
+                          description: Detailed validation errors
+                          additionalProperties:
+                            type: array
+                            items:
+                              type: string
+                          example:
+                            amount:
+                            - Given amount is less than min amount 0.001.
+              example:
+              - result:
+                  orderId: 4326248250
+                  clientOrderId: ''
+                  market: BTC_USDT
+                  side: buy
+                  type: limit
+                  timestamp: 1684916268.825564
+                  dealMoney: '641.988'
+                  dealStock: '0.02'
+                  amount: '0.02'
+                  left: '0'
+                  dealFee: '1.283976'
+                  ioc: false
+                  postOnly: false
+                  price: '40000'
+                  status: FILLED
+                  stp: 'no'
+                  positionSide: LONG
+                  rpi: true
+                  reduceOnly: false
+                error: null
+              - result: null
+                error:
+                  code: 32
+                  message: Validation failed
+                  errors:
+                    amount:
+                    - Given amount is less than min amount 0.001.
+              - result:
+                  orderId: 4326248250
+                  clientOrderId: ''
+                  market: BTC_USDT
+                  side: sell
+                  type: limit
+                  timestamp: 1684916268.825564
+                  dealMoney: '641.988'
+                  dealStock: '0.02'
+                  amount: '0.02'
+                  left: '0'
+                  dealFee: '1.283976'
+                  ioc: false
+                  postOnly: false
+                  price: '41000'
+                  status: FILLED
+                  stp: 'no'
+                  positionSide: LONG
+                  rpi: true
+                  reduceOnly: false
+                error: null
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (per-order). Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `33` - price validation failed
+
+            - `36` - clientOrderId validation failed
+
+            - `37` - `ioc=true` cannot be used with `postOnly=true` or `rpi=true`
+
+            - `10` - insufficient balance to place the order
+
+            - `111` - resulting position would exceed the market maximum
+
+            - `112` - pending orders value would exceed the allowed maximum
+
+            - `113` - position side cannot be changed while open positions or orders exist
+
+            - `114` - hedge mode position side does not match (per-order; sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+
+            - `115` - order would open a position in the opposite direction (one-way mode)
+
+            - `116` - reduce-only validation failed (no position exists or order side matches position direction). For bulk orders, this error appears per-order inside the response array.
+
+            - `10011` - the market is a TradFi market and TradFi trading is restricted for the account (per-order)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/collateral/market:
+    post:
+      summary: Collateral Market Order
+      operationId: createCollateralMarketOrder
+      description: 'The endpoint creates a market order using collateral balance. The order executes immediately at the best available market price. Optionally attach `stopLoss` and `takeProfit` prices to create an OTO order that activates after the market order fills.
+
+
+        **Price and amount steps:** from September 18, 2026, `amount` must be a multiple of the market `stepSize`, and an attached `stopLoss` or `takeProfit` price a multiple of `tickSize`. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - side
+              - amount
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Available margin [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                side:
+                  type: string
+                  enum:
+                  - buy
+                  - sell
+                  description: Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
+                  example: buy
+                amount:
+                  type: string
+                  description: Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+                  example: '0.01'
+                clientOrderId:
+                  type: string
+                  description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+                  example: order1987111
+                stopLoss:
+                  type: string
+                  description: 'Stop loss price.
+
+
+                    When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
+
+                    '
+                  example: '50000'
+                takeProfit:
+                  type: string
+                  description: 'Take profit price.
+
+
+                    When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
+
+                    '
+                  example: '40000'
+                positionSide:
+                  type: string
+                  enum:
+                  - LONG
+                  - SHORT
+                  - BOTH
+                  description: 'Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+
+
+                    - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+
+                    - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account''s mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+
+                    '
+                  example: LONG
+                reduceOnly:
+                  type: boolean
+                  default: false
+                  description: When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+                  example: false
+                stp:
+                  type: string
+                  enum:
+                  - 'no'
+                  - cb
+                  - cn
+                  - co
+                  default: 'no'
+                  description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+                    Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+                    See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+                    '
+                  example: 'no'
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              side: buy
+              amount: '0.01'
+              clientOrderId: order1987111
+              reduceOnly: false
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - market order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: integer
+                    description: Unique order identifier
+                    example: 4180284841
+                  clientOrderId:
+                    type: string
+                    description: Custom client order identifier. Empty string if not specified
+                    example: order1987111
+                  market:
+                    type: string
+                    description: Market name
+                    example: BTC_USDT
+                  side:
+                    type: string
+                    description: Order side
+                    enum:
+                    - buy
+                    - sell
+                    example: sell
+                  type:
+                    type: string
+                    description: Order type
+                    example: market
+                  timestamp:
+                    type: number
+                    description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+                    example: 1595792396.165973
+                  dealMoney:
+                    type: string
+                    description: Amount in money currency that is finished
+                    example: '0'
+                  dealStock:
+                    type: string
+                    description: Amount in stock currency that is finished
+                    example: '0'
+                  amount:
+                    type: string
+                    description: Order amount
+                    example: '0.001'
+                  left:
+                    type: string
+                    description: Remaining amount that must be finished
+                    example: '0.001'
+                  dealFee:
+                    type: string
+                    description: Fee in money that is paid when order is finished
+                    example: '0'
+                  status:
+                    $ref: '#/components/schemas/ActiveOrderStatus'
+                  stp:
+                    type: string
+                    description: 'Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.'
+                    example: 'no'
+                  oto:
+                    type:
+                    - object
+                    - 'null'
+                    description: OTO order data when stopLoss or takeProfit is specified
+                    properties:
+                      otoId:
+                        type: integer
+                        description: OTO order identifier
+                        example: 29457221
+                      stopLoss:
+                        type: string
+                        description: Stop loss order price
+                        example: '50000'
+                      takeProfit:
+                        type: string
+                        description: Take profit order price
+                        example: '40000'
+                  positionSide:
+                    type: string
+                    description: Position side
+                    enum:
+                    - LONG
+                    - SHORT
+                    - BOTH
+                    example: LONG
+                  reduceOnly:
+                    type: boolean
+                    description: Reduce-only flag
+                    example: false
+              example:
+                orderId: 4180284841
+                clientOrderId: order1987111
+                market: BTC_USDT
+                side: sell
+                type: market
+                timestamp: 1595792396.165973
+                dealMoney: '0'
+                dealStock: '0'
+                amount: '0.001'
+                left: '0.001'
+                dealFee: '0'
+                status: FILLED
+                stp: 'no'
+                oto:
+                  otoId: 29457221
+                  stopLoss: '50000'
+                  takeProfit: '40000'
+                positionSide: LONG
+                reduceOnly: false
+        '422':
+          description: 'Internal validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `36` - clientOrderId validation failed
+
+            - `10` - insufficient balance to place the order
+
+            - `111` - resulting position would exceed the market maximum
+
+            - `112` - pending orders value would exceed the allowed maximum
+
+            - `113` - position side cannot be changed while open positions or orders exist
+
+            - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+
+            - `115` - order would open a position in the opposite direction (one-way mode)
+
+            - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+
+            - `10011` - the market is a TradFi market and TradFi trading is restricted for the account
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/collateral/stop-limit:
+    post:
+      summary: Collateral Stop-Limit Order
+      operationId: createCollateralStopLimitOrder
+      description: 'The endpoint creates a collateral stop-limit order using collateral balance. The order remains inactive until the market price reaches `activation_price`, then places a limit order at `price`. Optionally attach `stopLoss` and `takeProfit` prices to create an OTO order that activates after the stop-limit order fills.
+
+
+        **Price and amount steps:** from September 18, 2026, `price`, `activation_price` and an attached `stopLoss` or `takeProfit` price must be multiples of the market `tickSize`, and `amount` a multiple of `stepSize`. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - side
+              - amount
+              - price
+              - activation_price
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Available margin [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                side:
+                  type: string
+                  enum:
+                  - buy
+                  - sell
+                  description: Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
+                  example: buy
+                amount:
+                  type: string
+                  description: Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+                  example: '0.001'
+                price:
+                  type: string
+                  description: Limit order price in [money](/glossary#money) currency. The order executes at the specified price or better after activation.
+                  example: '40000'
+                activation_price:
+                  type: string
+                  description: Trigger price in [money](/glossary#money) currency. The stop-limit order activates when the market price reaches the specified value.
+                  example: '40000'
+                stopLoss:
+                  type: string
+                  description: 'Stop loss price.
+
+
+                    When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
+
+                    '
+                  example: '30000'
+                takeProfit:
+                  type: string
+                  description: 'Take profit price.
+
+
+                    When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
+
+                    '
+                  example: '50000'
+                clientOrderId:
+                  type: string
+                  description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+                  example: order1987111
+                positionSide:
+                  type: string
+                  enum:
+                  - LONG
+                  - SHORT
+                  - BOTH
+                  description: 'Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+
+
+                    - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+
+                    - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account''s mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+
+                    '
+                  example: LONG
+                reduceOnly:
+                  type: boolean
+                  default: false
+                  description: When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+                  example: false
+                stp:
+                  type: string
+                  enum:
+                  - 'no'
+                  - cb
+                  - cn
+                  - co
+                  default: 'no'
+                  description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+                    Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+                    See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+                    '
+                  example: 'no'
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              side: buy
+              amount: '0.001'
+              price: '40000'
+              activation_price: '40000'
+              stopLoss: '30000'
+              takeProfit: '50000'
+              clientOrderId: order1987111
+              positionSide: LONG
+              reduceOnly: false
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - stop-limit order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: integer
+                    description: Unique order identifier
+                    example: 4180284841
+                  clientOrderId:
+                    type: string
+                    description: Custom client order identifier. Empty string if not specified
+                    example: order1987111
+                  market:
+                    type: string
+                    description: Market name
+                    example: BTC_USDT
+                  side:
+                    type: string
+                    description: Order side
+                    enum:
+                    - buy
+                    - sell
+                    example: buy
+                  type:
+                    type: string
+                    description: Order type
+                    example: stop limit
+                  timestamp:
+                    type: number
+                    description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+                    example: 1595792396.165973
+                  dealMoney:
+                    type: string
+                    description: Amount in money currency that is finished
+                    example: '0'
+                  dealStock:
+                    type: string
+                    description: Amount in stock currency that is finished
+                    example: '0'
+                  amount:
+                    type: string
+                    description: Order amount
+                    example: '0.001'
+                  left:
+                    type: string
+                    description: Remaining amount that must be finished
+                    example: '0.001'
+                  dealFee:
+                    type: string
+                    description: Fee in money that is paid when order is finished
+                    example: '0'
+                  price:
+                    type: string
+                    description: Order price
+                    example: '40000'
+                  activation_price:
+                    type: string
+                    description: Price at which the stop-limit order activates
+                    example: '40000'
+                  status:
+                    $ref: '#/components/schemas/ActiveOrderStatus'
+                  stp:
+                    type: string
+                    description: 'Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.'
+                    example: 'no'
+                  oto:
+                    type:
+                    - object
+                    - 'null'
+                    description: OTO order data when stopLoss or takeProfit is specified
+                    properties:
+                      otoId:
+                        type: integer
+                        description: OTO order identifier
+                        example: 29457221
+                      stopLoss:
+                        type: string
+                        description: Stop loss order price
+                        example: '30000'
+                      takeProfit:
+                        type: string
+                        description: Take profit order price
+                        example: '50000'
+                  positionSide:
+                    type: string
+                    description: Position side
+                    enum:
+                    - LONG
+                    - SHORT
+                    - BOTH
+                    example: LONG
+                  reduceOnly:
+                    type: boolean
+                    description: Reduce-only flag
+                    example: false
+              example:
+                orderId: 4180284841
+                clientOrderId: order1987111
+                market: BTC_USDT
+                side: buy
+                type: stop limit
+                timestamp: 1595792396.165973
+                dealMoney: '0'
+                dealStock: '0'
+                amount: '0.001'
+                left: '0.001'
+                dealFee: '0'
+                price: '40000'
+                activation_price: '40000'
+                status: FILLED
+                stp: 'no'
+                oto:
+                  otoId: 29457221
+                  stopLoss: '30000'
+                  takeProfit: '50000'
+                positionSide: LONG
+                reduceOnly: false
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `33` - price validation failed
+
+            - `36` - clientOrderId validation failed
+
+            - `10` - insufficient balance to place the order
+
+            - `111` - resulting position would exceed the market maximum
+
+            - `112` - pending orders value would exceed the allowed maximum
+
+            - `113` - position side cannot be changed while open positions or orders exist
+
+            - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+
+            - `115` - order would open a position in the opposite direction (one-way mode)
+
+            - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+
+            - `10011` - the market is a TradFi market and TradFi trading is restricted for the account
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/collateral/trigger-market:
+    post:
+      summary: Collateral Trigger Market Order
+      operationId: createCollateralTriggerMarketOrder
+      description: 'The endpoint creates a collateral trigger market order using collateral balance. The order remains inactive until the market price reaches `activation_price`, then executes immediately at the best available market price. Optionally attach `stopLoss` and `takeProfit` prices to create an OTO order that activates after the trigger market order fills.
+
+
+        **Price and amount steps:** from September 18, 2026, `activation_price` and an attached `stopLoss` or `takeProfit` price must be multiples of the market `tickSize`, and `amount` a multiple of `stepSize`. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - side
+              - amount
+              - activation_price
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Available margin [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                side:
+                  type: string
+                  enum:
+                  - buy
+                  - sell
+                  description: Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
+                  example: buy
+                amount:
+                  type: string
+                  description: Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+                  example: '0.01'
+                activation_price:
+                  type: string
+                  description: Trigger price in [money](/glossary#money) currency. The trigger market order activates when the market price reaches the specified value.
+                  example: '40000'
+                clientOrderId:
+                  type: string
+                  description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+                  example: order1987111
+                stopLoss:
+                  type: string
+                  description: 'Stop loss price.
+
+
+                    When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
+
+                    '
+                  example: '50000'
+                takeProfit:
+                  type: string
+                  description: 'Take profit price.
+
+
+                    When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
+
+                    '
+                  example: '30000'
+                positionSide:
+                  type: string
+                  enum:
+                  - LONG
+                  - SHORT
+                  - BOTH
+                  description: 'Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+
+
+                    - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+
+                    - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account''s mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+
+                    '
+                  example: LONG
+                reduceOnly:
+                  type: boolean
+                  default: false
+                  description: When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+                  example: false
+                stp:
+                  type: string
+                  enum:
+                  - 'no'
+                  - cb
+                  - cn
+                  - co
+                  default: 'no'
+                  description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+                    Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+                    See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+                    '
+                  example: 'no'
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              side: buy
+              amount: '0.01'
+              activation_price: '40000'
+              clientOrderId: order1987111
+              reduceOnly: false
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - trigger market order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: integer
+                    description: Unique order identifier
+                    example: 4180284841
+                  clientOrderId:
+                    type: string
+                    description: Custom client order identifier. Empty string if not specified
+                    example: order1987111
+                  market:
+                    type: string
+                    description: Market name
+                    example: BTC_USDT
+                  side:
+                    type: string
+                    description: Order side
+                    enum:
+                    - buy
+                    - sell
+                    example: sell
+                  type:
+                    type: string
+                    description: Order type
+                    example: stop market
+                  timestamp:
+                    type: number
+                    description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+                    example: 1595792396.165973
+                  dealMoney:
+                    type: string
+                    description: Amount in money currency that is finished
+                    example: '0'
+                  dealStock:
+                    type: string
+                    description: Amount in stock currency that is finished
+                    example: '0'
+                  amount:
+                    type: string
+                    description: Order amount
+                    example: '0.001'
+                  left:
+                    type: string
+                    description: Remaining amount that must be finished
+                    example: '0.001'
+                  dealFee:
+                    type: string
+                    description: Fee in money that is paid when order is finished
+                    example: '0'
+                  activation_price:
+                    type: string
+                    description: Price at which the stop market order activates
+                    example: '40000'
+                  status:
+                    $ref: '#/components/schemas/ActiveOrderStatus'
+                  stp:
+                    type: string
+                    description: 'Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.'
+                    example: 'no'
+                  oto:
+                    type:
+                    - object
+                    - 'null'
+                    description: OTO order data when stopLoss or takeProfit is specified
+                    properties:
+                      otoId:
+                        type: integer
+                        description: OTO order identifier
+                        example: 29457221
+                      stopLoss:
+                        type: string
+                        description: Stop loss order price
+                        example: '50000'
+                      takeProfit:
+                        type: string
+                        description: Take profit order price
+                        example: '30000'
+                  positionSide:
+                    type: string
+                    description: Position side
+                    enum:
+                    - LONG
+                    - SHORT
+                    - BOTH
+                    example: LONG
+                  reduceOnly:
+                    type: boolean
+                    description: Reduce-only flag
+                    example: false
+              example:
+                orderId: 4180284841
+                clientOrderId: order1987111
+                market: BTC_USDT
+                side: sell
+                type: stop market
+                timestamp: 1595792396.165973
+                dealMoney: '0'
+                dealStock: '0'
+                amount: '0.001'
+                left: '0.001'
+                dealFee: '0'
+                activation_price: '40000'
+                status: FILLED
+                stp: 'no'
+                oto:
+                  otoId: 29457221
+                  stopLoss: '50000'
+                  takeProfit: '30000'
+                positionSide: LONG
+                reduceOnly: false
+        '422':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `36` - clientOrderId validation failed
+
+            - `10` - insufficient balance to place the order
+
+            - `111` - resulting position would exceed the market maximum
+
+            - `112` - pending orders value would exceed the allowed maximum
+
+            - `113` - position side cannot be changed while open positions or orders exist
+
+            - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+
+            - `115` - order would open a position in the opposite direction (one-way mode)
+
+            - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+
+            - `10011` - the market is a TradFi market and TradFi trading is restricted for the account
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/summary:
+    post:
+      summary: Collateral Account Summary
+      operationId: collateralAccountSummary
+      description: 'The endpoint returns a collateral account summary including total equity, used margin, free margin, unrealized profit and loss, and the current leverage level. The `marginFraction` field indicates the ratio of used margin to total equity.
+
+
+        Rate limit: 12000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns collateral account summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  equity:
+                    type: string
+                    description: Total equity value of the collateral account
+                    example: '15000.50'
+                  margin:
+                    type: string
+                    description: Total margin used
+                    example: '5000.00'
+                  freeMargin:
+                    type: string
+                    description: Available margin for trading
+                    example: '10000.50'
+                  unrealizedFunding:
+                    type: string
+                    description: Unrealized funding payments
+                    example: '25.75'
+                  pnl:
+                    type: string
+                    description: Unrealized profit and loss
+                    example: '150.25'
+                  leverage:
+                    type: integer
+                    description: Current leverage level
+                    example: 3
+                  marginFraction:
+                    type: string
+                    description: Margin fraction ratio (margin / equity)
+                    example: '0.3333'
+              example:
+                equity: '15000.50'
+                margin: '5000.00'
+                freeMargin: '10000.50'
+                unrealizedFunding: '25.75'
+                pnl: '150.25'
+                leverage: 3
+                marginFraction: '0.3333'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/positions/open:
+    post:
+      summary: Open Positions
+      operationId: getOpenPositions
+      description: 'The endpoint returns all open collateral positions for the authenticated account. Each position includes entry price, unrealized PnL, margin allocation, liquidation price, and take-profit/stop-loss configuration. Use the optional `market` parameter to filter results to a single trading pair.
+
+
+        Rate limit: 12000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                market:
+                  type: string
+                  description: 'Filter by specific market. For example: BTC_USDT
+
+
+                    If not specified, returns all open positions.
+
+                    '
+                  example: BTC_USDT
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns array of open positions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    positionId:
+                      type: integer
+                      description: Unique position identifier
+                      example: 527
+                    market:
+                      type: string
+                      description: Market name
+                      example: BTC_USDT
+                    amount:
+                      type: string
+                      description: Position amount
+                      example: '0.1'
+                    basePrice:
+                      type: string
+                      description: Base price of position
+                      example: '45658.349'
+                    pnl:
+                      type: string
+                      description: Realized profit and loss accumulated from partial position closes, in money currency. Zero for newly opened positions that have not been partially closed.
+                      example: '-168.42'
+                    pnlPercent:
+                      type: string
+                      description: Unrealized profit and loss in percentage
+                      example: '-0.43'
+                    margin:
+                      type: string
+                      description: Amount of funds in open position money
+                      example: '8316.74'
+                    freeMargin:
+                      type: string
+                      description: Free funds for trading
+                      example: '619385.67'
+                    funding:
+                      type: string
+                      description: Cumulative funding fees paid over the entire lifetime of the position, in money currency. For futures markets (e.g., BTC_PERP and other _PERP pairs), the value is always "0" — futures funding is applied via periodic balance updates rather than being tracked per position.
+                      example: '0'
+                    unrealizedPnl:
+                      type: string
+                      description: Floating (mark-to-market) unrealized profit and loss in money currency. Updates continuously as the market price changes.
+                      example: '0.0019142920201966'
+                    positionSide:
+                      type: string
+                      description: Position side
+                      enum:
+                      - LONG
+                      - SHORT
+                      - BOTH
+                      example: LONG
+                    openDate:
+                      type: number
+                      description: Date of position opening in Unix timestamp format
+                      example: 1651568067.789679
+                    modifyDate:
+                      type: number
+                      description: Date of position modifying (current event) in Unix timestamp format
+                      example: 1651568067.789679
+                    liquidationPrice:
+                      type:
+                      - string
+                      - 'null'
+                      description: Liquidation price according to current state of position
+                      example: null
+                    liquidationState:
+                      type:
+                      - string
+                      - 'null'
+                      description: State of liquidation
+                      enum:
+                      - margin_call
+                      - liquidation
+                      example: null
+                    tpsl:
+                      type:
+                      - object
+                      - 'null'
+                      description: Take profit and stop loss configuration
+                      properties:
+                        takeProfitId:
+                          type: integer
+                          description: Take profit order ID
+                          example: 123
+                        takeProfit:
+                          type: string
+                          description: Take profit price
+                          example: '50000'
+                        stopLossId:
+                          type: integer
+                          description: Stop loss order ID
+                          example: 124
+                        stopLoss:
+                          type: string
+                          description: Stop loss price
+                          example: '35000'
+                    unrealizedFunding:
+                      type: string
+                      description: Funding fees accrued since the last position state change and not yet realized. For margin positions, the value accumulates continuously and is settled into the funding field when the position state changes (e.g., on partial or full close). For futures markets (BTC_PERP and other _PERP pairs), always "0" — futures funding is applied via periodic balance updates, not tracked per position.
+                      example: '0.0019142920201966'
+              example:
+              - positionId: 527
+                market: BTC_USDT
+                openDate: 1651568067.789679
+                modifyDate: 1651568067.789679
+                amount: '0.1'
+                basePrice: '45658.349'
+                liquidationPrice: null
+                liquidationState: margin_call
+                pnl: '-168.42'
+                pnlPercent: '-0.43'
+                margin: '8316.74'
+                freeMargin: '619385.67'
+                funding: '0'
+                unrealizedFunding: '0.0019142920201966'
+                tpsl:
+                  takeProfitId: 123
+                  takeProfit: '50000'
+                  stopLossId: 124
+                  stopLoss: '35000'
+                positionSide: LONG
+              - positionId: 528
+                market: ETH_USDT
+                openDate: 1651568067.789679
+                modifyDate: 1651568067.789679
+                amount: '0.1'
+                basePrice: '5658.349'
+                liquidationPrice: null
+                liquidationState: margin_call
+                pnl: '-168.42'
+                pnlPercent: '-0.43'
+                margin: '8316.74'
+                freeMargin: '19385.67'
+                funding: '0'
+                unrealizedFunding: '0.0020142920201966'
+                tpsl: null
+                positionSide: LONG
+        '422':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (returned when the optional `market` filter is malformed)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/position/close:
+    post:
+      summary: Close Position
+      operationId: closePosition
+      description: 'The endpoint closes an open collateral position at the current market price. The system places a market order in the opposite direction to fully close the specified position. Any attached take-profit or stop-loss orders are cancelled automatically.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - positionId
+              - market
+              - request
+              - nonce
+              properties:
+                positionId:
+                  type: integer
+                  description: Unique identifier of the position to close. Obtain from the [open positions](/api-reference/trading/open-positions) endpoint.
+                  example: 123
+                positionSide:
+                  type: string
+                  enum:
+                  - LONG
+                  - SHORT
+                  - BOTH
+                  description: Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
+                  example: LONG
+                market:
+                  type: string
+                  description: 'Market of the position to close. Example: BTC_USDT'
+                  example: BTC_USDT
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              positionId: 123
+              positionSide: LONG
+              market: BTC_USDT
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Position closed
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (for example, a missing or malformed `positionId` or `market`)
+
+            - `104` - position not found. Returned whether the `positionId` does not exist, the position is already closed, or it is not owned by the account — these cases are not distinguished
+
+            - `10` - insufficient balance to fund the closing market order
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/positions/history:
+    post:
+      summary: Positions History
+      operationId: getPositionsHistory
+      description: 'The endpoint returns the history of collateral position state changes for the authenticated account. Each record represents a position event (open, partial close, full close, or liquidation) and includes the order details that triggered the change. Use the optional `market` and `positionId` parameters to filter results.
+
+
+        Rate limit: 12000 requests/10 sec.
+
+
+        **Date filter window:** `startDate` and `endDate` are optional and have no defaults. The endpoint enforces no maximum window and no lower-bound floor. The only ordering constraint is `startDate` ≤ `endDate` ≤ `now + 1s` — requests that violate the ordering are rejected with a validation error.
+
+
+        **Breaking change — April 29, 2026.** The `positionSide` field is no longer returned in the Position History response. Use `side` (same enum: `LONG`, `SHORT`, `BOTH`) plus `isHedge` (boolean) instead. Integrations reading `positionSide` from `/api/v4/collateral-account/positions/history` must migrate before consuming the new response.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                market:
+                  type: string
+                  description: 'Filter by specific market. Example: BTC_USDT
+
+
+                    If not specified, returns position history for all markets.
+
+                    '
+                  example: BTC_USDT
+                positionId:
+                  type: integer
+                  description: Filter by specific position identifier. If not specified, returns history for all positions.
+                  example: 1
+                startDate:
+                  type: integer
+                  description: Start of the query window as a Unix timestamp in seconds. Optional, no default. Must be ≤ `endDate`.
+                  example: 1650400000
+                endDate:
+                  type: integer
+                  description: End of the query window as a Unix timestamp in seconds. Optional, no default. Must be ≥ `startDate` and ≤ `now + 1s`; violating values are rejected with a validation error.
+                  example: 1650500000
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              positionId: 1
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns array of position history
+          content:
+            application/json:
+              schema:
+                type: array
+                description: Array of position history entries
+                items:
+                  type: object
+                  properties:
+                    positionId:
+                      type: integer
+                      description: Position identifier
+                      example: 111
+                    market:
+                      type: string
+                      description: Position market
+                      example: BTC_USDT
+                    openDate:
+                      type: number
+                      description: Date of position opening in Unix timestamp format
+                      example: 1650400589.882613
+                    modifyDate:
+                      type: number
+                      description: Date of position modification (current event) in Unix timestamp format
+                      example: 1650400589.882613
+                    amount:
+                      type: string
+                      description: Position amount
+                      example: '0.1'
+                    basePrice:
+                      type: string
+                      description: Base price of position
+                      example: '45658.349'
+                    realizedFunding:
+                      type: string
+                      description: Funding fee for whole position lifetime till current state
+                      example: '0'
+                    liquidationPrice:
+                      type:
+                      - string
+                      - 'null'
+                      description: Liquidation price according to current state of position
+                      example: null
+                    liquidationState:
+                      type:
+                      - string
+                      - 'null'
+                      description: State of liquidation
+                      enum:
+                      - margin_call
+                      - liquidation
+                      example: null
+                    orderDetail:
+                      type: object
+                      description: Details of order which changes position
+                      properties:
+                        id:
+                          type: integer
+                          description: Order identifier
+                          example: 97067934
+                        tradeAmount:
+                          type: string
+                          description: Trade amount of order
+                          example: '0.1'
+                        price:
+                          type: string
+                          description: Order price
+                          example: '41507.59'
+                        tradeFee:
+                          type: string
+                          description: Order trade fee
+                          example: '415.07'
+                        fundingFee:
+                          type:
+                          - string
+                          - 'null'
+                          description: Funding fee captured by this position change
+                          example: null
+                        realizedPnl:
+                          type:
+                          - string
+                          - 'null'
+                          description: Realized profit and loss
+                          example: null
+                    side:
+                      type: string
+                      enum:
+                      - LONG
+                      - SHORT
+                      - BOTH
+                      description: Position direction. `BOTH` indicates a one-way mode position; `LONG` or `SHORT` indicates a hedge mode position. See [position side](/glossary#position-side).
+                      example: LONG
+                    isHedge:
+                      type: boolean
+                      description: Indicates whether [hedge mode](/glossary#hedge-mode) was active when the position was opened. Hedge-mode toggling requires zero open positions, so the value also reflects the account mode at every event in the position's lifetime.
+                      example: false
+              example:
+              - positionId: 111
+                market: BTC_USDT
+                openDate: 1650400589.882613
+                modifyDate: 1650400589.882613
+                amount: '0.1'
+                basePrice: '45658.349'
+                realizedFunding: '0'
+                liquidationPrice: null
+                liquidationState: margin_call
+                orderDetail:
+                  id: 97067934
+                  tradeAmount: '0.1'
+                  price: '41507.59'
+                  tradeFee: '415.07'
+                  fundingFee: null
+                  realizedPnl: null
+                side: LONG
+                isHedge: false
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset` — or a date filter that violates `startDate` ≤ `endDate` ≤ `now + 1s`)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/positions/closed-pnl:
+    post:
+      summary: Closed-position PNL
+      operationId: getClosedPositionsPnl
+      description: 'The endpoint returns one aggregated profit-and-loss record per closed collateral position for the authenticated account — the same closed-position PNL the trading terminal shows. Records are sorted by `closeDate` descending, then `positionId` descending. Use the optional `startDate` and `endDate` parameters to narrow the window; the filter applies to the position close time.
+
+
+        The endpoint supports pagination via `limit` (default: 50, max: 100) and `offset` (default: 0); the sum of `offset` and `limit` must not exceed 10000. A response that returns fewer than `limit` records indicates the last page.
+
+
+        **Close-time windowing:** a position opened before the requested window but closed inside the window returns complete aggregates — fees, average prices, and closed size cover the full position lifetime, not only the requested window.
+
+
+        Rate limit: 12000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startDate:
+                  type: integer
+                  description: Start of the query window as a Unix timestamp in seconds, applied to the position close time. Optional, no default. Must be ≤ `endDate`.
+                  example: 1778000000
+                endDate:
+                  type: integer
+                  description: End of the query window as a Unix timestamp in seconds, applied to the position close time. Optional, no default. Must be ≥ `startDate` and ≤ `now + 1s`.
+                  example: 1778100000
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 50
+                  description: 'Maximum number of records to return. Default: `50`. Minimum: `1`. Maximum: `100`.'
+                  example: 50
+                offset:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: 'Number of records to skip. Default: `0`. The sum of `offset` and `limit` must not exceed 10000.'
+                  example: 0
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              startDate: 1778000000
+              endDate: 1778100000
+              limit: 50
+              offset: 0
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns an array with one aggregated record per closed position, sorted by `closeDate` descending, then `positionId` descending. Returns an empty array when no closed positions match the filters.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    positionId:
+                      type: integer
+                      description: Unique identifier of the closed position.
+                      example: 111
+                    market:
+                      type: string
+                      description: 'Market of the position. Format: `BASE_QUOTE`.'
+                      example: BTC_USDT
+                    grossPnl:
+                      type: string
+                      description: Realized profit and loss of the position before funding. Trading fees are already deducted from the value; `totalTradeFee` is informational and must not be subtracted again.
+                      example: '43.85'
+                    netPnl:
+                      type: string
+                      description: 'Net profit and loss of the position: `grossPnl` minus `totalFunding`.'
+                      example: '42.6'
+                    totalTradeFee:
+                      type: string
+                      description: Sum of trading fees across all fills of the position, both opening and closing. Informational — already reflected in `grossPnl` and `netPnl`.
+                      example: '6.15'
+                    totalFunding:
+                      type: string
+                      description: Cumulative funding fee over the whole position lifetime.
+                      example: '1.25'
+                    avgEntryPrice:
+                      type: string
+                      description: Volume-weighted average price of the fills that increased the position, trimmed to the market money precision.
+                      example: '61000'
+                    avgExitPrice:
+                      type: string
+                      description: Volume-weighted average price of the fills that reduced the position, trimmed to the market money precision.
+                      example: '62000'
+                    closedSize:
+                      type: string
+                      description: Total closed volume in base currency — the sum of fills that reduced the position.
+                      example: '0.05'
+                    amount:
+                      type: string
+                      description: Remaining position size. Always returns `"0"` — a closed position holds no size.
+                      example: '0'
+                    side:
+                      type: string
+                      enum:
+                      - LONG
+                      - SHORT
+                      - BOTH
+                      description: Position direction. Returns `BOTH` for positions opened with hedge mode disabled. See [positionSide](/glossary#position-side).
+                      example: LONG
+                    isHedge:
+                      type: boolean
+                      description: Whether the position was opened in [hedge mode](/glossary#hedge-mode).
+                      example: true
+                    openDate:
+                      type: integer
+                      description: Position open time as a Unix timestamp in seconds.
+                      example: 1778000000
+                    closeDate:
+                      type: integer
+                      description: Position close time as a Unix timestamp in seconds. Primary sort key, descending.
+                      example: 1778077400
+              example:
+              - positionId: 111
+                market: BTC_USDT
+                grossPnl: '43.85'
+                netPnl: '42.6'
+                totalTradeFee: '6.15'
+                totalFunding: '1.25'
+                avgEntryPrice: '61000'
+                avgExitPrice: '62000'
+                closedSize: '0.05'
+                amount: '0'
+                side: LONG
+                isHedge: true
+                openDate: 1778000000
+                closeDate: 1778077400
+              - positionId: 98
+                market: ETH_USDT
+                grossPnl: '-82.425'
+                netPnl: '-83.225'
+                totalTradeFee: '7.425'
+                totalFunding: '0.8'
+                avgEntryPrice: '2500'
+                avgExitPrice: '2450'
+                closedSize: '1.5'
+                amount: '0'
+                side: BOTH
+                isHedge: false
+                openDate: 1777900000
+                closeDate: 1778050000
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (invalid pagination — `limit` outside 1–100, or `offset` + `limit` above 10000 — or a date filter that violates `startDate` ≤ `endDate` ≤ `now + 1s`)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/funding-history:
+    post:
+      summary: Funding History
+      operationId: getFundingHistory
+      description: 'The endpoint returns the funding rate payment history for collateral positions. Each record includes the funding rate, settlement price, position amount, and the resulting funding payment. The `market` parameter is required — the endpoint returns funding for one market per request and has no all-markets mode. The response supports pagination via `limit` and `offset` parameters. Results are ordered by funding time (`fundingTime`), newest first.
+
+
+        Rate limit: 12000 requests/10 sec.
+
+
+        This endpoint supports pagination. Use `limit` (default: 100) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when you receive fewer than `limit` records. When nothing matches, the response omits the `records` key entirely rather than returning an empty array, so check that the key is present before reading it. Receiving exactly `limit` records does not guarantee that another page exists.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Market to return funding history for. For example: BTC_PERP
+
+
+                    Required — there is no all-markets mode. Spot markets are rejected.
+
+                    '
+                  example: BTC_PERP
+                limit:
+                  type: integer
+                  description: Number of records to return
+                  example: 100
+                  default: 100
+                offset:
+                  type: integer
+                  description: Number of records to skip
+                  example: 0
+                  default: 0
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              market: BTC_PERP
+              limit: 100
+              offset: 0
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns paginated funding history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  records:
+                    type: array
+                    description: Array of funding history entries
+                    items:
+                      type: object
+                      properties:
+                        market:
+                          type: string
+                          description: Market name
+                          example: BTC_PERP
+                        fundingTime:
+                          type: string
+                          description: Funding time in Unix timestamp format
+                          example: '1734451200'
+                        fundingRate:
+                          type: string
+                          description: Funding rate applied
+                          example: '0.00017674'
+                        fundingAmount:
+                          type: string
+                          description: Funding amount paid or received
+                          example: '-0.171053531892'
+                        positionAmount:
+                          type: string
+                          description: Position amount at funding time
+                          example: '0.019'
+                        settlementPrice:
+                          type: string
+                          description: Settlement price used for funding calculation
+                          example: '50938.2'
+                        rateCalculatedTime:
+                          type: string
+                          description: Time when the funding rate was calculated in Unix timestamp format
+                          example: '1734364800'
+                  limit:
+                    type: integer
+                    description: Number of records per page
+                    example: 100
+                  offset:
+                    type: integer
+                    description: Number of records skipped
+                    example: 0
+              example:
+                records:
+                - market: BTC_PERP
+                  fundingTime: '1734451200'
+                  fundingRate: '0.00017674'
+                  fundingAmount: '-0.171053531892'
+                  positionAmount: '0.019'
+                  settlementPrice: '50938.2'
+                  rateCalculatedTime: '1734364800'
+                - market: BTC_PERP
+                  fundingTime: '1734451200'
+                  fundingRate: '-0.000177877800093587'
+                  fundingAmount: '-0.0054997859133136'
+                  positionAmount: '-0.001'
+                  settlementPrice: '30918.9'
+                  rateCalculatedTime: '1734364800'
+                limit: 100
+                offset: 0
+        '422':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset`)
+
+            - `31` - market validation failed — either `market` was omitted (`"The Market field is required."`) or it is unknown / not available for collateral trading, e.g. a spot market (`"Incorrect market"`)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/borrow-history:
+    post:
+      summary: Borrow History
+      operationId: getBorrowHistory
+      description: 'The endpoint returns the collateral account''s borrow history for the authenticated account — one record per borrow position, not per underlying engine state change. Use the optional `asset` parameter to filter to a single asset; when omitted, the response covers every asset the caller''s region allows to borrow. An `asset` that is unknown or blocked in the caller''s region returns a validation error rather than an empty result. Records are ordered by creation time descending (newest first). Records created in the same second are ordered by `asset` ascending, then by the trading engine''s sub-second creation time descending; `limit` and `offset` page over this order.
+
+
+        Rate limit: 12000 requests/10 sec.
+
+
+        This endpoint supports pagination via `limit` (default and max: 100) and `offset` (default: 0, max: 10000 — a value above the maximum is rejected outright). `startTime` (default: `0`) and `endTime` (default: now) filter by position time and must satisfy `endTime` > `startTime`. Independently of `offset`, a `startTime`/`endTime` window is rejected rather than scanned slowly or served partially when collecting the matching history would exceed the endpoint''s budget of 10000 underlying engine records. One position spans several engine records, so that budget is reached well below 10000 positions — narrow the window instead.
+
+
+        **Field semantics:** `amount`, `principal` and `interest` are independently computed peak values, not a running formula — `amount` does not always equal `principal` + `interest`, because funding can keep accruing after a position''s balance has already peaked. Treat any apparent `amount = principal + interest` relationship as usually true, never as a guarantee.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                asset:
+                  type: string
+                  description: Filter to a single asset. Optional — when omitted or empty, returns borrow history for every asset the caller's region allows to borrow. An unknown or region-blocked asset returns a validation error.
+                  example: BTC
+                startTime:
+                  type: integer
+                  description: Start of the query window as a Unix timestamp in seconds. Optional, default `0`. Must be less than `endTime`.
+                  example: 1700000000
+                endTime:
+                  type: integer
+                  description: 'End of the query window as a Unix timestamp in seconds. Optional, default: now. Must be greater than `startTime`.'
+                  example: 1700100000
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 100
+                  description: 'Maximum number of records to return. Default: `100`. Minimum: `1`. Maximum: `100`.'
+                  example: 100
+                offset:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+                  default: 0
+                  description: 'Number of borrow positions to skip. Paging applies after engine state changes are grouped into positions, so page boundaries do not follow the count of underlying engine records. Default: `0`. Maximum: `10000`.'
+                  example: 0
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              asset: BTC
+              startTime: 1700000000
+              endTime: 1700100000
+              limit: 100
+              offset: 0
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns paginated borrow history. `records` is an empty array, not omitted, when nothing matches.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  records:
+                    type: array
+                    description: One entry per borrow position, not per underlying engine state change.
+                    items:
+                      type: object
+                      properties:
+                        asset:
+                          type: string
+                          description: Borrowed asset.
+                          example: BTC
+                        amount:
+                          type: string
+                          description: Peak total amount owed to the engine for the position, already including accrued funding. Not always equal to `principal` + `interest` — see the field-semantics note above.
+                          example: '108.32'
+                        principal:
+                          type: string
+                          description: Peak borrowed balance, excluding funding accrued in the position at that point.
+                          example: '100'
+                        interest:
+                          type: string
+                          description: Magnitude of realized funding on the position.
+                          example: '6.15'
+                        status:
+                          type: string
+                          enum:
+                          - active
+                          - repaid
+                          - liquidated
+                          description: State of the borrow position within the requested `startTime`/`endTime` window. `repaid` and `liquidated` are reported only when the records returned for that position include one that moved the borrowed principal — `liquidated` when the outstanding balance reached zero through the risk engine, `repaid` when it reached zero by any other route. A position whose returned records hold only funding accruals or discounts stays `active` even when the outstanding balance nets to zero.
+                          example: active
+                        timestamp:
+                          type: integer
+                          description: Unix timestamp in seconds of the borrow position's open time — not of any later state change on the position. Positions are grouped with sub-second precision while this field is truncated to whole seconds, so two positions in the same asset opened within one second are returned as separate records carrying the same `timestamp`.
+                          example: 1700000000
+                  limit:
+                    type: integer
+                    description: The `limit` applied to this response — the request's `limit`, or `100` when the request omitted the field.
+                    example: 100
+                  offset:
+                    type: integer
+                    description: Echoes the request's `offset`.
+                    example: 0
+              example:
+                records:
+                - asset: BTC
+                  amount: '108.32'
+                  principal: '100'
+                  interest: '6.15'
+                  status: active
+                  timestamp: 1700000000
+                limit: 100
+                offset: 0
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (`asset` unknown or not available in the caller''s region, invalid pagination, or `endTime` not strictly greater than `startTime`)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: 'Request validation failed
+
+
+            Error codes:
+
+            - `30` - collecting the requested window would exceed the endpoint''s budget of 10000 underlying engine records (tag: `startTime`); narrow `startTime`/`endTime` instead. Paging with `offset` does not help — the rejection happens while the history is being collected, before `offset` is applied
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/leverage:
+    post:
+      summary: Change Collateral Account Leverage
+      operationId: changeCollateralAccountLeverage
+      description: 'The endpoint changes the leverage level for the collateral trading account. Leverage determines the ratio of borrowed funds to collateral and directly affects margin requirements and liquidation thresholds. Accepted values: `1`, `2`, `3`, `5`, `10`, `20`, `50`, `100`.
+
+
+        Each leverage level has a corresponding bracket defining the maximum position size for the tier. When a position exceeds the bracket limit, the system applies higher tiers with progressively lower leverage. Query market-specific brackets via `GET /api/v4/public/futures`.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        A market''s `max_leverage` field (from `GET /api/v4/public/futures`) may be lower than `100`. Setting leverage above a market''s maximum results in an error.
+
+
+        Coming soon: the maximum accepted `leverage` can be lower than `100` for an account due to trading restrictions. A value above the account''s maximum is rejected with `422` and error code `30` on `leverage`. Leverage already set above the new maximum stays in effect until the next change.
+
+
+        Changing leverage affects **all open positions** across margin and futures trading. Decreasing leverage increases margin requirements — if available funds are insufficient to support the new level, the request returns an error.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - leverage
+              - request
+              - nonce
+              properties:
+                leverage:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  description: 'Target leverage level: `1`, `2`, `3`, `5`, `10`, `20`, `50` or `100`. Coming soon: trading restrictions can set a lower maximum for the account. The market''s `max_leverage` also applies.'
+                  example: 5
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              leverage: 5
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - leverage changed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  leverage:
+                    type: integer
+                    description: Active leverage level for the collateral account after the update, from `1` (no leverage) to `100`
+                    example: 5
+              example:
+                leverage: 5
+        '422':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - invalid `leverage` value (out of range, non-integer, or wrong type). Setting leverage above a market''s `max_leverage` also surfaces here as an out-of-range value. Coming soon: a value above the maximum allowed for the account by trading restrictions also returns `30`
+
+            - `17` - the requested leverage is valid but available balance is insufficient to support it
+
+            - `113` - leverage cannot be changed while open positions or orders exist
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/hedge-mode:
+    post:
+      summary: Collateral Account Hedge Mode
+      operationId: getCollateralHedgeMode
+      description: 'The endpoint returns the current hedge mode status for the collateral trading account. When hedge mode is enabled (`true`), the account supports simultaneous long and short positions on the same market. When disabled (`false`), the account operates in one-way mode.
+
+
+        Rate limit: 12000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns hedge mode status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  hedgeMode:
+                    type: boolean
+                    description: Indicates whether hedge mode is active. When `true`, the account supports simultaneous long and short positions on the same market.
+                    example: true
+              example:
+                hedgeMode: true
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/hedge-mode/update:
+    post:
+      summary: Update Collateral Account Hedge Mode
+      operationId: updateHedgeMode
+      description: 'The endpoint enables or disables hedge mode for the collateral trading account. When hedge mode is enabled (`true`), the account supports simultaneous long and short positions on the same market. When disabled (`false`), the account operates in one-way mode.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        Switching between one-way mode and hedge mode requires **no open positions**. Close all futures positions before toggling the mode. If the switch does not take effect immediately after closing positions, wait approximately 15 seconds and retry.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - hedgeMode
+              - request
+              - nonce
+              properties:
+                hedgeMode:
+                  type: boolean
+                  description: Set to `true` to enable hedge mode (simultaneous long and short positions) or `false` to use one-way mode.
+                  example: true
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              hedgeMode: true
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - hedge mode updated
+        '422':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (for example, a missing or non-boolean `hedgeMode` value)
+
+            - `113` - hedge mode cannot be changed while open positions or orders exist
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal error
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/collateral-account/adl-quantile:
+    post:
+      summary: ADL Quantile
+      operationId: getCollateralAccountAdlQuantile
+      description: 'The endpoint returns the Auto-Deleveraging (ADL) quantile for each perpetual market in which the authenticated account holds an open position. Each entry exposes the deleveraging-priority value for the long and short sides of the position, where `0` indicates the lowest deleveraging priority and `4` indicates the highest. The endpoint returns an empty array when the account has no perpetual positions.
+
+
+        Rate limit: 12000 requests/10 sec.
+
+
+        Only perpetual markets (markets with the `_PERP` suffix) are returned. Spot and margin markets are not included.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response — returns array of per-market ADL quantile entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    market:
+                      type: string
+                      description: 'Perpetual market name. Format: `BASE_PERP`.'
+                      example: BTC_PERP
+                    long:
+                      type:
+                      - integer
+                      - 'null'
+                      minimum: 0
+                      maximum: 4
+                      description: 'ADL quantile for the long side of the position. Values range from `0` to `4`: `0` indicates the lowest deleveraging priority (safest position in the ADL queue); `4` indicates the highest probability of being selected as the ADL counterparty. The value is `null` when the account has no exposure on the long side.'
+                      example: 0
+                    short:
+                      type:
+                      - integer
+                      - 'null'
+                      minimum: 0
+                      maximum: 4
+                      description: 'ADL quantile for the short side of the position. Values range from `0` to `4`: `0` indicates the lowest deleveraging priority; `4` indicates the highest probability of being selected as the ADL counterparty. The value is `null` when the account has no exposure on the short side.'
+                      example: null
+              example:
+              - market: BTC_PERP
+                long: 0
+                short: null
+              - market: ETH_PERP
+                long: 2
+                short: 1
+        '422':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/conditional-orders:
+    post:
+      summary: Query unexecuted(active) conditional orders
+      operationId: getConditionalOrders
+      description: 'The endpoint returns active (unexecuted) conditional orders for the authenticated account. Conditional orders include OCO and OTO types. The response uses polymorphic structure — each record contains a `type` field (`oco` or `oto`) that determines the record shape. Use the optional `market` parameter to filter results.
+
+
+        Rate limit: 12000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                market:
+                  type: string
+                  description: 'Filter by specific market. Example: BTC_USDT
+
+
+                    If not specified, returns conditional orders for all markets.
+
+                    '
+                  example: BTC_USDT
+                offset:
+                  type: integer
+                  description: Number of records to skip for pagination.
+                  default: 0
+                  minimum: 0
+                  maximum: 4294967295
+                  example: 0
+                limit:
+                  type: integer
+                  description: Maximum number of records to return per page.
+                  default: 100
+                  minimum: 1
+                  maximum: 100
+                  example: 100
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              offset: 0
+              limit: 100
+      responses:
+        '200':
+          description: Successful response - returns paginated conditional orders (OCO and OTO types)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  limit:
+                    type: integer
+                    description: Number of records per page
+                    example: 100
+                  offset:
+                    type: integer
+                    description: Number of records skipped
+                    example: 0
+                  total:
+                    type: integer
+                    description: Total number of records
+                    example: 2
+                  records:
+                    type: array
+                    description: Array of conditional orders (can be OCO or OTO type)
+                    items:
+                      oneOf:
+                      - type: object
+                        description: OCO type conditional order
+                        properties:
+                          id:
+                            type: integer
+                            description: Conditional order identifier
+                            example: 117703764513
+                          type:
+                            type: string
+                            enum:
+                            - oco
+                            example: oco
+                          conditionalOrderType:
+                            type: string
+                            description: Conditional order subtype. Omitted when not set.
+                          stopLoss:
+                            description: Stop-loss leg of the OCO order. The `reduceOnly` flag is returned per leg.
+                            allOf:
+                            - $ref: '#/components/schemas/ConditionalOrderLeg'
+                          takeProfit:
+                            description: Take-profit leg of the OCO order. The `reduceOnly` flag is returned per leg.
+                            allOf:
+                            - $ref: '#/components/schemas/ConditionalOrderLeg'
+                      - type: object
+                        description: OTO type conditional order
+                        properties:
+                          id:
+                            type: integer
+                            description: Conditional order identifier
+                            example: 29457221
+                          type:
+                            type: string
+                            enum:
+                            - oto
+                            example: oto
+                          conditionalOrderType:
+                            type: string
+                            description: Conditional order subtype. Omitted when not set.
+                            example: margin_take_profit
+                          stopLossPrice:
+                            type: string
+                            description: Stop loss order price
+                            example: '30000'
+                          takeProfitPrice:
+                            type: string
+                            description: Take profit order price
+                            example: '50000'
+                          conditionalOrder:
+                            description: The linked active order. Same shape as an `/api/v4/orders` record, including its per-order `reduceOnly` flag.
+                            allOf:
+                            - $ref: '#/components/schemas/OrderResponse'
+              example:
+                limit: 100
+                offset: 0
+                total: 2
+                records:
+                - id: 117703764513
+                  type: oco
+                  stopLoss:
+                    orderId: 117703764514
+                    clientOrderId: ''
+                    market: BTC_USDT
+                    side: buy
+                    type: margin stop limit
+                    timestamp: 1594605801.49815
+                    dealMoney: '0'
+                    dealStock: '0'
+                    amount: '2.241379'
+                    left: '2.241379'
+                    dealFee: '0'
+                    postOnly: false
+                    status: OPEN
+                    stp: 'no'
+                    positionSide: LONG
+                    reduceOnly: false
+                    mtime: 1662478154.941582
+                    price: '19928.79'
+                    activationPrice: '29928.79'
+                    activationCondition: gte
+                    activated: 0
+                  takeProfit:
+                    orderId: 117703764515
+                    clientOrderId: ''
+                    market: BTC_USDT
+                    side: buy
+                    type: margin limit
+                    timestamp: 1662478154.941582
+                    dealMoney: '0'
+                    dealStock: '0'
+                    amount: '0.635709'
+                    left: '0.635709'
+                    dealFee: '0'
+                    postOnly: false
+                    status: OPEN
+                    stp: 'no'
+                    positionSide: LONG
+                    reduceOnly: false
+                    mtime: 1662478154.941582
+                    price: '9928.79'
+                - id: 29457221
+                  type: oto
+                  stopLossPrice: '30000'
+                  takeProfitPrice: '50000'
+                  conditionalOrder:
+                    orderId: 3686033640
+                    clientOrderId: customId11
+                    market: BTC_USDT
+                    side: buy
+                    type: limit
+                    timestamp: 1594605801.49815
+                    dealMoney: '0'
+                    dealStock: '0'
+                    amount: '2.241379'
+                    left: '2.241379'
+                    dealFee: '0'
+                    ioc: false
+                    status: OPEN
+                    stp: 'no'
+                    rpi: false
+                    reduceOnly: false
+                    price: '40000'
+                    postOnly: false
+                    positionSide: LONG
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset`)
+
+            - `31` - market validation failed (the `market` filter is unknown or not available for collateral trading)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/oco-orders:
+    post:
+      summary: Query unexecuted(active) OCO orders
+      operationId: getOcoOrders
+      description: 'The endpoint returns active (unexecuted) OCO orders for the authenticated account. Each OCO order contains a `stop_loss` and `take_profit` leg. When one leg executes, the system cancels the other automatically. Use the optional `market` parameter to filter results.
+
+
+        Rate limit: 12000 requests/10 sec.
+
+
+        This endpoint supports pagination. Use `limit` (default: 50) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when fewer than `limit` OCO orders are returned. An empty array means you have paged past the end; receiving exactly `limit` orders does not guarantee that another page exists.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                market:
+                  type: string
+                  description: 'Filter by specific market. Example: BTC_USDT
+
+
+                    If not specified, returns OCO orders for all markets.
+
+                    '
+                  example: BTC_USDT
+                offset:
+                  type: integer
+                  description: Number of records to skip for pagination.
+                  default: 0
+                  minimum: 0
+                  maximum: 4294967295
+                  example: 0
+                limit:
+                  type: integer
+                  description: Maximum number of records to return per page.
+                  default: 50
+                  minimum: 1
+                  maximum: 100
+                  example: 100
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              offset: 0
+              limit: 100
+      responses:
+        '200':
+          description: Successful response - returns array of active OCO orders
+          content:
+            application/json:
+              schema:
+                type: array
+                description: Array of active OCO orders
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: OCO order identifier
+                      example: 117703764513
+                    stop_loss:
+                      description: Stop loss order details. Includes the `activation_price` / `activation_condition` / `activated` trigger fields.
+                      allOf:
+                      - $ref: '#/components/schemas/OcoOrderLeg'
+                    take_profit:
+                      description: Take profit order details. The trigger fields are omitted on this leg.
+                      allOf:
+                      - $ref: '#/components/schemas/OcoOrderLeg'
+              example:
+              - id: 117703764513
+                stop_loss:
+                  orderId: 117703764514
+                  clientOrderId: ''
+                  market: BTC_USDT
+                  side: buy
+                  type: margin stop limit
+                  timestamp: 1594605801.49815
+                  dealMoney: '0'
+                  dealStock: '0'
+                  amount: '2.241379'
+                  left: '2.241379'
+                  dealFee: '0'
+                  post_only: false
+                  status: OPEN
+                  stp: 'no'
+                  reduceOnly: false
+                  mtime: 1662478154.941582
+                  price: '19928.79'
+                  activation_price: '29928.79'
+                  activation_condition: gte
+                  activated: 0
+                take_profit:
+                  orderId: 117703764515
+                  clientOrderId: ''
+                  market: BTC_USDT
+                  side: buy
+                  type: margin limit
+                  timestamp: 1662478154.941582
+                  dealMoney: '0'
+                  dealStock: '0'
+                  amount: '0.635709'
+                  left: '0.635709'
+                  dealFee: '0'
+                  post_only: false
+                  status: OPEN
+                  stp: 'no'
+                  reduceOnly: false
+                  mtime: 1662478154.941582
+                  price: '9928.79'
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset`)
+
+            - `31` - market validation failed (the `market` filter is unknown or not available for collateral trading)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/collateral/oco:
+    post:
+      summary: Create collateral OCO order
+      operationId: createCollateralOcoOrder
+      description: 'The endpoint creates a collateral OCO (one-cancels-the-other) order using collateral balance. An OCO order combines a limit order (take-profit leg) and a stop-limit order (stop-loss leg) into a single conditional group. When one leg executes, the system cancels the other automatically.
+
+
+        **Price and amount steps:** from September 18, 2026, `price`, `activation_price` and `stop_limit_price` must be multiples of the market `tickSize`, and `amount` a multiple of `stepSize`. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - side
+              - amount
+              - price
+              - activation_price
+              - stop_limit_price
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Available margin [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                side:
+                  type: string
+                  enum:
+                  - buy
+                  - sell
+                  description: Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
+                  example: buy
+                amount:
+                  type: string
+                  description: Amount of [stock](/glossary#stock) currency for both legs of the OCO order. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+                  example: '0.001'
+                price:
+                  type: string
+                  description: Limit order price in [money](/glossary#money) currency for the take-profit leg.
+                  example: '40000'
+                activation_price:
+                  type: string
+                  description: Trigger price in [money](/glossary#money) currency for the stop-loss leg. The stop-limit order activates when the market price reaches the specified value.
+                  example: '41000'
+                stop_limit_price:
+                  type: string
+                  description: Execution price in [money](/glossary#money) currency for the stop-loss leg. After activation, the stop-loss leg places a limit order at the specified price.
+                  example: '42000'
+                clientOrderId:
+                  type: string
+                  description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+                  example: order1987111
+                reduceOnly:
+                  type: boolean
+                  default: false
+                  description: When `true`, both legs of the OCO order can only reduce or close an existing position — neither leg can increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+                  example: false
+                positionSide:
+                  type: string
+                  enum:
+                  - LONG
+                  - SHORT
+                  - BOTH
+                  description: 'Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side). Both legs of the OCO inherit the value.
+
+
+                    - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` on each leg whether the field is sent or omitted.
+
+                    - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account''s mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+
+                    '
+                  example: LONG
+                stp:
+                  type: string
+                  enum:
+                  - 'no'
+                  - cb
+                  - cn
+                  - co
+                  default: 'no'
+                  description: 'Self-trade prevention mode. The value applies to both legs of the OCO order. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+                    Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+                    See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+                    '
+                  example: 'no'
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              side: buy
+              amount: '0.001'
+              price: '40000'
+              activation_price: '41000'
+              stop_limit_price: '42000'
+              clientOrderId: order1987111
+              reduceOnly: false
+              positionSide: LONG
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - OCO order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: OCO order identifier
+                    example: 117703764513
+                  reduceOnly:
+                    type: boolean
+                    description: Reduce-only flag
+                    example: false
+                  stop_loss:
+                    type: object
+                    description: Stop loss order details
+                    properties:
+                      orderId:
+                        type: integer
+                        description: Order identifier
+                        example: 117703764514
+                      clientOrderId:
+                        type: string
+                        description: Custom order identifier. Empty string if not specified
+                        example: ''
+                      market:
+                        type: string
+                        description: Market name
+                        example: BTC_USDT
+                      side:
+                        type: string
+                        description: Order side
+                        enum:
+                        - buy
+                        - sell
+                        example: buy
+                      type:
+                        type: string
+                        description: Order type
+                        example: stop limit
+                      timestamp:
+                        type: number
+                        description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+                        example: 1594605801.49815
+                      dealMoney:
+                        type: string
+                        description: Executed amount in money
+                        example: '0'
+                      dealStock:
+                        type: string
+                        description: Executed amount in stock
+                        example: '0'
+                      amount:
+                        type: string
+                        description: Order amount
+                        example: '2.241379'
+                      takerFee:
+                        type: string
+                        description: Taker fee ratio
+                        example: '0.001'
+                      makerFee:
+                        type: string
+                        description: Maker fee ratio
+                        example: '0.001'
+                      left:
+                        type: string
+                        description: Unexecuted amount in stock
+                        example: '2.241379'
+                      dealFee:
+                        type: string
+                        description: Executed fee by deal
+                        example: '0'
+                      post_only:
+                        type: boolean
+                        description: Post-only flag
+                        example: false
+                      mtime:
+                        type: number
+                        description: Unix timestamp in seconds (UTC), with microsecond precision, of the last time the matching engine modified the order.
+                        example: 1662478154.941582
+                      price:
+                        type: string
+                        description: Order price
+                        example: '19928.79'
+                      activation_price:
+                        type: string
+                        description: Activation price
+                        example: '29928.79'
+                      activation_condition:
+                        type: string
+                        description: 'Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
+
+                          '
+                        enum:
+                        - gte
+                        - lte
+                        example: gte
+                      activated:
+                        type: integer
+                        description: Activation status (0 - not activated, 1 - activated)
+                        example: 0
+                      status:
+                        type: string
+                        $ref: '#/components/schemas/ActiveOrderStatus'
+                      stp:
+                        type: string
+                        description: 'Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.'
+                        example: 'no'
+                      positionSide:
+                        type: string
+                        description: Position side
+                        enum:
+                        - LONG
+                        - SHORT
+                        - BOTH
+                        example: LONG
+                  take_profit:
+                    type: object
+                    description: Take profit order details
+                    properties:
+                      orderId:
+                        type: integer
+                        description: Order identifier
+                        example: 117703764515
+                      clientOrderId:
+                        type: string
+                        description: Custom order identifier. Empty string if not specified
+                        example: ''
+                      market:
+                        type: string
+                        description: Market name
+                        example: BTC_USDT
+                      side:
+                        type: string
+                        description: Order side
+                        enum:
+                        - buy
+                        - sell
+                        example: buy
+                      type:
+                        type: string
+                        description: Order type
+                        example: limit
+                      timestamp:
+                        type: number
+                        description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+                        example: 1662478154.941582
+                      dealMoney:
+                        type: string
+                        description: Executed amount in money
+                        example: '0'
+                      dealStock:
+                        type: string
+                        description: Executed amount in stock
+                        example: '0'
+                      amount:
+                        type: string
+                        description: Order amount
+                        example: '0.635709'
+                      takerFee:
+                        type: string
+                        description: Taker fee ratio
+                        example: '0.001'
+                      makerFee:
+                        type: string
+                        description: Maker fee ratio
+                        example: '0.001'
+                      left:
+                        type: string
+                        description: Unexecuted amount in stock
+                        example: '0.635709'
+                      dealFee:
+                        type: string
+                        description: Executed fee by deal
+                        example: '0'
+                      post_only:
+                        type: boolean
+                        description: Post-only flag
+                        example: false
+                      mtime:
+                        type: number
+                        description: Unix timestamp in seconds (UTC), with microsecond precision, of the last time the matching engine modified the order.
+                        example: 1662478154.941582
+                      price:
+                        type: string
+                        description: Order price
+                        example: '9928.79'
+                      status:
+                        type: string
+                        $ref: '#/components/schemas/ActiveOrderStatus'
+                      stp:
+                        type: string
+                        description: 'Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.'
+                        example: 'no'
+                      positionSide:
+                        type: string
+                        description: Position side
+                        enum:
+                        - LONG
+                        - SHORT
+                        - BOTH
+                        example: LONG
+              example:
+                id: 117703764513
+                reduceOnly: false
+                stop_loss:
+                  orderId: 117703764514
+                  clientOrderId: ''
+                  market: BTC_USDT
+                  side: buy
+                  type: stop limit
+                  timestamp: 1594605801.49815
+                  dealMoney: '0'
+                  dealStock: '0'
+                  amount: '2.241379'
+                  takerFee: '0.001'
+                  makerFee: '0.001'
+                  left: '2.241379'
+                  dealFee: '0'
+                  post_only: false
+                  mtime: 1662478154.941582
+                  price: '19928.79'
+                  activation_price: '29928.79'
+                  activation_condition: gte
+                  activated: 0
+                  status: FILLED
+                  stp: 'no'
+                  positionSide: LONG
+                take_profit:
+                  orderId: 117703764515
+                  clientOrderId: ''
+                  market: BTC_USDT
+                  side: buy
+                  type: limit
+                  timestamp: 1662478154.941582
+                  dealMoney: '0'
+                  dealStock: '0'
+                  amount: '0.635709'
+                  takerFee: '0.001'
+                  makerFee: '0.001'
+                  left: '0.635709'
+                  dealFee: '0'
+                  post_only: false
+                  mtime: 1662478154.941582
+                  price: '9928.79'
+                  status: FILLED
+                  stp: 'no'
+                  positionSide: LONG
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `33` - price validation failed
+
+            - `36` - clientOrderId validation failed
+
+            - `10` - insufficient balance to place the order
+
+            - `111` - resulting position would exceed the market maximum
+
+            - `112` - pending orders value would exceed the allowed maximum
+
+            - `113` - position side cannot be changed while open positions or orders exist
+
+            - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+
+            - `115` - order would open a position in the opposite direction (one-way mode)
+
+            - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+
+            - `10011` - the market is a TradFi market and TradFi trading is restricted for the account
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/conditional-cancel:
+    post:
+      summary: Cancel conditional order
+      operationId: cancelConditionalOrder
+      description: 'The endpoint cancels an active conditional order (OCO or OTO) on the specified market. Both legs of the conditional order are cancelled. Use the query unexecuted conditional orders endpoint to obtain the conditional order `id` before cancellation.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - id
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Market of the conditional order to cancel. Example: BTC_USDT'
+                  example: BTC_USDT
+                id:
+                  type: integer
+                  description: Conditional order identifier. Obtain from the [query unexecuted conditional orders](/api-reference/trading/query-unexecuted-conditional-orders) endpoint.
+                  example: 117703764513
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              id: 117703764513
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Order cancelled. The response body is a literal empty array.
+          content:
+            application/json:
+              schema:
+                type: array
+                description: Always an empty array (`[]`) on success.
+                maxItems: 0
+                items: {}
+              example: []
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            - `2` - conditional order not found. Returned whether the `id` does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                id2:
+                  summary: Unexecuted order was not found
+                  value:
+                    code: 2
+                    message: Inner validation failed
+                    errors:
+                      id:
+                      - Unexecuted order was not found.
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/oco-cancel:
+    post:
+      summary: Cancel OCO order
+      operationId: cancelOcoOrder
+      deprecated: true
+      description: '**Deprecated.** The endpoint is deprecated as of March 12, 2026. Sunset date: to be announced. Use cancel conditional order (`POST /api/v4/order/conditional-cancel`), which cancels both OCO and OTO orders.
+
+
+        The replacement identifies the order by `id` only. An integration that cancels by `clientOrderId` must first resolve the client order id to the conditional order `id` through query unexecuted conditional orders. The replacement also returns an empty array rather than the canceled legs.
+
+
+        The endpoint cancels an OCO order. Identify the order by `orderId` or `clientOrderId` — exactly one of the two must be provided. A request specifying both identifiers, or neither, fails validation.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Market of the OCO order to cancel. Example: BTC_USDT'
+                  example: BTC_USDT
+                orderId:
+                  type: integer
+                  description: OCO order identifier (the `id` returned at creation and by the OCO listings). Required if `clientOrderId` is not set; mutually exclusive with `clientOrderId`.
+                  example: 117703764513
+                clientOrderId:
+                  type: string
+                  description: Client-defined order ID supplied at order creation. Required if `orderId` is not set; mutually exclusive with `orderId`.
+                  example: customId11
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              orderId: 117703764513
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response - OCO order cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: OCO order identifier
+                    example: 117703764513
+                  stop_loss:
+                    description: Cancelled stop loss order details. Includes the `activation_price` / `activation_condition` / `activated` trigger fields.
+                    allOf:
+                    - $ref: '#/components/schemas/OcoOrderLeg'
+                  take_profit:
+                    description: Cancelled take profit order details. The trigger fields are omitted on this leg.
+                    allOf:
+                    - $ref: '#/components/schemas/OcoOrderLeg'
+              example:
+                id: 117703764513
+                stop_loss:
+                  orderId: 117703764514
+                  clientOrderId: ''
+                  market: BTC_USDT
+                  side: buy
+                  type: margin stop limit
+                  timestamp: 1594605801.49815
+                  dealMoney: '0'
+                  dealStock: '0'
+                  amount: '2.241379'
+                  left: '2.241379'
+                  dealFee: '0'
+                  post_only: false
+                  status: CANCELED
+                  stp: 'no'
+                  reduceOnly: false
+                  mtime: 1662478154.941582
+                  price: '19928.79'
+                  activation_price: '29928.79'
+                  activation_condition: gte
+                  activated: 0
+                take_profit:
+                  orderId: 117703764515
+                  clientOrderId: ''
+                  market: BTC_USDT
+                  side: buy
+                  type: margin limit
+                  timestamp: 1662478154.941582
+                  dealMoney: '0'
+                  dealStock: '0'
+                  amount: '0.635709'
+                  left: '0.635709'
+                  dealFee: '0'
+                  post_only: false
+                  status: CANCELED
+                  stp: 'no'
+                  reduceOnly: false
+                  mtime: 1662478154.941582
+                  price: '9928.79'
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code. Also returned when the request specifies both `orderId` and `clientOrderId`, or neither
+
+            - `31` - market validation failed
+
+            - `2` - OCO order not found. Returned whether the identifier (`orderId` or `clientOrderId`) does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                orderid2:
+                  summary: Unexecuted order was not found
+                  value:
+                    code: 2
+                    message: Inner validation failed
+                    errors:
+                      orderId:
+                      - Unexecuted order was not found.
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/oto-cancel:
+    post:
+      summary: Cancel OTO order
+      operationId: cancelOtoOrder
+      deprecated: true
+      description: '**Deprecated.** The endpoint is deprecated as of March 12, 2026. Sunset date: to be announced. Use cancel conditional order (`POST /api/v4/order/conditional-cancel`), which cancels both OCO and OTO orders and takes the same identifier under the name `id`.
+
+
+        The endpoint cancels an OTO order on the specified market. The query unexecuted conditional orders endpoint returns `otoId` as the `id` field of every record with `type` set to `oto`.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Collateral Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - otoId
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Market of the OTO order to cancel. Example: BTC_USDT'
+                  example: BTC_USDT
+                otoId:
+                  type: integer
+                  description: OTO order identifier. Obtain from the [query unexecuted conditional orders](/api-reference/trading/query-unexecuted-conditional-orders) endpoint — the `id` field of every record with `type` set to `oto`.
+                  example: 29457221
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              otoId: 29457221
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: OTO order cancelled. The response body is a literal empty array.
+          content:
+            application/json:
+              schema:
+                type: array
+                description: Always an empty array (`[]`) on success.
+                maxItems: 0
+                items: {}
+              example: []
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            - `2` - OTO order not found. Returned whether the `otoId` does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                otoid2:
+                  summary: Unexecuted order was not found
+                  value:
+                    code: 2
+                    message: Inner validation failed
+                    errors:
+                      otoId:
+                      - Unexecuted order was not found.
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+components:
+  schemas:
+    OcoOrderLeg:
+      type: object
+      description: OCO order leg as returned by `/api/v4/oco-orders` and `/api/v4/order/oco-cancel`. Field names use snake_case (`post_only`, `activation_price`) — unlike the camelCase legs returned by `/api/v4/conditional-orders`.
+      properties:
+        orderId:
+          type: integer
+          description: Order identifier
+          example: 117703764514
+        clientOrderId:
+          type: string
+          description: Custom order identifier. Empty string if not specified
+          example: ''
+        market:
+          type: string
+          description: Market name
+          example: BTC_USDT
+        side:
+          type: string
+          description: Order side
+          enum:
+          - buy
+          - sell
+          example: buy
+        type:
+          type: string
+          description: Order type
+          example: margin stop limit
+        timestamp:
+          type: number
+          description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+          example: 1594605801.49815
+        dealMoney:
+          type: string
+          description: Executed amount in money
+          example: '0'
+        dealStock:
+          type: string
+          description: Executed amount in stock
+          example: '0'
+        amount:
+          type: string
+          description: Order amount
+          example: '2.241379'
+        left:
+          type: string
+          description: Unexecuted amount in stock
+          example: '2.241379'
+        dealFee:
+          type: string
+          description: Executed fee by deal
+          example: '0'
+        post_only:
+          type: boolean
+          description: Post-only flag
+          example: false
+        feeAsset:
+          type: string
+          description: Currency ticker of the asset used to pay the trading fee. Omitted when empty.
+          example: USDT
+        status:
+          type: string
+          description: Order status (for example `OPEN` for an active leg, `CANCELED` after cancellation).
+          example: OPEN
+        stp:
+          type: string
+          description: 'Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.'
+          example: 'no'
+        positionSide:
+          type: string
+          description: Position side of the leg. Present on futures markets (`BOTH` in one-way mode, `LONG`/`SHORT` in hedge mode); omitted on margin-spot markets.
+          enum:
+          - LONG
+          - SHORT
+          - BOTH
+          example: LONG
+        reduceOnly:
+          type: boolean
+          description: Reduce-only flag. When `true`, the leg can only reduce or close an existing position.
+          example: false
+        mtime:
+          type: number
+          description: Unix timestamp in seconds (UTC), with microsecond precision, of the last time the matching engine modified the order.
+          example: 1662478154.941582
+        price:
+          type: string
+          description: Order price
+          example: '19928.79'
+        activation_price:
+          type: string
+          description: Activation price. Returned on the stop-loss leg
+          example: '29928.79'
+        activation_condition:
+          type: string
+          description: 'Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`. Returned on the stop-loss leg.
+
+            '
+          enum:
+          - gte
+          - lte
+          example: gte
+        activated:
+          type: integer
+          description: Activation status (0 - not activated, 1 - activated). Returned on the stop-loss leg
+          example: 0
+    ConditionalOrderLeg:
+      type: object
+      description: Conditional-order leg as returned by `/api/v4/conditional-orders`. Field names use camelCase (`postOnly`, `activationPrice`) — unlike the snake_case legs returned by `/api/v4/oco-orders` and `/api/v4/order/oco-cancel`; do not treat the two shapes as interchangeable.
+      properties:
+        orderId:
+          type: integer
+          description: Order identifier
+          example: 117703764514
+        clientOrderId:
+          type: string
+          description: Custom order identifier. Empty string if not specified
+          example: ''
+        market:
+          type: string
+          description: Market name
+          example: BTC_USDT
+        side:
+          type: string
+          description: Order side
+          enum:
+          - buy
+          - sell
+          example: buy
+        type:
+          type: string
+          description: Order type
+          example: margin stop limit
+        timestamp:
+          type: number
+          description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+          example: 1594605801.49815
+        dealMoney:
+          type: string
+          description: Executed amount in money
+          example: '0'
+        dealStock:
+          type: string
+          description: Executed amount in stock
+          example: '0'
+        amount:
+          type: string
+          description: Order amount
+          example: '2.241379'
+        left:
+          type: string
+          description: Unexecuted amount in stock
+          example: '2.241379'
+        dealFee:
+          type: string
+          description: Executed fee by deal
+          example: '0'
+        postOnly:
+          type: boolean
+          description: Post-only flag. Omitted when not set
+          example: false
+        status:
+          type: string
+          description: Order status (for example `OPEN` for an active leg, `CANCELED` after cancellation).
+          example: OPEN
+        stp:
+          type: string
+          description: 'Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value. Omitted when not set.'
+          example: 'no'
+        positionSide:
+          type: string
+          description: Position side of the leg. Present on futures markets (`BOTH` in one-way mode, `LONG`/`SHORT` in hedge mode); omitted on margin-spot markets.
+          enum:
+          - LONG
+          - SHORT
+          - BOTH
+          example: LONG
+        reduceOnly:
+          type: boolean
+          description: Reduce-only flag. When `true`, the leg can only reduce or close an existing position.
+          example: false
+        mtime:
+          type: number
+          description: Unix timestamp in seconds (UTC), with microsecond precision, of the last time the matching engine modified the order.
+          example: 1662478154.941582
+        price:
+          type: string
+          description: Order price
+          example: '19928.79'
+        activationPrice:
+          type: string
+          description: Activation price. Returned on the stop-loss leg; omitted when not set
+          example: '29928.79'
+        activationCondition:
+          type: string
+          description: 'Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`. Returned on the stop-loss leg; omitted when not set.
+
+            '
+          enum:
+          - gte
+          - lte
+          example: gte
+        activated:
+          type: integer
+          description: Activation status (0 - not activated, 1 - activated). Omitted when not set
+          example: 0
+    OrderResponse:
+      type: object
+      description: Shared order shape returned by the order-creation, cancel, active-orders list, and modify endpoints. Field presence varies by endpoint and order type — see the per-field notes.
+      properties:
+        orderId:
+          type: integer
+          description: Unique identifier assigned to the order by the matching engine.
+          example: 4180284841
+        clientOrderId:
+          type: string
+          description: Custom client order identifier supplied in the request. Returns an empty string when not specified.
+          example: order1987111
+        market:
+          type: string
+          description: 'Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`).'
+          example: BTC_USDT
+        side:
+          type: string
+          description: 'Order side. Possible values: `buy`, `sell`.'
+          example: buy
+        type:
+          type: string
+          description: 'Order type. Possible values: `limit`, `market`, `stock market`, `stop limit`, `stop market`.'
+          example: limit
+        timestamp:
+          type: number
+          description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+          example: 1595792396.165973
+        dealMoney:
+          type: string
+          description: Filled amount in quote currency. Returns `"0"` while the order remains unfilled.
+          example: '0'
+        dealStock:
+          type: string
+          description: Filled amount in base currency. Returns `"0"` while the order remains unfilled.
+          example: '0'
+        amount:
+          type: string
+          description: Order quantity in base currency for limit and stop-limit orders, or in quote currency for buy market orders.
+          example: '0.01'
+        left:
+          type: string
+          description: Remaining unfilled quantity. Equals `amount` for new orders and `"0"` for fully filled orders.
+          example: '0.001'
+        dealFee:
+          type: string
+          description: Cumulative trading fee charged for filled portions, denominated in the fee asset.
+          example: '0'
+        feeAsset:
+          type: string
+          description: Currency ticker of the asset used to pay the trading fee. Omitted when empty.
+          example: USDT
+        price:
+          type: string
+          description: Limit price per unit in quote currency. Present for orders that carry a price (limit and stop-limit shapes); omitted on market and stop-market order shapes.
+          example: '40000'
+        postOnly:
+          type: boolean
+          description: Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Omitted when not set.
+          example: false
+        ioc:
+          type: boolean
+          description: 'Immediate-or-cancel flag. When `true`, the order executes available quantity immediately and cancels the unfilled remainder. Default: `false`.'
+          example: false
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        stp:
+          type: string
+          description: 'Self-trade prevention mode applied to the order. Possible values: `no`, `cb`, `cn`, `co`. The response always returns the abbreviated form, even when the request used a legacy value. Default: `no`.'
+          example: 'no'
+        positionSide:
+          type: string
+          description: Position side (for collateral orders). Returned on the cancel, active-orders list, and modify responses; omitted when not set. Spot order-creation responses do not include the field.
+          example: LONG
+        oto:
+          type: object
+          description: OTO order data. Present only when the order belongs to an [OTO](/glossary#one-triggers-the-other-oto) group — returned on the cancel, active-orders list, and modify responses.
+          properties:
+            otoId:
+              type: integer
+              description: OTO order identifier
+              example: 29457221
+            takeProfit:
+              type: string
+              description: Take profit order price
+              example: '50000'
+            stopLoss:
+              type: string
+              description: Stop loss order price
+              example: '30000'
+        rpi:
+          type: boolean
+          description: Indicates Retail Price Improvement (RPI) mode for the order.
+          example: true
+        retail:
+          type: boolean
+          description: Retail-source taker flag. The field is present only when the order was placed with `retail=true`. See [Retail flag](/glossary#retail-flag).
+          example: true
+        reduceOnly:
+          type: boolean
+          description: Reduce-only flag. When `true`, the order can only reduce or close an existing position. Returned on the cancel, active-orders list, and modify responses; spot order-creation responses do not include the field. See [reduce-only](/glossary#reduce-only).
+          example: false
+        activated:
+          type: integer
+          description: Activation status of the stop order. 0 = not yet triggered (waiting for the activation_price condition to be met). 1 = triggered (the stop condition has been met and the order is now active). Returned for stop orders; omitted on other order shapes.
+          example: 0
+        activationCondition:
+          type: string
+          enum:
+          - lte
+          - gte
+          description: 'Trigger condition for the stop order. Response-only — not accepted in the request body, and cannot be overridden. Derived from `side`:
+
+
+            - `side = buy` → `gte`. The order activates when the market price rises to or above `activation_price`.
+
+            - `side = sell` → `lte`. The order activates when the market price falls to or below `activation_price`.
+
+            '
+          example: lte
+        activation_price:
+          type: string
+          description: The trigger price for the stop order. Always equals the activation_price value submitted in the request. Returned for stop orders; omitted on other order shapes.
+          example: '40000'
+    OrderStatus:
+      type: string
+      description: Order lifecycle status. `FILLED` — fully executed. `CANCELED` — canceled before execution. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED_TAKER_BAND` — partially filled up to the taker band limit, remainder canceled to protect against excessive order book slippage. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `AUTO_CANCELED_LIQUIDATION` — pending order auto-canceled because the associated position was force-liquidated. `CANCELED_STP` — order canceled by [Self-Trade Prevention](/platform/self-trade-prevention). REST returns the single-`L` spelling throughout; `NEW` and `PARTIAL_FILLED` are not REST values (`NEW` is WebSocket-only; the partially-filled state is `PARTIALLY_FILLED`).
+      example: FILLED
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Error code
+          example: 30
+        message:
+          type: string
+          description: Error message
+          example: Validation failed
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Detailed error information
+    ActiveOrderStatus:
+      type: string
+      description: Order status. `FILLED` — fully executed. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED` — canceled before full execution. REST uses the single-`L` spelling `CANCELED`; the double-`L` `CANCELLED` and the WebSocket-only `NEW` state are not returned by this API.
+      enum:
+      - FILLED
+      - PARTIALLY_FILLED
+      - CANCELED
+      example: FILLED
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

@@ -1,0 +1,826 @@
+openapi: 3.2.0
+info:
+  title: WhiteBIT Private HTTP API V4 Crypto Lending - Fixed API
+  description: 'WhiteBIT Private HTTP API V4 for Main balance changes.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.'
+  version: 4.0.0
+  contact:
+    name: WhiteBIT Support
+    email: support@whitebit.com
+    url: https://whitebit.com
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Crypto Lending - Fixed
+  description: Fixed crypto lending plans
+paths:
+  /api/v4/main-account/smart/plans:
+    post:
+      tags:
+      - Crypto Lending - Fixed
+      summary: Get plans
+      description: 'The endpoint returns investment plan configurations with active status and API access enabled, filtered by the authenticated user''s region and plan visibility. Results include public plans and private plans assigned to the account.
+
+
+        These endpoints are available only for B2B partner services. Fill the institutional services form to get permissions to use these endpoints.
+
+
+        **Note:** When target currency is different from source currency, interest amount in target currency will be calculated using `interestRatio` value.
+
+
+        **Examples:**
+
+        - When source currency = USDT, target currency = BTC and interest ratio = 40000, interest is received in BTC and equals the USDT interest amount divided by the interest ratio (e.g. 0.000025 BTC per 1 USDT of interest).
+
+        - When source currency equals target currency, interest ratio equals 1.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getFixedPlans
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                ticker:
+                  type: string
+                  description: '[Invest plan](/glossary#crypto-lending) source currency''s [ticker](/glossary#ticker). Example: BTC'
+                  example: USDT
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              ticker: USDT
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FixedPlan'
+              example:
+              - id: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+                ticker: USDT
+                status: 1
+                percent: '10'
+                duration: 14400
+                interestTicker: USDT
+                interestRatio: '1'
+                minInvestment: '100'
+                maxInvestment: '10000'
+                maxPossibleInvestment: '3000'
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidTicker:
+                  summary: Invalid ticker
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - The selected ticker is invalid.
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart/investment:
+    post:
+      tags:
+      - Crypto Lending - Fixed
+      summary: Invest
+      description: 'The endpoint creates a new investment to the specified invest plan.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: createFixedInvestment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - planId
+              - amount
+              - request
+              - nonce
+              properties:
+                planId:
+                  type: string
+                  description: '[Invest plan](/glossary#crypto-lending) identifier'
+                  example: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+                amount:
+                  type: string
+                  description: Investment amount
+                  example: '100'
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              planId: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+              amount: '100'
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '201':
+          description: Investment created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Investment identifier
+              example:
+                id: 0d7b66ff-1909-4938-ab7a-d16d9a64dcd5
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidPlanOrAmount:
+                  summary: Invalid planId or amount
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      planId:
+                      - The selected planId is invalid.
+                      amount:
+                      - The amount field must be a valid number
+                amountTooSmall:
+                  summary: Amount below minimum
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount must be at least 0.000001.
+                amountExceedsAvailable:
+                  summary: Amount exceeds plan availability
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount you are trying to invest is bigger than the amount left in this SMART plan. Please try investing a smaller amount.
+                planDisabled:
+                  summary: Plan is disabled
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      planId:
+                      - Plan is disabled
+                planInactive:
+                  summary: Plan is inactive
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      planId:
+                      - Plan is inactive
+                noCoinsLeft:
+                  summary: No coins left in plan
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      planId:
+                      - There are no coins left in the plan
+                planPaused:
+                  summary: Plan is paused
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      planId:
+                      - Plan is paused
+                specialOffer:
+                  summary: Special-offer plan not available via API
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      planId:
+                      - Special offers are not available via API
+                invalidDecimal:
+                  summary: Decimal precision exceeded
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Invalid decimal amount
+        '422':
+          description: 'Inner validation failed
+
+
+            Response error codes:
+
+            - 1 - Investment already exists (when you don''t have permissions to create multiple investments by plan)
+
+            - 2 - Amount is less than min investment amount
+
+            - 3 - Amount is greater than max investment amount
+
+            - 4 - Not enough balance to create investment
+
+            - 5 - No funds in plan to cover target interest amount
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                investmentExists:
+                  summary: Investment already exists
+                  value:
+                    code: 1
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - The investment in this investment plan already exists
+                amountTooLow:
+                  summary: Amount below plan minimum
+                  value:
+                    code: 2
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Amount is less than min investment
+                amountTooHigh:
+                  summary: Amount exceeds plan maximum
+                  value:
+                    code: 3
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Amount is more than max investment
+                insufficientBalance:
+                  summary: Insufficient balance
+                  value:
+                    code: 4
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Available 9 < 10
+                insufficientFunds:
+                  summary: Insufficient funds for interest payment
+                  value:
+                    code: 5
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Not enough money to pay interest
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart/investment/close:
+    post:
+      tags:
+      - Crypto Lending - Fixed
+      summary: Close investment
+      description: 'The endpoint closes active investment.
+
+
+        Early closure is allowed and carries no penalty — the request either succeeds or returns one of the documented errors.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: closeFixedInvestment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - id
+              - request
+              - nonce
+              properties:
+                id:
+                  type: string
+                  description: Investment identifier
+                  example: 0d7b66ff-1909-4938-ab7a-d16d9a64dcd5
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              id: 0d7b66ff-1909-4938-ab7a-d16d9a64dcd5
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Investment closed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {}
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                investmentNotFound:
+                  summary: Investment not found
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      id:
+                      - Investment not found
+                idRequired:
+                  summary: Missing or invalid id
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      id:
+                      - The id field is required.
+        '422':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                alreadyClosed:
+                  summary: Investment already closed
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      error:
+                      - Investment is already closed
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart/investments:
+    post:
+      tags:
+      - Crypto Lending - Fixed
+      summary: Get investments history
+      description: 'The endpoint retrieves an investments history.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getFixedInvestmentsHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                id:
+                  type: string
+                  description: Investment identifier
+                  example: 0d7b66ff-1909-4938-ab7a-d16d9a64dcd5
+                ticker:
+                  type: string
+                  description: '[Invest plan](/glossary#crypto-lending) source currency''s [ticker](/glossary#ticker)'
+                  example: USDT
+                status:
+                  type: integer
+                  description: Investment status (1 - active, 2 - closed)
+                  enum:
+                  - 1
+                  - 2
+                  example: 1
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 100
+                  description: LIMIT is a special clause used to limit records a particular query can return.
+                  example: 100
+                offset:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+                  default: 0
+                  description: Use the OFFSET clause to return entries starting from a particular line.
+                  example: 0
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              id: 0d7b66ff-1909-4938-ab7a-d16d9a64dcd5
+              ticker: USDT
+              status: 1
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  offset:
+                    type: integer
+                  limit:
+                    type: integer
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Investment'
+              example:
+                offset: 0
+                limit: 100
+                records:
+                - id: 0d7b66ff-1909-4938-ab7a-d16d9a64dcd5
+                  plan:
+                    id: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+                    ticker: USDT
+                    status: 1
+                    percent: '10'
+                    duration: 14400
+                    interestTicker: USDT
+                    interestRatio: '1'
+                    minInvestment: '100'
+                    maxInvestment: '10000'
+                    maxPossibleInvestment: '3000'
+                  status: 1
+                  created: 1646825196
+                  updated: 1646825196
+                  paymentTime: 1646839596
+                  amount: '100'
+                  interestPaid: '0'
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidFields:
+                  summary: Invalid id, ticker, or status
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      id:
+                      - The selected id is invalid.
+                      ticker:
+                      - The selected ticker is invalid.
+                      status:
+                      - The selected status is invalid.
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart/interest-payment-history:
+    post:
+      tags:
+      - Crypto Lending - Fixed
+      summary: Get interest payments history
+      description: 'The endpoint retrieves the history of interest payments.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getInterestPaymentHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                planId:
+                  type: string
+                  description: '[Invest plan](/glossary#crypto-lending) identifier'
+                  example: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+                ticker:
+                  type: string
+                  description: '[Invest plan](/glossary#crypto-lending) target currency''s [ticker](/glossary#ticker)'
+                  example: USDT
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 100
+                  description: LIMIT is a special clause used to limit records a particular query can return.
+                  example: 100
+                offset:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+                  default: 0
+                  description: Use the OFFSET clause to return entries starting from a particular line.
+                  example: 0
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              planId: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+              ticker: USDT
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  offset:
+                    type: integer
+                  limit:
+                    type: integer
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InterestPayment'
+              example:
+                offset: 0
+                limit: 100
+                records:
+                - planId: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+                  investmentId: 0d7b66ff-1909-4938-ab7a-d16d9a64dcd5
+                  amount: '10'
+                  ticker: USDT
+                  timestamp: 1646839596
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidFields:
+                  summary: Invalid planId or ticker
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      planId:
+                      - The selected planId is invalid.
+                      ticker:
+                      - The selected ticker is invalid.
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+components:
+  schemas:
+    Investment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Investment identifier
+          example: '1232'
+        plan:
+          $ref: '#/components/schemas/FixedPlan'
+          description: Investment plan (similar to Get plans response)
+        status:
+          type: integer
+          description: Investment status (1 - active, 2 - closed)
+          example: 1
+        created:
+          type: integer
+          description: Timestamp of investment creation
+          example: 1588345560
+        updated:
+          type: integer
+          description: Timestamp of investment update
+          example: 1588345560
+        paymentTime:
+          type: integer
+          description: Timestamp of the payment time
+          example: 1588345560
+        amount:
+          type: string
+          description: Investment amount
+          example: '100'
+        interestPaid:
+          type: string
+          description: Interest paid amount
+          example: '0.01'
+    ErrorInner:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    InterestPayment:
+      type: object
+      properties:
+        planId:
+          type: string
+          description: Invest plan identifier
+          example: '1'
+        investmentId:
+          type: string
+          description: Investment identifier
+          example: '1232'
+        amount:
+          type: string
+          description: Interest amount
+          example: '0.01'
+        ticker:
+          type: string
+          description: Interest currency [ticker](/glossary#ticker)
+          example: BTC
+        timestamp:
+          type: integer
+          description: Transaction timestamp
+          example: 1588345560
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    FixedPlan:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Invest plan identifier
+          example: '1'
+        ticker:
+          type: string
+          description: Source currency ticker
+          example: BTC
+        status:
+          type: integer
+          description: Status (1 - active, 2 - no coins left, 3 - inactive, 4 - pause)
+          example: 1
+        percent:
+          type: string
+          description: Interest percent
+          example: '0.01'
+        duration:
+          type: integer
+          description: Investment duration (in minutes)
+          example: 40320
+        interestTicker:
+          type: string
+          description: Target currency ticker
+          example: BTC
+        interestRatio:
+          type: string
+          description: Target currency to source currency ratio
+          example: '1'
+        minInvestment:
+          type: string
+          description: Minimum investment amount
+          example: '100'
+        maxInvestment:
+          type: string
+          description: Maximum investment amount
+          example: '10000'
+        maxPossibleInvestment:
+          type: string
+          description: Maximum investment amount due to current invest plan state
+          example: '3000'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

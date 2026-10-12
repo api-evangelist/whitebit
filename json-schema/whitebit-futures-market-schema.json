@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/whitebit/main/json-schema/whitebit-futures-market-schema.json",
+  "title": "FuturesMarket",
+  "x-generated": "2026-10-13",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/whitebit-http-v4-openapi.yml#/components/schemas/FuturesMarket",
+  "type": "object",
+  "properties": {
+    "ticker_id": {
+      "type": "string",
+      "description": "Identifier of a ticker with delimiter to separate base/target"
+    },
+    "stock_currency": {
+      "type": "string",
+      "description": "Symbol/currency code of base pair"
+    },
+    "money_currency": {
+      "type": "string",
+      "description": "Symbol/currency code of target pair"
+    },
+    "last_price": {
+      "type": "string",
+      "description": "Last transacted price of base currency based on given target currency"
+    },
+    "stock_volume": {
+      "type": "string",
+      "description": "24 hour trading volume in base pair volume"
+    },
+    "money_volume": {
+      "type": "string",
+      "description": "24 hour trading volume in target pair volume"
+    },
+    "bid": {
+      "type": "string",
+      "description": "Current highest bid price"
+    },
+    "ask": {
+      "type": "string",
+      "description": "Current lowest ask price"
+    },
+    "high": {
+      "type": "string",
+      "description": "Rolling 24-hours highest transaction price"
+    },
+    "low": {
+      "type": "string",
+      "description": "Rolling 24-hours lowest transaction price"
+    },
+    "product_type": {
+      "type": "string",
+      "description": "Derivative product type for the market. Currently always `Perpetual`.",
+      "enum": [
+        "Perpetual"
+      ]
+    },
+    "open_interest": {
+      "type": "string",
+      "description": "Current open interest in contracts (point-in-time snapshot, not a 24-hour delta or volume)."
+    },
+    "mark_price": {
+      "type": "string",
+      "description": "Fair value of the perpetual contract, derived from the underlying index price and the futures basis. Mark price — not `last_price` — is what a liquidation is evaluated against, so a temporary wick in the order book does not by itself trigger one. Point-in-time value from the latest premium index snapshot; returns an empty string while no fresh snapshot is available for the market."
+    },
+    "index_price": {
+      "type": "string",
+      "description": "Price of the underlying index the contract tracks, taken from the same premium index snapshot as `mark_price`. While the index is unavailable the field falls back to the last traded price of the corresponding spot market, then to the last traded price of the futures market itself, and returns `\"0\"` when neither has traded."
+    },
+    "index_name": {
+      "type": "string",
+      "description": "Name of the underlying index if any"
+    },
+    "index_currency": {
+      "type": "string",
+      "description": "Underlying currency for index"
+    },
+    "funding_rate": {
+      "type": "string",
+      "description": "Predicted funding rate for the next settlement interval. Fluctuates in real time until settlement occurs. See GET /api/v4/public/funding-history/{market} for historical funding rate records."
+    },
+    "funding_cap": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Upper bound that the funding rate can reach for the market. Served from the last successfully refreshed funding snapshot, so a temporary source outage does not drop the field. Returns `null` only when no snapshot has been loaded since service start."
+    },
+    "funding_floor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Lower bound that the funding rate can reach for the market. Served from the last successfully refreshed funding snapshot, so a temporary source outage does not drop the field. Returns `null` only when no snapshot has been loaded since service start."
+    },
+    "next_funding_rate_timestamp": {
+      "type": "string",
+      "description": "Unix timestamp in milliseconds of the next funding settlement. 13-digit value (millisecond precision)."
+    },
+    "brackets": {
+      "type": "object",
+      "description": "Leverage brackets defining position size limits. Object keys are leverage multipliers (e.g., \"1\", \"2\", \"5\", \"10\", \"20\", \"50\", \"100\"). Values are the maximum allowed open position size in USDT equivalent at the corresponding leverage level.",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    },
+    "max_leverage": {
+      "type": "integer",
+      "description": "Maximum leverage multiplier allowed for the market."
+    },
+    "funding_interval_minutes": {
+      "type": "integer",
+      "description": "Funding interval in minutes"
+    }
+  }
+}

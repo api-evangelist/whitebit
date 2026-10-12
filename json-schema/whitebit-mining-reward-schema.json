@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/whitebit/main/json-schema/whitebit-mining-reward-schema.json",
+  "title": "MiningReward",
+  "x-generated": "2026-10-13",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/MiningReward",
+  "type": "object",
+  "properties": {
+    "miningAccountName": {
+      "type": "string",
+      "description": "Mining account name"
+    },
+    "payoutDestination": {
+      "type": "string",
+      "enum": [
+        "main_balance",
+        "external_address"
+      ],
+      "description": "Payout destination"
+    },
+    "payoutTransactionHash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Payout transaction hash. null in case payout destination is main_balance, blockchain transaction hash in case payout destination is external_address"
+    },
+    "payoutAddress": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Payout address. External wallet address in case payout destination is external_address, null in case payout destination is main_balance"
+    },
+    "payoutTime": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Timestamp when the external transaction is completed. null in case payout destination is main_balance"
+    },
+    "rewardCurrency": {
+      "type": "string",
+      "description": "Reward currency"
+    },
+    "totalReward": {
+      "type": "string",
+      "description": "Total reward amount"
+    },
+    "reward": {
+      "type": "string",
+      "description": "Reward amount (without fee)"
+    },
+    "fee": {
+      "type": "string",
+      "description": "Fee amount"
+    },
+    "fppsRate": {
+      "type": "string",
+      "description": "FPPS rate"
+    },
+    "hashRate": {
+      "type": "string",
+      "description": "Hash rate (H/s)"
+    },
+    "date": {
+      "type": "integer",
+      "description": "Reward date timestamp"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "successful",
+        "canceled"
+      ],
+      "description": "Current status of the mining reward. Possible values:\n  - `pending` — the reward is not finalized yet. May mean either \"waiting for block confirmations / batch accumulation\" or \"ready for payout, but the onchain transaction hasn't gone through\". No user action needed — just wait.\n  - `successful` — the reward is finalized. For `main_balance` payout, funds are credited to the main balance. For `external_address` payout, the onchain transaction is confirmed.\n  - `canceled` — the reward was canceled.\n"
+    }
+  }
+}

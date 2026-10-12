@@ -1,0 +1,1648 @@
+# x-archived-from: whitebit-http-v4-openapi.yml
+# x-archived-on: 2026-10-13
+openapi: 3.0.3
+info:
+  title: Public HTTP API V4
+  description: |
+    WhiteBIT Public HTTP API V4 for market data and trading information.
+    Base URL: https://whitebit.com
+    All endpoints return time in Unix-time format.
+    All endpoints return either a JSON object or array.
+    Use HTTP method GET for API calls.
+    Send parameters as query string when an endpoint requires them.
+    
+    <Warning>
+    Rate limit: 2000 requests/10 sec for most endpoints (specific limits noted per endpoint).
+    </Warning>
+
+    ## Caching and data freshness
+
+    Most public endpoints serve cached data. The cache is **shared across all callers** — values are keyed by the resource (market, currency), never by account — and invalidates on a **time basis only**: an upstream change becomes visible after the next refresh, not immediately.
+
+    Two refresh tiers apply:
+
+    - **Reference data** (`markets`, `assets`, `fee`, `collateral/markets`, `futures`) refreshes from the database on a fixed interval, ranging from about 10 seconds to about 1 minute depending on the endpoint.
+    - **Market data** (`trades`, `orderbook`, `orderbook/depth`, `ticker`) uses a short-lived cache, about 1 second by default.
+
+    `time` and `ping` are computed per request and are not cached. Each endpoint states its own refresh interval. Polling faster than that interval returns identical data and consumes rate-limit budget without producing fresher results.
+
+    ## Error responses
+
+    Public V4 endpoints do not share a single error schema. Depending on the endpoint, an error arrives in one of three shapes (there is no `params` field on any public error):
+
+    - **Flat validation bag (HTTP 422)** — `{ "<field>": ["<message>"] }`. No envelope. Used by the market endpoints (`orderbook`, `orderbook/depth`, `trades`). Example: `{ "market": ["Market is not available."] }`. On `funding-history` most validation values are single strings rather than arrays; the market-not-available case and the upstream `error` key keep the array shape.
+    - **Wrapped, HTTP 200 even on validation errors** — `{ "success": false, "message": { "<field>": ["<message>"] }, "result": null }`. Used by the V4 `kline` endpoint (not part of this portal — the documented Kline endpoint is V1).
+    - **Wrapped string message (HTTP 4xx)** — `{ "success": false, "message": "<string>", "errors": [] }`. Used by the margin/futures collateral subset of endpoints, including the HTTP 451 regional-availability responses on `collateral/markets` and `futures`. Parameterless endpoints (`markets`, `ticker`, `assets`, `fee`) take no input and so produce no validation errors — they fail only at the infrastructure level below.
+
+    Common failures are produced at the infrastructure layer, not by the application, and do not follow these shapes:
+
+    - **Maintenance** — every endpoint returns **HTTP 503** with a non-JSON body served by the gateway.
+    - **Rate limit exceeded** — **HTTP 429** with a non-JSON body served by the gateway/CDN.
+    - **Internal server error** — **HTTP 500** with a flat body `{ "error": ["Internal server error."] }`.
+    - **Unknown route** — **HTTP 404** with an empty body.
+  version: 4.0.0
+servers:
+  - url: https://whitebit.com
+    description: WhiteBIT Global Server
+  - url: https://whitebit.eu
+    description: WhiteBIT EU Server
+  - url: https://whitebit.tr
+    description: WhiteBIT TR Server
+  - url: https://whitebit.ge
+    description: WhiteBIT GE Server
+
+paths:
+  /api/v4/public/platform/status:
+    get:
+      summary: Maintenance status
+      description: |
+        The endpoint retrieves the current maintenance status of the WhiteBIT platform. Use the response to detect scheduled downtime and pause trading automation during maintenance windows. The `status` field returns `"system operational"` when all platform services are available, or `"system maintenance"` when the platform is undergoing planned maintenance.
+      tags:
+        - Public API V4
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    description: "Platform operational state. `\"system operational\"` indicates all services are available. `\"system maintenance\"` indicates the platform is undergoing planned maintenance."
+                    enum: ["system operational", "system maintenance"]
+                    example: "system operational"
+
+  /api/v4/public/markets:
+    get:
+      summary: Market Info
+      description: |
+        The endpoint retrieves configuration and trading rules for all available spot, futures, and TradFi futures markets. Use the response to discover tradeable pairs, check minimum order sizes, and read fee schedules. Each entry includes precision settings, fee ratios, and order-size constraints for the market.
+
+        <Note>
+        Market configuration is reference data, re-synced from the database approximately every 10 seconds. Polling more frequently returns identical data. The cache is shared across all callers.
+        </Note>
+
+        <Note>
+        TradFi futures markets are region-gated: markets not available in a given region are omitted from the response entirely and do not appear under any other market type.
+        </Note>
+
+        <Note>
+        A market with an announced delisting carries the announced date in `delistedAt` and stays tradeable until the delisting runs. Once the delisting runs, the platform cancels the active orders on the market and drops the market from this response — [Query delisting and maintenance orders](/api-reference/trading/query-delisting-orders) is a signed request that returns the authenticated account's resulting spot order records. An announcement can be rescheduled or canceled, so treat `delistedAt` as the current plan rather than a settled fact and re-read the value on the next poll.
+        </Note>
+
+        <Warning>
+        Rate limit 2000 requests/10 sec.
+        </Warning>
+
+      tags:
+        - Public API V4
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - name
+                    - stock
+                    - money
+                    - stockPrec
+                    - moneyPrec
+                    - feePrec
+                    - makerFee
+                    - takerFee
+                    - minAmount
+                    - minTotal
+                    - maxTotal
+                    - tradesEnabled
+                    - isCollateral
+                    - type
+                    - isTradFiFutures
+                    - delistedAt
+                    - tickSize
+                    - stepSize
+                  properties:
+                    name:
+                      type: string
+                      description: Market pair name
+                      example: SON_USD
+                    stock:
+                      type: string
+                      description: Ticker of stock currency
+                      example: SON
+                    money:
+                      type: string
+                      description: "Ticker of money currency. Perpetual futures markets report `USDT` as the money currency."
+                      example: USD
+                    stockPrec:
+                      type: string
+                      description: "Maximum number of decimal places for the base (stock) currency quantity. Represented as a stringified integer."
+                      example: "3"
+                    moneyPrec:
+                      type: string
+                      description: "Maximum number of decimal places for the quote (money) currency amount. Represented as a stringified integer."
+                      example: "2"
+                    feePrec:
+                      type: string
+                      description: "Maximum number of decimal places used when calculating fees. Represented as a stringified integer."
+                      example: "4"
+                    makerFee:
+                      type: string
+                      description: "Default maker fee as a percentage value (e.g., `\"0.1\"` means 0.1%). Divide by 100 to convert to a decimal ratio. `GET /api/v4/public/assets` reports `maker_fee` in the same format."
+                      example: "0.1"
+                    takerFee:
+                      type: string
+                      description: "Default taker fee as a percentage value (e.g., `\"0.1\"` means 0.1%). Divide by 100 to convert to a decimal ratio. `GET /api/v4/public/assets` reports `taker_fee` in the same format."
+                      example: "0.1"
+                    minAmount:
+                      type: string
+                      description: "Minimum order quantity in the base (stock) currency."
+                      example: "0.001"
+                    minTotal:
+                      type: string
+                      description: "Minimum order total in the quote (money) currency."
+                      example: "0.001"
+                    maxTotal:
+                      type: string
+                      description: "Maximum order total (quantity × price) in the quote (money) currency. `\"0\"` indicates no upper limit."
+                      example: "10000000000"
+                    tradesEnabled:
+                      type: boolean
+                      description: "Indicates whether trading is enabled. The response includes only markets enabled for trading, so the value is always `true`."
+                      example: true
+                    isCollateral:
+                      type: boolean
+                      description: Indicates whether margin trading is enabled
+                      example: true
+                    type:
+                      type: string
+                      description: "Market type. Possible values: spot, futures, tradfiFutures"
+                      enum: [spot, futures, tradfiFutures]
+                      example: spot
+                    isTradFiFutures:
+                      type: boolean
+                      description: "Indicates whether the market is a traditional-finance (TradFi) futures market. Always paired with `type: tradfiFutures`. TradFi futures markets are region-gated and omitted from the response entirely where not available."
+                      example: false
+                    delistedAt:
+                      type: integer
+                      format: int64
+                      nullable: true
+                      description: "Announced delisting date as a Unix timestamp in seconds. `null` when no delisting is announced for the market. The field is always present in the response."
+                      example: 1786752000
+                    tickSize:
+                      type: string
+                      description: "Minimal price step a limit order price must be a multiple of. Passed through verbatim from the trade engine; an empty string when the engine does not provide the value for the market. From September 18, 2026, an order price that is not a multiple of this value is rejected."
+                      example: "0.01"
+                    stepSize:
+                      type: string
+                      description: "Minimal quantity step an order amount must be a multiple of. Passed through verbatim from the trade engine; an empty string when the engine does not provide the value for the market. From September 18, 2026, an order amount that is not a multiple of this value is rejected."
+                      example: "0.001"
+        'default':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV4'
+
+  /api/v4/public/ticker:
+    get:
+      summary: Market activity
+      description: |
+        The endpoint retrieves a 24-hour pricing and volume summary for each market pair available on the exchange.
+
+        <Note>
+        The API caches the response for 1 second
+        </Note>
+
+        <Warning>
+        Rate limit: 2000 requests/10 sec. See [Public API V4 overview](/public/http-v4/index) for rate limit details.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    base_id:
+                      type: integer
+                      description: "CoinMarketCap ID of base currency; 0 - if unknown"
+                      example: 1
+                    quote_id:
+                      type: integer
+                      description: "CoinMarketCap ID of quote currency; 0 - if unknown"
+                      example: 825
+                    last_price:
+                      type: string
+                      description: "Most recent trade price in the quote currency."
+                      example: "9164.09"
+                    quote_volume:
+                      type: string
+                      description: "Rolling 24-hour trading volume in the quote currency."
+                      example: "43341942.90416876"
+                    base_volume:
+                      type: string
+                      description: "Rolling 24-hour trading volume in the base currency."
+                      example: "4723.286463"
+                    isFrozen:
+                      type: boolean
+                      description: "Indicates whether trading is disabled for the market pair."
+                      example: false
+                    change:
+                      type: string
+                      description: "Percentage change between the rolling 24-hour open price
+                        and the last traded price."
+                      example: "0.57"
+              example:
+                BTC_USDT:
+                  base_id: 1
+                  quote_id: 825
+                  last_price: "9164.09"
+                  quote_volume: "43341942.90416876"
+                  base_volume: "4723.286463"
+                  isFrozen: false
+                  change: "0.57"
+        'default':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV4'
+
+  /api/v4/public/assets:
+    get:
+      summary: Asset Status List
+      description: |
+        The endpoint retrieves the deposit and withdrawal status for every supported asset. Use the response to check whether deposits and withdrawals are enabled, read per-network fee and limit details, and determine required blockchain confirmation counts. The response includes crypto assets, fiat currencies, and fiat payment methods.
+
+        <Note>
+        Asset status is reference data, re-synced approximately once per minute. Polling more frequently returns identical data. The cache is shared across all callers.
+        </Note>
+
+        <Warning>
+        Rate limit: 2000 requests/10 sec. See [Public API V4 overview](/public/http-v4/index) for rate limit details.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/Asset'
+              example:
+                BTC:
+                  name: "Bitcoin"
+                  unified_cryptoasset_id: 1
+                  can_withdraw: true
+                  can_deposit: true
+                  min_withdraw: "0.001"
+                  max_withdraw: "2"
+                  maker_fee: "0.1"
+                  taker_fee: "0.1"
+                  min_deposit: "0.0001"
+                  max_deposit: "0"
+                  currency_precision: 18
+                  is_memo: false
+                  memo:
+                    deposit: false
+                    withdraw: false
+                  networks:
+                    deposits: ["BTC"]
+                    withdraws: ["BTC"]
+                    default: "BTC"
+                  limits:
+                    deposit:
+                      BTC:
+                        min: "0.001"
+                    withdraw:
+                      BTC:
+                        min: "0.002"
+                  confirmations:
+                    BTC: 2
+                  confirmations_for_trading:
+                    BTC: 1
+                USDT:
+                  name: "Tether US"
+                  unified_cryptoasset_id: 825
+                  can_withdraw: true
+                  can_deposit: true
+                  min_withdraw: "5"
+                  max_withdraw: "0"
+                  maker_fee: "0.1"
+                  taker_fee: "0.1"
+                  min_deposit: "0"
+                  max_deposit: "0"
+                  currency_precision: 6
+                  is_memo: false
+                  memo:
+                    deposit: false
+                    withdraw: false
+                  networks:
+                    deposits: ["ERC20", "TRC20", "OMNI", "BEP20"]
+                    withdraws: ["ERC20", "TRC20", "OMNI", "BEP20"]
+                    default: "ERC20"
+                  limits:
+                    deposit:
+                      ERC20:
+                        min: "5"
+                        max: "1000"
+                      TRC20:
+                        min: "5"
+                    withdraw:
+                      ERC20:
+                        min: "10"
+                        max: "1000"
+                      TRC20:
+                        min: "10"
+                  confirmations:
+                    ERC20: 20
+                    TRC20: 20
+                  confirmations_for_trading:
+                    ERC20: 6
+                    TRC20: 6
+        'default':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV4'
+
+  /api/v4/public/orderbook/{market}:
+    get:
+      summary: Orderbook
+      description: |
+        The endpoint retrieves the current [order book](/glossary#order-book) as two arrays ([bids](/glossary#bid) / [asks](/glossary#ask)) with additional parameters.
+
+        <Note>
+        The API caches the response for 100 ms
+        </Note>
+
+        <Warning>
+        Rate limit 600 requests/10 sec.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters:
+        - name: market
+          in: path
+          required: true
+          description: Market pair name
+          schema:
+            type: string
+            example: BTC_USDT
+        - name: limit
+          in: query
+          required: false
+          description: "Orders depth quantity: 0 - 100. Not defined or 0 will return 100 entries."
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            default: 100
+            example: 100
+        - name: level
+          in: query
+          required: false
+          description: "Aggregation level for price grouping. Level 0 applies no aggregation. Levels 1–5 provide increasing aggregation of the order book; values up to 10 are accepted. Out-of-range values are clamped to the 0–10 range rather than rejected."
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10
+            default: 0
+            example: 2
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderbookResponse'
+        '422':
+          description: "Validation error. Returned when the `market` path parameter is unknown, missing, or not enabled for trading, or when `limit` or `level` is not an integer."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicValidationError'
+              examples:
+                marketNotAvailable:
+                  summary: Unknown or disabled market
+                  value: { "market": ["Market is not available."] }
+                levelNotInteger:
+                  summary: Non-integer level
+                  value: { "level": ["The level must be an integer."] }
+
+  /api/v4/public/orderbook/depth/{market}:
+    get:
+      summary: Depth
+      description: |
+        The endpoint retrieves depth price levels within ±2% of the market last price. Use when lightweight order book data is needed for a narrow price band around the current market price. The ±2% constraint limits the response to price levels near the last traded price, reducing payload size compared to the full order book.
+
+        <Note>
+        The API caches the response for 1 sec
+        </Note>
+
+        <Warning>
+        Rate limit: 2000 requests/10 sec. See [Public API V4 overview](/public/http-v4/index) for rate limit details.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters:
+        - name: market
+          in: path
+          required: true
+          description: Market pair name
+          schema:
+            type: string
+            example: BTC_USDT
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderbookResponse'
+        '422':
+          description: "Validation error. Returned when the `market` path parameter is unknown, not enabled for trading, or not enabled for the Coingecko feed that backs this endpoint."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicValidationError'
+              example:
+                market: ["Market is not available."]
+
+  /api/v4/public/trades/{market}:
+    get:
+      summary: Recent Trades
+      description: |
+        The endpoint retrieves the [trades](/glossary#deal-trade) that have been executed recently on the requested [market](/glossary#market). It returns up to the 100 most recent trades; the response size is fixed and there is no `limit` parameter.
+
+        <Note>
+        The API caches the response for 1 second
+        </Note>
+
+        <Note>
+          Public trade data can include executions that originate from RPI orders. Public order book feeds (`depth`, `bookTicker`) exclude RPI orders. RPI orders appear only in private active orders and in the exchange UI order book (web and mobile).
+        </Note>
+
+
+        <Warning>
+        Rate limit 2000 requests/10 sec.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters:
+        - name: market
+          in: path
+          required: true
+          description: Market pair name
+          schema:
+            type: string
+            example: BTC_USDT
+        - name: type
+          in: query
+          required: false
+          description: "Filter by trade side. Omit to return both buy and sell trades."
+          schema:
+            type: string
+            enum: [buy, sell]
+            example: sell
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - tradeID
+                    - price
+                    - quote_volume
+                    - base_volume
+                    - trade_timestamp
+                    - type
+                    - rpi
+                  properties:
+                    tradeID:
+                      type: integer
+                      description: "A unique ID associated with the trade for the currency pair transaction Note: Unix timestamp does not qualify as trade_id."
+                      example: 158056419
+                    price:
+                      type: string
+                      description: Transaction price in quote pair volume.
+                      example: "9186.13"
+                    quote_volume:
+                      type: string
+                      description: "Transaction amount in the quote (stock) currency. In a
+                        BTC_USDT market, the value is the BTC amount. Note: WhiteBIT uses a
+                        reversed naming convention compared to standard exchange terminology —
+                        the stock/asset currency is called 'quote' here."
+                      example: "0.0021"
+                    base_volume:
+                      type: string
+                      description: "Transaction amount in the base (money) currency. In a
+                        BTC_USDT market, the value is the USDT amount. Note: WhiteBIT uses a
+                        reversed naming convention compared to standard exchange terminology —
+                        the settlement/pricing currency is called 'base' here."
+                      example: "9186.13"
+                    trade_timestamp:
+                      type: integer
+                      description: "Unix timestamp in seconds (UTC). Identifies when the transaction occurred."
+                      example: 1594391747
+                    type:
+                      type: string
+                      description: "Used to determine whether or not the transaction originated as a buy or sell. Buy – Identifies an ask that was removed from the order book. Sell – Identifies a bid that was removed from the order book."
+                      enum: [buy, sell]
+                      example: sell
+                    rpi:
+                      type: boolean
+                      description: "Indicates that the trade originates from a Retail Price Improvement (RPI) order."
+                      example: true
+              example:
+                - tradeID: 158056419
+                  price: "9186.13"
+                  quote_volume: "0.0021"
+                  base_volume: "19.29"
+                  trade_timestamp: 1594391747
+                  type: "sell"
+                  rpi: true
+                - tradeID: 158056416
+                  price: "9186.13"
+                  quote_volume: "0.002751"
+                  base_volume: "25.27"
+                  trade_timestamp: 1594391746
+                  type: "sell"
+                  rpi: false
+        '422':
+          description: "Validation error. Returned when the `market` path parameter is unknown or not enabled for trading, or when the `type` query parameter is not `buy` or `sell`."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicValidationError'
+              examples:
+                marketNotAvailable:
+                  summary: Unknown or disabled market
+                  value: { "market": ["Market is not available."] }
+                invalidType:
+                  summary: Invalid type filter
+                  value: { "type": ["Type should be 'sell' or 'buy'."] }
+
+  /api/v4/public/fee:
+    get:
+      summary: Fee
+      description: |
+        The endpoint retrieves the [fee](/glossary#fee) schedule and deposit/withdrawal limits for every supported asset. Use the response to display fee estimates before a user initiates a deposit or withdrawal. The response is keyed by currency ticker; each entry contains deposit and withdrawal fee amounts and min/max transfer limits.
+
+        <Note>
+        The fee schedule is reference data, re-synced approximately once per minute. Polling more frequently returns identical data. The cache is shared across all callers.
+        </Note>
+
+        <Warning>
+        Rate limit: 2000 requests/10 sec. See [Public API V4 overview](/public/http-v4/index) for rate limit details.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                description: |
+                  Map of currency tickers to fee information. Each key is an asset ticker (e.g., `BTC`, `EUR`).
+
+                  **Crypto assets** — `providers` is an empty array; `withdraw` and `deposit` are flat objects with fee fields.
+
+                  **Fiat assets** — `providers` lists available payment methods; `withdraw` and `deposit` are objects keyed by provider ID, where each value contains provider-specific fee details.
+                x-fern-type-name: FeeMap
+                additionalProperties:
+                  $ref: '#/components/schemas/FeeInfo'
+              examples:
+                crypto:
+                  summary: Crypto asset
+                  value:
+                    BTC:
+                      is_depositable: true
+                      is_withdrawal: true
+                      is_api_withdrawal: true
+                      is_api_depositable: true
+                      ticker: "BTC"
+                      name: "Bitcoin"
+                      providers: []
+                      withdraw:
+                        max_amount: "0"
+                        min_amount: "0.0003"
+                        fixed: "0.0002"
+                        flex: null
+                      deposit:
+                        max_amount: "0"
+                        min_amount: "0.0001"
+                        fixed: null
+                        flex: null
+                fiat:
+                  summary: Fiat asset with providers
+                  value:
+                    EUR:
+                      is_api_withdrawal: true
+                      is_api_depositable: true
+                      ticker: "EUR"
+                      name: "Euro"
+                      providers:
+                        - "EUR_SEPA_BCB"
+                        - "EUR_ADVCASH"
+                      withdraw:
+                        EUR_SEPA_BCB:
+                          is_withdrawal: true
+                          is_api_withdrawal: true
+                          ticker: "EUR_SEPA_BCB"
+                          name: "EUR SEPA BCB"
+                          max_amount: "14500"
+                          min_amount: "10"
+                          fixed: null
+                          flex:
+                            percent: "0.05"
+                            min_fee: "3"
+                            max_fee: "7.25"
+                        EUR_ADVCASH:
+                          is_withdrawal: true
+                          is_api_withdrawal: true
+                          ticker: "EUR_ADVCASH"
+                          name: "EUR Volet.com"
+                          max_amount: "10000"
+                          min_amount: "10"
+                          fixed: null
+                          flex:
+                            percent: "1.5"
+                            min_fee: "0.15"
+                            max_fee: "150"
+                      deposit:
+                        EUR_SEPA_BCB:
+                          is_depositable: true
+                          is_api_depositable: true
+                          ticker: "EUR_SEPA_BCB"
+                          name: "EUR SEPA BCB"
+                          max_amount: "14500"
+                          min_amount: "10"
+                          fixed: null
+                          flex:
+                            percent: "0.05"
+                            min_fee: "3"
+                            max_fee: "7.25"
+                        EUR_ADVCASH:
+                          is_depositable: true
+                          is_api_depositable: true
+                          ticker: "EUR_ADVCASH"
+                          name: "EUR Volet.com"
+                          max_amount: "10000"
+                          min_amount: "10"
+                          fixed: null
+                          flex:
+                            percent: "1.5"
+                            min_fee: "0.15"
+                            max_fee: "150"
+        'default':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV4'
+
+  /api/v4/public/time:
+    get:
+      summary: Server Time
+      description: |
+        The endpoint retrieves the current server time as a Unix timestamp. Use the response to synchronize local clocks before generating HMAC signatures for authenticated requests. The endpoint takes no parameters and has no request-validation errors; it returns HTTP 200 on success and fails only at the infrastructure level (see the API description).
+
+        <Note>
+        The server time is computed per request and is not cached.
+        </Note>
+
+        <Warning>
+        Rate limit 2000 requests/10 sec.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  time:
+                    type: integer
+                    description: Unix timestamp in seconds
+                    example: 1631451591
+
+  /api/v4/public/ping:
+    get:
+      summary: Server Status
+      description: |
+        The endpoint checks API availability by returning a simple health-check response. Use the endpoint to verify network connectivity and confirm the API server is reachable. A successful response contains the string `"pong"`. The endpoint takes no parameters and has no request-validation errors; it returns HTTP 200 on success and fails only at the infrastructure level (see the API description).
+
+        <Note>
+        The health-check response is generated per request and is not cached.
+        </Note>
+
+        <Warning>
+        Rate limit 2000 requests/10 sec.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  description: "Health-check token. The value `\"pong\"` confirms the API server is operational."
+                example: ["pong"]
+
+  /api/v4/public/collateral/markets:
+    get:
+      summary: Collateral Markets List
+      description: |
+        The endpoint returns the list of [market](/glossary#market) pair names available for [collateral](/glossary#collateral) trading. Use the response to determine which markets support margin positions. Each item in the result array is a market pair name in `BASE_QUOTE` format (e.g., `BTC_USDT`).
+
+        The list includes TradFi futures markets that are enabled for collateral trading, alongside crypto markets. TradFi entries are ordinary market pair names in the same array — the response carries no per-market type field, so read `type` and `isTradFiFutures` from [`GET /api/v4/public/markets`](/api-reference/market-data/market-info) to tell the market types apart.
+
+        TradFi futures markets stay region-gated: a TradFi market not assigned to the caller's region is omitted from that region's response, exactly as on `GET /api/v4/public/markets`.
+
+        <Note>
+        The collateral market list is reference data, re-synced approximately every 10 seconds. Polling more frequently returns identical data. The cache is shared across all callers.
+        </Note>
+
+        <Note>
+        A market in this list is configured for collateral trading; that is not the same as the account being entitled to trade it. Placing an order on a TradFi market additionally requires TradFi futures to be enabled for the account — without it the order request is rejected with HTTP 422, `api.tradeErrors.tradFi.restricted`.
+        </Note>
+
+        <Warning>
+        Rate limit 2000 requests/10 sec.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    nullable: true
+                    example: null
+                  result:
+                    type: array
+                    items:
+                      type: string
+                      description: "Market pair name in `BASE_QUOTE` format. Crypto and TradFi futures markets share the same array."
+                    example: ["AAPL_USD", "ADA_USDT", "BCH_USDT", "BTC_USDT", "DOGE_USDT"]
+              example:
+                success: true
+                message: null
+                result: ["AAPL_USD", "ADA_USDT", "BCH_USDT", "BTC_USDT", "DOGE_USDT"]
+        '451':
+          description: "Returned when the service is not available in the caller's region."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV4'
+              example:
+                success: false
+                message: "api.margin.unavailable"
+                errors: []
+
+  /api/v4/public/futures:
+    get:
+      summary: Available Futures Markets List
+      description: |
+        The endpoint returns detailed information for all available futures markets. Use the response to read current pricing, open interest, funding rates, and leverage bracket configuration. Each entry includes the predicted next funding rate, settlement timestamps, and maximum allowed position sizes per leverage level.
+
+        The `mark_price` field reports the fair value of the perpetual contract. `index_price` and `funding_rate` are sourced from the premium index that already drives liquidation; field names and the decimal-string format are unchanged.
+
+        <Note>
+        The API caches the response for 1 second
+        </Note>
+
+        <Warning>
+        Rate limit 2000 requests/10 sec.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    nullable: true
+                    example: null
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FuturesMarket'
+              example:
+                success: true
+                message: null
+                result:
+                  - ticker_id: "BTC_PERP"
+                    stock_currency: "BTC"
+                    money_currency: "USDT"
+                    last_price: "24005.5"
+                    stock_volume: "196965.591"
+                    money_volume: "4737879075.7817"
+                    bid: "24005.4"
+                    ask: "24005.6"
+                    high: "24295.1"
+                    low: "23765.3"
+                    product_type: "Perpetual"
+                    open_interest: "6000"
+                    mark_price: "24012.75"
+                    index_price: "24019.25"
+                    index_name: "Bitcoin"
+                    index_currency: "BTC"
+                    funding_rate: "0.000044889033693137"
+                    funding_cap: "0.0003"
+                    funding_floor: "-0.0003"
+                    next_funding_rate_timestamp: "1660665600000"
+                    brackets:
+                      "1": 0
+                      "2": 0
+                      "3": 0
+                      "5": 0
+                      "10": 0
+                      "20": 0
+                      "50": 20
+                      "100": 50
+                    max_leverage: 100
+                    funding_interval_minutes: 300
+        '451':
+          description: "Returned when the service is not available in the caller's region."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorV4'
+              example:
+                success: false
+                message: "api.futures.unavailable"
+                errors: []
+
+  /api/v4/public/funding-history/{market}:
+    get:
+      summary: Funding History
+      description: |
+        The endpoint returns the funding rate history for a specified futures market. Use the response to analyze historical funding rate trends and settlement prices. Results are sorted by funding time in descending order and support offset-based pagination via `limit` and `offset` parameters.
+
+        <Warning>
+        Rate limit 2000 requests/10 sec.
+        </Warning>
+
+        <Note>
+        This endpoint supports pagination. Use `limit` (default: 100, max: 100) and `offset` (default: 0, max: 1000000) to page through results.
+        </Note>
+
+        <Note>
+        The response is a plain array with no `total`, `has_more`, or cursor — a returned count below `limit` marks the last page (an empty array means no further records).
+        </Note>
+
+        <Note>
+        Funding history is served per request at the API layer, with no application-level cache.
+        </Note>
+      tags:
+        - Public API V4
+      parameters:
+        - name: market
+          in: path
+          required: true
+          description: "Market name (e.g., BTC_PERP)"
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]+_[A-Z0-9]+$'
+            example: BTC_PERP
+        - name: startDate
+          in: query
+          required: false
+          description: Start timestamp in seconds
+          schema:
+            type: integer
+            minimum: 0
+            example: 1752480000
+        - name: endDate
+          in: query
+          required: false
+          description: End timestamp in seconds
+          schema:
+            type: integer
+            minimum: 0
+            example: 1752537600
+        - name: limit
+          in: query
+          required: false
+          description: "Number of records to return. Default: 100, Maximum: 100"
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+            example: 100
+        - name: offset
+          in: query
+          required: false
+          description: "Number of records to skip. Maximum: 1000000"
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 1000000
+            default: 0
+            example: 0
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - fundingTime
+                    - fundingRate
+                    - market
+                    - settlementPrice
+                    - rateCalculatedTime
+                  properties:
+                    fundingTime:
+                      type: string
+                      description: "Unix timestamp in seconds when the funding settlement executed."
+                      example: "1752537600"
+                    fundingRate:
+                      type: string
+                      description: "Funding rate applied at the settlement interval. Each record
+                        represents a historical settlement event."
+                      example: "-0.0001229"
+                    market:
+                      type: string
+                      description: "Futures market pair name (e.g., `BTC_PERP`)."
+                      example: BTC_PERP
+                    settlementPrice:
+                      type: string
+                      description: "Mark price in the quote currency at the time of funding settlement."
+                      example: "119816.5"
+                    rateCalculatedTime:
+                      type: string
+                      description: "Unix timestamp in seconds when the funding rate was calculated.
+                        The rate is computed before the actual settlement."
+                      example: "1752508800"
+        '422':
+          description: "Validation or upstream error. Field-keyed like the other public market endpoints. Most validation values (missing market, limit, offset, dates) are single message strings; the market-not-available case and the upstream-failure `error` key carry arrays of strings."
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+                description: "Flat field-keyed error. Validation messages (missing market, limit, offset, dates) are single strings; the market-not-available and upstream-failure `error` values are arrays of strings."
+              examples:
+                invalidMarket:
+                  summary: Missing market
+                  value: { "market": "market is required" }
+                marketNotAvailable:
+                  summary: Unknown market
+                  value: { "market": ["Market is not available."] }
+                invalidLimit:
+                  summary: limit out of range
+                  value: { "limit": "limit must be less than or equal to 100" }
+                invalidOffset:
+                  summary: offset out of range
+                  value: { "offset": "offset must be less than or equal to 1000000" }
+                invalidDateRange:
+                  summary: invalid date range
+                  value: { "endDate": "endDate must be greater than to startDate" }
+                upstreamFailure:
+                  summary: Upstream funding-history service failure
+                  value: { "error": ["unable to get funding history"] }
+
+  /api/v4/public/mining-pool:
+    get:
+      summary: Mining Pool Overview
+      description: |
+        The endpoint returns overall information about the current mining pool state.
+
+        Hash rate is expressed in H units.
+
+        <Warning>
+        Rate limit 1000 requests/10 sec.
+        </Warning>
+      tags:
+        - Public API V4
+      parameters: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      connection_links:
+                        type: array
+                        items:
+                          type: string
+                        example: ["stratum+tcp://1.1.1.1:80", "stratum+tcp://1.1.1.2:80"]
+                      location:
+                        type: string
+                        example: global
+                      assets:
+                        type: array
+                        items:
+                          type: string
+                        example: ["BTC"]
+                      reward_schemes:
+                        type: array
+                        items:
+                          type: string
+                        example: ["FPPS"]
+                      workers:
+                        type: integer
+                        example: 1846
+                      current_hash_rate:
+                        type: string
+                        example: "39353570.8006319183174839"
+                      last7days_hash_rate:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            timestamp:
+                              type: integer
+                              example: 1732579200
+                            hashrate:
+                              type: string
+                              example: "184425100325925.9259259259259259"
+                      blocks:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            block_found_at:
+                              type: integer
+                              example: 1715339355
+                            block_height:
+                              type: integer
+                              example: 18329
+
+components:
+  schemas:
+    ErrorV4:
+      type: object
+      description: "Generic wrapped error envelope (fallback). Market-data validation errors use the flat PublicValidationError shape (HTTP 422) instead, and infrastructure-level failures (maintenance, rate limit, internal error, unknown route) are non-JSON or flat. See the API description for the full set of public error shapes."
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Error message
+          example: "Internal server error."
+        errors:
+          type: array
+          items:
+            type: string
+          example: []
+
+    PublicValidationError:
+      type: object
+      description: "Flat field-keyed validation error (HTTP 422) returned by the market-data endpoints. Each key is the offending request field and the value is an array of human-readable messages. There is no success/message envelope and no `params` field."
+      additionalProperties:
+        type: array
+        items:
+          type: string
+      example:
+        market: ["Market is not available."]
+
+    Asset:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Full name of cryptocurrency
+          example: Bitcoin
+        unified_cryptoasset_id:
+          type: integer
+          description: "Unique ID of cryptocurrency assigned by Unified Cryptoasset ID, 0 if unknown"
+          example: 1
+        can_withdraw:
+          type: boolean
+          description: Indicates withdrawal status (enabled or disabled)
+          example: true
+        can_deposit:
+          type: boolean
+          description: Indicates deposit status (enabled or disabled)
+          example: true
+        min_withdraw:
+          type: string
+          description: Minimum withdrawal amount for the asset
+          example: "0.001"
+        max_withdraw:
+          type: string
+          description: Maximum withdrawal amount for the asset
+          example: "2"
+        maker_fee:
+          type: string
+          description: "Maker fee expressed as a direct percentage value (e.g., \"0.1\"
+            means 0.1%). GET /api/v4/public/markets reports the per-market `makerFee`
+            in the same format."
+          example: "0.1"
+        taker_fee:
+          type: string
+          description: "Taker fee expressed as a direct percentage value (e.g., \"0.1\"
+            means 0.1%). GET /api/v4/public/markets reports the per-market `takerFee`
+            in the same format."
+          example: "0.1"
+        min_deposit:
+          type: string
+          description: Min deposit amount
+          example: "0.0001"
+        max_deposit:
+          type: string
+          description: "Max deposit amount; 0 if unlimited"
+          example: "0"
+        currency_precision:
+          type: integer
+          description: Max number of digits to the right of the decimal point
+          example: 18
+        is_memo:
+          type: boolean
+          description: Indicates whether the asset requires a memo address
+          example: false
+        memo:
+          type: object
+          description: Indicates whether the asset requires a memo for deposits and withdrawals
+          properties:
+            deposit:
+              type: boolean
+              example: false
+            withdraw:
+              type: boolean
+              example: false
+        networks:
+          type: object
+          description: Currency networks
+          properties:
+            deposits:
+              type: array
+              description: "Networks available for depositing. Absent when deposits are disabled
+                for the asset (can_deposit: false). Examples of assets where the field may be
+                absent: AMB, AVA, A, KZT."
+              items:
+                type: string
+              example: ["BTC"]
+            withdraws:
+              type: array
+              description: "Networks available for withdrawing. Absent when withdrawals are
+                disabled for the asset (can_withdraw: false). Examples: AVA, A (Vaulta)."
+              items:
+                type: string
+              example: ["BTC"]
+            default:
+              type: string
+              description: "Default network used when no specific network is selected by the
+                user. Absent when multiple networks exist but no explicit default priority has been
+                configured (e.g., AGRS, ANKR, APE, POL)."
+              example: BTC
+        limits:
+          type: object
+          description: "Currency limits by each network. May be absent from the response."
+          properties:
+            deposit:
+              type: object
+              description: Deposits limits
+              additionalProperties:
+                type: object
+                properties:
+                  min:
+                    type: string
+                    example: "0.001"
+                  max:
+                    type: string
+                    example: "1000"
+            withdraw:
+              type: object
+              description: Withdraws limits
+              additionalProperties:
+                type: object
+                properties:
+                  min:
+                    type: string
+                    example: "0.002"
+                  max:
+                    type: string
+                    example: "1000"
+        confirmations:
+          type: object
+          description: "Required blockchain confirmations for deposits, mapped by network name
+            (e.g., {\"BTC\": 2, \"ERC20\": 20}). Absent for fiat currencies, demo assets, and
+            internal exchange tokens (e.g., UAH, EUR, DBTC, DUSDT). Individual network keys may
+            also be absent if a network was historically supported but is currently disabled."
+          additionalProperties:
+            type: integer
+          example:
+            BTC: 2
+        confirmations_for_trading:
+          type: object
+          description: "Blockchain confirmations after which a deposit is credited for trading,
+            mapped by network name (e.g., {\"BTC\": 1}). Until the count in confirmations is
+            reached, the credited amount can be traded but not withdrawn, transferred to a
+            collateral balance, or used as collateral. This map carries exactly the same network
+            keys as confirmations. Where a network has no earlier threshold configured, or while
+            the platform has early trading availability switched off, the value repeats the
+            confirmations count, because trading then opens at the same point as withdrawal."
+          additionalProperties:
+            type: integer
+          example:
+            BTC: 1
+        providers:
+          type: object
+          description: "Payment provider identifiers for fiat assets (e.g., VISAMASTER,
+            ADVCASH, GEOPAY). Use these identifiers as the network parameter value when
+            making fiat deposits or withdrawals via the API — equivalent to network codes
+            such as ERC20 or TRC20 for crypto assets."
+          properties:
+            deposits:
+              type: array
+              items:
+                type: string
+              example: ["VISAMASTER", "ADVCASH"]
+            withdraws:
+              type: array
+              items:
+                type: string
+              example: ["VISAMASTER", "GEOPAY"]
+
+    OrderbookResponse:
+      type: object
+      properties:
+        ticker_id:
+          type: string
+          description: Market Name
+          example: BTC_PERP
+        timestamp:
+          type: integer
+          description: Current timestamp
+          example: 1594391413
+        asks:
+          type: array
+          description: Array of ask orders
+          items:
+            type: array
+            items:
+              type: string
+            minItems: 2
+            maxItems: 2
+            example: ["9184.41", "0.773162"]
+            description: "[price, quantity] — price in quote currency, quantity in base currency"
+        bids:
+          type: array
+          description: Array of bid orders
+          items:
+            type: array
+            items:
+              type: string
+            minItems: 2
+            maxItems: 2
+            example: ["9181.19", "0.010873"]
+            description: "[price, quantity] — price in quote currency, quantity in base currency"
+
+    FeeInfo:
+      type: object
+      description: |
+        Fee and limit details for a single asset. For crypto assets, `withdraw` and `deposit` are flat fee objects. For fiat assets with providers, they are objects keyed by provider ID.
+      properties:
+        ticker:
+          type: string
+          description: Asset ticker symbol
+          example: "BTC"
+        name:
+          type: string
+          description: Human-readable asset name
+          example: "Bitcoin"
+        providers:
+          type: array
+          description: "Payment provider identifiers used as the network parameter value
+            for fiat deposits and withdrawals via the API. See GET /api/v4/public/assets
+            providers field for context."
+          items:
+            type: string
+          example: []
+        deposit:
+          description: |
+            Deposit fee details. For crypto assets, this is a flat object with `max_amount`, `min_amount`, `fixed`, and `flex` fields. For fiat assets with providers, this is an object keyed by provider ID, where each value contains provider-specific fee details.
+          oneOf:
+            - $ref: '#/components/schemas/FeeDetails'
+            - type: object
+              description: Map of provider IDs to provider-specific deposit fee details
+              additionalProperties:
+                $ref: '#/components/schemas/ProviderFeeDetails'
+        withdraw:
+          description: |
+            Withdrawal fee details. For crypto assets, this is a flat object with `max_amount`, `min_amount`, `fixed`, and `flex` fields. For fiat assets with providers, this is an object keyed by provider ID, where each value contains provider-specific fee details.
+          oneOf:
+            - $ref: '#/components/schemas/FeeDetails'
+            - type: object
+              description: Map of provider IDs to provider-specific withdrawal fee details
+              additionalProperties:
+                $ref: '#/components/schemas/ProviderFeeDetails'
+        is_depositable:
+          type: boolean
+          description: "Indicates whether deposits are enabled for the currency. May be absent
+            from the response; absence should be treated as equivalent to false."
+          example: true
+        is_withdrawal:
+          type: boolean
+          description: "Indicates whether withdrawals are enabled for the currency. May be absent
+            from the response; absence should be treated as equivalent to false."
+          example: true
+        is_api_withdrawal:
+          type: boolean
+          description: Whether API withdrawals are enabled
+          example: true
+        is_api_depositable:
+          type: boolean
+          description: Whether API deposits are enabled
+          example: true
+
+    FeeDetails:
+      type: object
+      description: Fee amounts and transfer limits for a crypto asset
+      properties:
+        max_amount:
+          type: string
+          description: "Maximum transaction amount for the operation and network. May be absent
+            independently from other limit fields; absence typically indicates no upper limit
+            applies."
+          example: "0"
+        min_amount:
+          type: string
+          description: "Minimum transaction amount for the operation and network. May be absent
+            independently from other limit fields."
+          example: "0.0004"
+        fixed:
+          type: string
+          nullable: true
+          description: "Fixed fee amount per transaction. `null` if no fixed fee applies."
+          example: "0.0002"
+        flex:
+          type: object
+          nullable: true
+          description: "Percentage-based (flexible) fee. `null` if no flexible fee applies."
+          properties:
+            percent:
+              type: string
+              description: "Fee percentage (e.g., `\"1.5\"` means 1.5%)"
+              example: "1.5"
+            min_fee:
+              type: string
+              description: Minimum fee amount regardless of percentage calculation
+              example: "0.15"
+            max_fee:
+              type: string
+              description: Maximum fee amount regardless of percentage calculation
+              example: "150"
+
+    ProviderFeeDetails:
+      type: object
+      description: Fee details for a specific fiat payment provider
+      properties:
+        ticker:
+          type: string
+          description: Provider identifier
+          example: "EUR_SEPA_BCB"
+        name:
+          type: string
+          description: Human-readable provider name
+          example: "EUR SEPA BCB"
+        is_depositable:
+          type: boolean
+          description: Whether deposits are enabled via this provider
+          example: true
+        is_api_depositable:
+          type: boolean
+          description: Whether API deposits are enabled via this provider
+          example: true
+        is_withdrawal:
+          type: boolean
+          description: Whether withdrawals are enabled via this provider
+          example: true
+        is_api_withdrawal:
+          type: boolean
+          description: Whether API withdrawals are enabled via this provider
+          example: true
+        max_amount:
+          type: string
+          description: "Maximum transfer amount. `\"0\"` means unlimited."
+          example: "14500"
+        min_amount:
+          type: string
+          description: Minimum transfer amount
+          example: "10"
+        fixed:
+          type: string
+          nullable: true
+          description: "Fixed fee amount per transaction. `null` if no fixed fee applies."
+          example: null
+        flex:
+          type: object
+          nullable: true
+          description: "Percentage-based (flexible) fee. `null` if no flexible fee applies."
+          properties:
+            percent:
+              type: string
+              description: "Fee percentage (e.g., `\"1.5\"` means 1.5%)"
+              example: "0.05"
+            min_fee:
+              type: string
+              description: Minimum fee amount regardless of percentage calculation
+              example: "3"
+            max_fee:
+              type: string
+              description: Maximum fee amount regardless of percentage calculation
+              example: "7.25"
+
+    FuturesMarket:
+      type: object
+      properties:
+        ticker_id:
+          type: string
+          description: Identifier of a ticker with delimiter to separate base/target
+          example: BTC_PERP
+        stock_currency:
+          type: string
+          description: Symbol/currency code of base pair
+          example: BTC
+        money_currency:
+          type: string
+          description: Symbol/currency code of target pair
+          example: USDT
+        last_price:
+          type: string
+          description: Last transacted price of base currency based on given target currency
+          example: "24005.5"
+        stock_volume:
+          type: string
+          description: 24 hour trading volume in base pair volume
+          example: "196965.591"
+        money_volume:
+          type: string
+          description: 24 hour trading volume in target pair volume
+          example: "4737879075.7817"
+        bid:
+          type: string
+          description: Current highest bid price
+          example: "24005.4"
+        ask:
+          type: string
+          description: Current lowest ask price
+          example: "24005.6"
+        high:
+          type: string
+          description: Rolling 24-hours highest transaction price
+          example: "24295.1"
+        low:
+          type: string
+          description: Rolling 24-hours lowest transaction price
+          example: "23765.3"
+        product_type:
+          type: string
+          description: "Derivative product type for the market. Currently always `Perpetual`."
+          enum: [Perpetual]
+          example: Perpetual
+        open_interest:
+          type: string
+          description: "Current open interest in contracts (point-in-time snapshot, not a
+            24-hour delta or volume)."
+          example: "6000"
+        mark_price:
+          type: string
+          description: "Fair value
+            of the perpetual contract, derived from the underlying index price and the futures
+            basis. Mark price — not `last_price` — is what a liquidation is evaluated against,
+            so a temporary wick in the order book does not by itself trigger one. Point-in-time
+            value from the latest premium index snapshot; returns an empty string while no
+            fresh snapshot is available for the market."
+          example: "24012.75"
+        index_price:
+          type: string
+          description: "Price of the underlying index the contract tracks, taken from the same
+            premium index snapshot as `mark_price`. While the index is unavailable the field
+            falls back to the last traded price of the corresponding spot market, then to the
+            last traded price of the futures market itself, and returns `\"0\"` when neither
+            has traded."
+          example: "24019.25"
+        index_name:
+          type: string
+          description: Name of the underlying index if any
+          example: Bitcoin
+        index_currency:
+          type: string
+          description: Underlying currency for index
+          example: BTC
+        funding_rate:
+          type: string
+          description: "Predicted funding rate for the next settlement interval. Fluctuates
+            in real time until settlement occurs. See GET /api/v4/public/funding-history/{market}
+            for historical funding rate records."
+          example: "0.000044889033693137"
+        funding_cap:
+          type: string
+          nullable: true
+          description: "Upper bound that the funding rate can reach for the market. Served from
+            the last successfully refreshed funding snapshot, so a temporary source outage
+            does not drop the field. Returns `null` only when no snapshot has been loaded
+            since service start."
+          example: "0.0003"
+        funding_floor:
+          type: string
+          nullable: true
+          description: "Lower bound that the funding rate can reach for the market. Served from
+            the last successfully refreshed funding snapshot, so a temporary source outage
+            does not drop the field. Returns `null` only when no snapshot has been loaded
+            since service start."
+          example: "-0.0003"
+        next_funding_rate_timestamp:
+          type: string
+          description: "Unix timestamp in milliseconds of the next funding settlement.
+            13-digit value (millisecond precision)."
+          example: "1660665600000"
+        brackets:
+          type: object
+          description: "Leverage brackets defining position size limits. Object keys are
+            leverage multipliers (e.g., \"1\", \"2\", \"5\", \"10\", \"20\", \"50\", \"100\").
+            Values are the maximum allowed open position size in USDT equivalent at the
+            corresponding leverage level."
+          additionalProperties:
+            type: integer
+          example:
+            "1": 0
+            "2": 0
+            "3": 0
+            "5": 0
+            "10": 0
+            "20": 0
+            "50": 20
+            "100": 50
+        max_leverage:
+          type: integer
+          description: "Maximum leverage multiplier allowed for the market."
+          example: 100
+        funding_interval_minutes:
+          type: integer
+          description: Funding interval in minutes
+          example: 300
+
+tags:
+  - name: Public API V4
+    description: Public endpoints for market data, trading information, and platform status

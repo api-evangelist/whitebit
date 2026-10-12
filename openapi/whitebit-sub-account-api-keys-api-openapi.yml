@@ -1,0 +1,899 @@
+openapi: 3.2.0
+info:
+  title: WhiteBIT Private HTTP API V4 Sub-Account API Keys API
+  description: 'WhiteBIT Private HTTP API V4 for Main balance changes.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.'
+  version: 4.0.0
+  contact:
+    name: WhiteBIT Support
+    email: support@whitebit.com
+    url: https://whitebit.com
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Sub-Account API Keys
+  description: Sub-account API key management
+paths:
+  /api/v4/sub-account/api-key/create:
+    post:
+      tags:
+      - Sub-Account API Keys
+      summary: Create Sub-Account API Key
+      description: 'The endpoint creates a new API key for a sub-account. Each sub-account supports up to 50 API keys, independent from the main account and from other sub-accounts.
+
+
+        A `type: 2` key includes the withdrawal permission group, but its URLs default to `enable: false`.
+
+        Enable the ones the key uses (for example `/api/v4/main-account/withdraw`) with
+
+        Edit Sub-Account API Key; until then
+
+        `/api/v4/main-account/withdraw` returns `401` with `{"code":4,"message":"This API Key is not authorized to perform this action."}`.
+
+        Crypto deposits additionally require deposits to be enabled for the account — disabled by default,
+
+        contact your assigned Account Manager or email institutional@whitebit.com.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: createSubAccountApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - type
+              - subAccountId
+              - title
+              properties:
+                type:
+                  type: integer
+                  description: Type of API key (1 - info and trading; 2 - info, trading, deposits, withdraws)
+                  enum:
+                  - 1
+                  - 2
+                  example: 1
+                subAccountId:
+                  type: string
+                  description: ID of the sub-account to create the API key for
+                  example: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+                title:
+                  type: string
+                  description: Custom title/name for the API key
+                  example: Trading Bot Key
+      responses:
+        '201':
+          description: API key created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubAccountApiKey'
+        '400':
+          description: 'Request failed.
+
+
+            Response error codes:
+
+            - 0 - request validation failed (missing field, wrong type)
+
+            - 5 - business-rule violation (API-key limit reached, key type not allowed)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validationFailed:
+                  summary: Request validation failed
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      type:
+                      - validation.required
+                      subAccountId:
+                      - validation.required
+                      title:
+                      - validation.required
+                limitReached:
+                  summary: API-key limit reached
+                  value:
+                    code: 5
+                    message: 'Limit of API keys is reached. Maximum allowed: 50'
+                typeNotAllowed:
+                  summary: Requested key type is not allowed
+                  value:
+                    code: 5
+                    message: Type isn't allowed
+        '404':
+          description: 'The requested key type requires a permission the account does not have. Returned as a bare not-found response with an empty message.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                typeNotPermitted:
+                  summary: Restricted key type
+                  value:
+                    message: ''
+  /api/v4/sub-account/api-key/edit:
+    post:
+      tags:
+      - Sub-Account API Keys
+      summary: Edit Sub-Account API Key
+      description: 'The endpoint updates an existing sub-account API key.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: editSubAccountApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - apiKeyId
+              - title
+              - urls
+              properties:
+                apiKeyId:
+                  type: string
+                  description: ID of the API key to update
+                  example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                title:
+                  type: string
+                  description: New title for the API key
+                  example: Trading Bot Key
+                urls:
+                  type: array
+                  description: 'Array of URL objects for API key restrictions. The array is merged into the key''s
+
+                    existing settings — URLs not listed keep their current `enable` value.
+
+                    '
+                  items:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        example: /api/v4/main-account/balance
+                      enable:
+                        type: boolean
+                        example: true
+            example:
+              apiKeyId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+              title: Trading Bot Key
+              urls:
+              - url: /api/v4/main-account/withdraw
+                enable: false
+              - url: /api/v4/main-account/balance
+                enable: true
+      responses:
+        '200':
+          description: API key updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {}
+        '400':
+          description: 'Request failed.
+
+
+            Response error codes:
+
+            - 0 - request validation failed
+
+            - 5 - business-rule violation (restricted URL for sub-account API keys)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validationFailed:
+                  summary: Request validation failed
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      apiKeyId:
+                      - validation.required
+                      title:
+                      - validation.required
+                      urls:
+                      - validation.required
+                restrictedUrl:
+                  summary: Restricted URL
+                  value:
+                    code: 5
+                    message: 'The following URLs are restricted for sub-account API keys: /api/v4/main-account/address'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  summary: API key not found
+                  value:
+                    message: API key not found
+  /api/v4/sub-account/api-key/delete:
+    post:
+      tags:
+      - Sub-Account API Keys
+      summary: Delete Sub-Account API Key
+      description: 'The endpoint deletes a sub-account API key.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: deleteSubAccountApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - apiKeyId
+              properties:
+                apiKeyId:
+                  type: string
+                  description: ID of the API key to delete
+                  example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+            example:
+              apiKeyId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+      responses:
+        '200':
+          description: API key deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {}
+        '400':
+          description: 'Request validation failed.
+
+
+            Response error codes:
+
+            - 0 - request validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validationFailed:
+                  summary: Request validation failed
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      apiKeyId:
+                      - validation.required
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  summary: API key not found
+                  value:
+                    message: API key not found
+  /api/v4/sub-account/api-key/list:
+    post:
+      tags:
+      - Sub-Account API Keys
+      summary: List Sub-Account API Keys
+      description: 'The endpoint retrieves a list of API keys for a sub-account.
+
+        Note: For security reasons, the apiSecret field returns an empty string.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.
+
+
+        Results are sorted by api-key id descending (newest key first). The response is a plain array with no `total`, `has_more`, or cursor — a returned count below `limit` marks the last page (an empty array means no further records).'
+      operationId: listSubAccountApiKeys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subAccountId:
+                  type: string
+                  description: ID of the sub-account to list API keys for
+                  example: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 100
+                  example: 100
+                offset:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+                  default: 0
+                  example: 0
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SubAccountApiKeyList'
+        '400':
+          description: 'Request validation failed.
+
+
+            Response error codes:
+
+            - 0 - request validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validationFailed:
+                  summary: Request validation failed
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - validation.integer
+                      offset:
+                      - validation.integer
+  /api/v4/sub-account/api-key/reset:
+    post:
+      tags:
+      - Sub-Account API Keys
+      summary: Reset Sub-Account API Key
+      description: 'The endpoint resets (regenerates) an existing sub-account API key.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: resetSubAccountApiKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - apiKeyId
+              properties:
+                apiKeyId:
+                  type: string
+                  description: ID of the API key to reset
+                  example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+            example:
+              apiKeyId: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+      responses:
+        '200':
+          description: API key reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+              example: {}
+        '400':
+          description: 'Request validation failed.
+
+
+            Response error codes:
+
+            - 0 - request validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validationFailed:
+                  summary: Request validation failed
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      apiKeyId:
+                      - validation.required
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  summary: API key not found
+                  value:
+                    message: API key not found
+  /api/v4/sub-account/api-key/ip-address/list:
+    post:
+      tags:
+      - Sub-Account API Keys
+      summary: List Sub-Account API Key IP Addresses
+      description: 'The endpoint retrieves the list of IP addresses allowed for a sub-account API key.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: listSubAccountApiKeyIpAddresses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - apiKeyId
+              properties:
+                apiKeyId:
+                  type: string
+                  description: ID of the API key to list IP addresses for
+                  example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: 'Request validation failed.
+
+
+            Response error codes:
+
+            - 0 - request validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validationFailed:
+                  summary: Request validation failed
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      apiKeyId:
+                      - validation.required
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  summary: API key not found
+                  value:
+                    message: API key not found
+  /api/v4/sub-account/api-key/ip-address/create:
+    post:
+      tags:
+      - Sub-Account API Keys
+      summary: Create Sub-Account API Key IP Address
+      description: 'The endpoint adds a new IP address to the allowed list for a sub-account API key.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: createSubAccountApiKeyIpAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - apiKeyId
+              - ip
+              properties:
+                apiKeyId:
+                  type: string
+                  description: ID of the API key to add IP address to
+                  example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                ip:
+                  type: string
+                  description: IP address to add to allowed list
+                  example: 192.168.1.100
+      responses:
+        '201':
+          description: IP address added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: 'Request failed.
+
+
+            Response error codes:
+
+            - 0 - request validation failed (missing field, invalid IP address)
+
+            - 5 - business-rule violation (IP already in allowlist, allowlist full)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validationFailed:
+                  summary: Request validation failed
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      apiKeyId:
+                      - validation.required
+                      ip:
+                      - validation.required
+                invalidIp:
+                  summary: Invalid IP address
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ip:
+                      - Invalid IP address.
+                duplicateIp:
+                  summary: IP already in allowlist
+                  value:
+                    code: 5
+                    message: This IP address is already in allowlist
+                allowlistFull:
+                  summary: Allowlist full
+                  value:
+                    code: 5
+                    message: 'You have reached the maximum number of allowed IPs: 50'
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  summary: API key not found
+                  value:
+                    message: API key not found
+  /api/v4/sub-account/api-key/ip-address/delete:
+    post:
+      tags:
+      - Sub-Account API Keys
+      summary: Delete Sub-Account API Key IP Address
+      description: 'The endpoint removes an IP address from the allowed list for a sub-account API key.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: deleteSubAccountApiKeyIpAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - apiKeyId
+              - ip
+              properties:
+                apiKeyId:
+                  type: string
+                  description: ID of the API key to remove IP address from
+                  example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+                ip:
+                  type: string
+                  description: IP address to remove from allowed list
+                  example: 192.168.1.100
+      responses:
+        '200':
+          description: IP address removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: 'Request failed.
+
+
+            Response error codes:
+
+            - 0 - request validation failed (missing field, invalid IP address)
+
+            - 5 - business-rule violation (IP not in allowlist)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                validationFailed:
+                  summary: Request validation failed
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      apiKeyId:
+                      - validation.required
+                      ip:
+                      - validation.required
+                invalidIp:
+                  summary: Invalid IP address
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ip:
+                      - Invalid IP address.
+                ipNotInAllowlist:
+                  summary: IP not in allowlist
+                  value:
+                    code: 5
+                    message: IP address 192.168.1.100 is not in the allowlist
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  summary: API key not found
+                  value:
+                    message: API key not found
+components:
+  schemas:
+    SubAccountApiKeyList:
+      type: object
+      properties:
+        subAccountId:
+          type: string
+          example: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+        id:
+          type: string
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        title:
+          type: string
+          example: Trading Bot Key
+        isEnabled:
+          type: boolean
+          example: true
+        apiKey:
+          type: string
+          example: pub-key-abc123
+        apiSecret:
+          type: string
+          description: Empty for security (only shown during creation)
+          example: ''
+        type:
+          type: string
+          example: '1'
+        lastActivity:
+          type: integer
+          example: 1641081600
+        restrictAccess:
+          type: boolean
+          example: false
+        accessEndpoints:
+          type: array
+          description: 'Permission groups for the key. Each group lists its individual endpoint URLs and whether
+
+            each is enabled. On a newly created key every URL defaults to `enable: false`; enable the
+
+            required URLs with [Edit Sub-Account API Key](/api-reference/sub-accounts/edit-sub-account-api-key).
+
+            '
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: withdraw
+              title:
+                type: string
+                example: Withdraw
+              urls:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      example: /api/v4/main-account/withdraw
+                    enable:
+                      type: boolean
+                      example: false
+    SubAccountApiKey:
+      type: object
+      properties:
+        subAccountId:
+          type: string
+          description: Sub-account identifier
+          example: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+        id:
+          type: string
+          description: API key identifier
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        title:
+          type: string
+          description: API key title/name
+          example: Trading Bot Key
+        isEnabled:
+          type: boolean
+          description: Whether the API key is enabled
+          example: true
+        apiKey:
+          type: string
+          description: API key
+          example: pub-key-abc123
+        apiSecret:
+          type: string
+          description: API secret
+          example: secret-xyz789
+        type:
+          type: integer
+          description: API key type (1 - info and trading, 2 - info, trading, deposit and withdraw)
+          example: 1
+        lastActivity:
+          type: integer
+          description: Last activity timestamp
+          example: 1641081600
+        restrictAccess:
+          type: boolean
+          description: Whether access is restricted
+          example: false
+        accessEndpoints:
+          type: array
+          description: 'Permission groups for the key. Each group lists its individual endpoint URLs and whether
+
+            each is enabled. On a newly created key every URL defaults to `enable: false`; enable the
+
+            required URLs with [Edit Sub-Account API Key](/api-reference/sub-accounts/edit-sub-account-api-key)
+
+            before calling them (for example `/api/v4/main-account/withdraw`).
+
+            '
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Permission group name
+                example: withdraw
+              title:
+                type: string
+                description: Permission group title
+                example: Withdraw
+              urls:
+                type: array
+                description: Endpoint URLs in this group and their enabled state
+                items:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      example: /api/v4/main-account/withdraw
+                    enable:
+                      type: boolean
+                      example: false
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

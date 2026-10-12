@@ -1,0 +1,734 @@
+openapi: 3.2.0
+info:
+  title: WhiteBIT Private HTTP API V4 Codes API
+  description: 'WhiteBIT Private HTTP API V4 for Main balance changes.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.'
+  version: 4.0.0
+  contact:
+    name: WhiteBIT Support
+    email: support@whitebit.com
+    url: https://whitebit.com
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Codes
+  description: WhiteBIT codes operations
+paths:
+  /api/v4/main-account/codes:
+    post:
+      tags:
+      - Codes
+      summary: Create code
+      description: 'The endpoint creates WhiteBIT code.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: createCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - ticker
+              - amount
+              - request
+              - nonce
+              properties:
+                ticker:
+                  type: string
+                  description: 'Currency''s [ticker](/glossary#ticker). Example: BTC'
+                  example: ETH
+                amount:
+                  type: string
+                  description: Amount to transfer. Up to 18 decimal places, value greater than zero and capped at 1e17 (10^17), and not exceeding the [main balance](/glossary#balance-main).
+                  example: '0.002'
+                passphrase:
+                  type: string
+                  maxLength: 25
+                  description: 'Passphrase for applying [WhiteBIT codes](/glossary#whitebit-codes). Passphrase must contain only latin letters, numbers and symbols (like !@#$%^, no whitespaces). Max: 25 symbols.'
+                  example: some passphrase
+                description:
+                  type: string
+                  maxLength: 280
+                  description: 'Additional text description for [code](/glossary#whitebit-codes). Visible only for creator. Max: 280 symbols.'
+                  example: some description
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              ticker: ETH
+              amount: '0.002'
+              passphrase: some passphrase
+              description: some description
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '201':
+          description: All validations succeeded and creating transaction is started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    description: Generated WhiteBIT code
+                  message:
+                    type: string
+                    description: Success message
+                  external_id:
+                    type: string
+                    description: External identifier
+              example:
+                code: WBe11f4fce-2a53-4edc-b195-66b693bd77e3ETH
+                message: Code was successfully created
+                external_id: be08a482-5faf-11ed-9b6a-0242ac120002
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount field is required.
+                      ticker:
+                      - The ticker field is required.
+                invalidTypes:
+                  summary: Invalid field types
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount must be a number.
+                      - Invalid number
+                      description:
+                      - The description must be a string.
+                      passphrase:
+                      - The passphrase must be a string.
+                      ticker:
+                      - The selected ticker is invalid.
+                invalidLengths:
+                  summary: Invalid field lengths
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount must be at least 0.
+                      description:
+                      - The description may not be greater than 280 characters.
+                      passphrase:
+                      - The passphrase may not be greater than 25 characters.
+                      ticker:
+                      - The selected ticker is invalid.
+        '422':
+          description: 'Inner validation failed
+
+
+            Response error codes:
+
+            - 0 - Fiat are available on the front-end only
+
+            - 1 - currency is not withdrawable
+
+            - 2 - specified address is invalid
+
+            - 3 - amount is too small
+
+            - 4 - amount is too small for the payment system
+
+            - 5 - not enough balance
+
+            - 6 - amount is less than or equals [fee](/glossary#fee)
+
+            - 20 - the amount is not withdrawable yet because deposits credited before full network confirmation are still held back; see [Withdrawable balance](/api-reference/account-wallet/withdrawable-balance)
+
+
+            Code creation reserves funds through the shared withdraw processor, so insufficient
+
+            balance surfaces as code 5. The minimum amount is configured **per currency** (there
+
+            is no fixed global value) and a below-minimum amount surfaces as code 3.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                unconfirmedUser:
+                  summary: Unconfirmed users (without KYC) - limit exceeded
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - This currency has no active pairs or it may have been delisted. Its rate cannot be calculated at the moment.
+                      - Current limit exceeded
+                kycRequired:
+                  summary: Fiat currencies require KYC verification
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Your account must be verified
+                invalidPassphrase:
+                  summary: Invalid passphrase format
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      passphrase:
+                      - The passphrase format is invalid.
+                codesDisabled:
+                  summary: WhiteBIT codes are disabled for this currency
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - Codes are disabled for this currency
+  /api/v4/main-account/codes/apply:
+    post:
+      tags:
+      - Codes
+      summary: Apply code
+      description: 'The endpoint applies WhiteBIT code.
+
+
+        Rate limit: 60 requests/1 sec.
+
+
+        The API does not cache the response.
+
+
+        To avoid leaking whether a code exists, most failure modes — invalid format, expired,
+
+        non-existent, or wrong passphrase — collapse to one generic rejection on field `code`.
+
+        Only two cases are distinguishable at the API surface: a code that has already been
+
+        applied, and a code created by the same account.'
+      operationId: applyCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - code
+              - request
+              - nonce
+              properties:
+                code:
+                  type: string
+                  description: '[Code](/glossary#whitebit-codes) that will be applied.'
+                  example: WBe11f4fce-2a53-4edc-b195-66b693bd77e3ETH
+                passphrase:
+                  type: string
+                  maxLength: 25
+                  description: 'Should be provided if the [code](/glossary#whitebit-codes) was created with passphrase. Max: 25 symbols.'
+                  example: some passphrase
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              code: WBe11f4fce-2a53-4edc-b195-66b693bd77e3ETH
+              passphrase: some passphrase
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '201':
+          description: All validations succeeded and creating transaction is started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  ticker:
+                    type: string
+                  amount:
+                    type: string
+                  external_id:
+                    type: string
+              example:
+                message: Code was successfully applied
+                ticker: ETH
+                amount: '0.002'
+                external_id: be08a482-5faf-11ed-9b6a-0242ac120002
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingCode:
+                  summary: Missing code field
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      code:
+                      - The code field is required.
+                incorrectCode:
+                  summary: Incorrect code or passphrase
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      code:
+                      - Incorrect code or passphrase
+                codeNotApplied:
+                  summary: Generic rejection (invalid format / expired / non-existent / wrong passphrase)
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      code:
+                      - Code not applied
+                codeAlreadyApplied:
+                  summary: Code has already been applied
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      code:
+                      - Code already applied
+                ownCode:
+                  summary: Applying a code created by the same account
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      code:
+                      - This code was created by you
+        '422':
+          description: 'Inner validation failed. Returned with `code: 0`; the message is localized, so
+
+            match on the condition rather than the exact string.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                kycRequired:
+                  summary: KYC verification required to redeem
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      error:
+                      - KYC required
+                codesDisabled:
+                  summary: WhiteBIT codes are disabled for this currency
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      code:
+                      - Codes are disabled for this currency
+  /api/v4/main-account/codes/my:
+    post:
+      tags:
+      - Codes
+      summary: Get my codes
+      description: 'The endpoint retrieves the list of WhiteBIT codes created by my account.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.
+
+
+        Results are sorted by creation date, newest first. Pagination is capped at `offset + limit ≤ 10000`; for a complete history export beyond the cap, use the Report on the History page.'
+      operationId: getMyCodes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 30
+                  description: LIMIT is a special clause used to limit records a particular query can return.
+                  example: 30
+                offset:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+                  default: 0
+                  description: Use the OFFSET clause to return entries starting from a particular line.
+                  example: 0
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '201':
+          description: All validations succeeded and creating transaction is started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: Total number of codes
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CodeInfo'
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+              example:
+                total: 15
+                data:
+                - amount: '0.002'
+                  code: WBe11f4fce-2a53-4edc-b195-66b693bd77e3ETH
+                  date: 1598296332
+                  status: Activated
+                  ticker: ETH
+                  external_id: cf7c3ff8-5eb0-11ed-9b6a-0242ac120002
+                limit: 30
+                offset: 0
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                exceedsMaximum:
+                  summary: Exceeds maximum values
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit may not be greater than 100.
+                      offset:
+                      - The offset may not be greater than 10000.
+                belowMinimum:
+                  summary: Below minimum values
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit must be at least 1.
+                      offset:
+                      - The offset must be at least 0.
+                invalidType:
+                  summary: Invalid field types
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit must be an integer.
+                      offset:
+                      - The offset must be an integer.
+        '422':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+  /api/v4/main-account/codes/history:
+    post:
+      tags:
+      - Codes
+      summary: Get codes history
+      description: 'The endpoint retrieves the whole codes history for the account.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.
+
+
+        Results are sorted by date, newest first.
+
+
+        **No date filtering:** the endpoint does not accept `startDate` / `endDate` parameters, and pagination is capped at `offset + limit ≤ 10000` (`limit` ≤ 100). For a complete history export beyond the cap, use the Report on the History page.'
+      operationId: getCodesHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 30
+                  description: LIMIT is a special clause used to limit records a particular query can return.
+                  example: 100
+                offset:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+                  default: 0
+                  description: Use the OFFSET clause to return entries starting from a particular line.
+                  example: 0
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '201':
+          description: All validations succeeded and creating transaction is started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: Total number of code history entries
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CodeHistory'
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+              example:
+                total: 29
+                data:
+                - amount: '+0.002'
+                  code: WBe11f4fce-2a53-4edc-b195-66b693bd77e3ETH
+                  date: 1598296734
+                  status: Activated
+                  ticker: ETH
+                  external_id: cf7c3ff8-5eb0-11ed-9b6a-0242ac120002
+                - amount: '-0.002'
+                  code: WBe11f4fce-2a53-4edc-b195-66b693bd77e3ETH
+                  date: 1598296332
+                  status: Activated
+                  ticker: ETH
+                  external_id: 52995812-5eb1-11ed-9b6a-0242ac120002
+                limit: 100
+                offset: 0
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                exceedsMaximum:
+                  summary: Exceeds maximum values
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit may not be greater than 100.
+                      offset:
+                      - The offset may not be greater than 10000.
+                belowMinimum:
+                  summary: Below minimum values
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit must be at least 1.
+                      offset:
+                      - The offset must be at least 0.
+                invalidType:
+                  summary: Invalid field types
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit must be an integer.
+                      offset:
+                      - The offset must be an integer.
+        '422':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+components:
+  schemas:
+    ErrorInner:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    CodeInfo:
+      type: object
+      properties:
+        amount:
+          type: string
+          description: Code amount
+          example: '100'
+        code:
+          type: string
+          description: WhiteBIT code
+          example: WBe50fbe4d5d...ee33
+        date:
+          type: integer
+          description: Code creation timestamp
+          example: 1598296132
+        status:
+          type: string
+          description: Code status
+          example: active
+        ticker:
+          type: string
+          description: Code [ticker](/glossary#ticker)
+          example: USDT
+        external_id:
+          type: string
+          description: Code external identifier
+          example: id1
+    CodeHistory:
+      type: object
+      properties:
+        amount:
+          type: string
+          description: Code amount change (- is created, + is applied)
+          example: '-100'
+        code:
+          type: string
+          description: WhiteBIT code
+          example: WBe50fbe4d5d...ee33
+        date:
+          type: integer
+          description: Code activation timestamp (for applied) or code creation timestamp (for created)
+          example: 1598296132
+        status:
+          type: string
+          description: Current code status
+          example: applied
+        ticker:
+          type: string
+          description: Code [ticker](/glossary#ticker)
+          example: USDT
+        external_id:
+          type: string
+          description: Code external identifier
+          example: id1
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

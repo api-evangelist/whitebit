@@ -1,0 +1,11 @@
+generated: '2026-10-13'
+method: searched
+source:
+- https://docs.whitebit.com/llms-full.txt
+- https://github.com/whitebit-exchange/whitebit-cli
+name: whitebit-cli
+official: true
+install:
+  npm: npm install -g whitebit-cli
+commands:
+  whitebit: Command-line client for the WhiteBIT API (installed by the npm package).

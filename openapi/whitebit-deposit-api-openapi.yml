@@ -1,0 +1,1251 @@
+openapi: 3.2.0
+info:
+  title: WhiteBIT Private HTTP API V4 Deposit API
+  description: 'WhiteBIT Private HTTP API V4 for Main balance changes.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.'
+  version: 4.0.0
+  contact:
+    name: WhiteBIT Support
+    email: support@whitebit.com
+    url: https://whitebit.com
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Deposit
+  description: Cryptocurrency and fiat deposit operations
+paths:
+  /api/v4/main-account/address:
+    post:
+      tags:
+      - Deposit
+      summary: Get cryptocurrency deposit address
+      description: 'Get an existing cryptocurrency deposit address for a given currency and network.
+
+
+        Sub-accounts use this endpoint with a sub-account API key once deposits are enabled for the account. Crypto deposits are disabled by default. To enable deposits, contact the assigned account manager or email institutional@whitebit.com.
+
+
+        Rate limit: 1000 requests/10 sec.'
+      operationId: getDepositAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - ticker
+              - request
+              - nonce
+              properties:
+                ticker:
+                  type: string
+                  description: 'Currencies ticker. Example: BTC ⚠️ Currency [ticker](/glossary#ticker) should not be [fiat](/glossary#fiat) and it’s “can_deposit” status must be “true”. See [Asset Status endpoint](/public/http-v4/asset-status-list) response for the status.
+
+                    '
+                  example: BTC
+                network:
+                  type: string
+                  description: 'Cryptocurrency network. ⚠️ If currency has multiple networks like USDT, specify the network to use. See [ticker](/glossary#ticker) networks list in “networks” field from response [Asset Status endpoint](/public/http-v4/asset-status-list).
+
+                    '
+                  example: ERC20
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+      responses:
+        '200':
+          description: 'Successful response. The API does not cache the response.
+
+            '
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account:
+                    type: object
+                    properties:
+                      address:
+                        type: string
+                        description: Deposit address
+                      memo:
+                        type: string
+                        description: Memo if currency requires memo
+                  required:
+                    type: object
+                    properties:
+                      fixedFee:
+                        type: string
+                        description: Fixed deposit fee
+                      flexFee:
+                        type: object
+                        description: Flexible fee - is fee that use percent rate
+                        properties:
+                          maxFee:
+                            type: string
+                            description: Maximum fixed fee charged
+                          minFee:
+                            type: string
+                            description: Minimum fixed fee charged
+                          percent:
+                            type: string
+                            description: Percent of deposit as fee
+                      maxAmount:
+                        type: string
+                        description: Max amount of deposit accepted by the exchange. Deposits exceeding this amount are rejected.
+                      minAmount:
+                        type: string
+                        description: Min amount of deposit accepted by the exchange. Deposits below this amount are rejected.
+              example:
+                account:
+                  address: GDTSOI56XNVAKJNJBLJGRNZIVOCIZJRBIDKTWSCYEYNFAZEMBLN75RMN
+                  memo: '48565488244493'
+                required:
+                  fixedFee: '0'
+                  flexFee:
+                    maxFee: '0'
+                    minFee: '0'
+                    percent: '0'
+                  maxAmount: '0'
+                  minAmount: '1'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidTicker:
+                  summary: Invalid ticker
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - The selected ticker is invalid.
+                invalidNetwork:
+                  summary: Invalid network
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      network:
+                      - The selected network is invalid.
+                notDepositable:
+                  summary: Currency not depositable
+                  value:
+                    code: 1
+                    message: Inner validation failed
+                    errors:
+                      ticker:
+                      - Currency is not depositable
+        '503':
+          description: Service temporary unavailable
+  /api/v4/main-account/fiat-deposit-url:
+    post:
+      tags:
+      - Deposit
+      summary: Get fiat deposit address
+      description: 'The endpoint retrieves a deposit url of the fiat invoice.
+
+
+        The endpoint works on demand. Contact WhiteBIT support and provide the API key to get access to the functionality.
+
+
+        When using VISAMASTER as provider, pass the referer header when opening the invoice link (e.g. when opening https://someaddress.com). If the header is missing (e.g. when opening the link from a Telegram message), the browser is redirected to the WhiteBIT homepage
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getFiatDepositUrl
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - ticker
+              - provider
+              - amount
+              - uniqueId
+              - request
+              - nonce
+              properties:
+                ticker:
+                  type: string
+                  description: Currency's [ticker](/glossary#ticker) ([fiat](/glossary#fiat)). ⚠️ Currencies ticker should be fiat and has "can_deposit" status must be "true". Use [Asset Status endpoint](/public/http-v4/asset-status-list) to know more about currency.
+                  example: UAH
+                provider:
+                  type: string
+                  description: '[Fiat](/glossary#fiat) currency [provider](/glossary#provider). ⚠️ Currency provider should be taken from [Asset Status endpoint](/public/http-v4/asset-status-list) response.'
+                  example: VISAMASTER
+                amount:
+                  type: string
+                  description: Deposit amount
+                  example: '100'
+                uniqueId:
+                  type: string
+                  description: Unique transaction identifier on client's side. Any string up to 255 characters; not validated as a UUID.
+                  example: qw22
+                customer:
+                  type: object
+                  description: Customer information (required for USD/EUR with VISAMASTER [provider](/glossary#provider))
+                  properties:
+                    firstName:
+                      type: string
+                      description: 'Customer billing first name.
+
+
+                        ⚠️ Required if currency USD or EUR with VISAMASTER [provider](/glossary#provider).
+
+                        '
+                      example: John
+                    lastName:
+                      type: string
+                      description: 'Customer billing last name.
+
+
+                        ⚠️ Required if currency USD or EUR with VISAMASTER [provider](/glossary#provider).
+
+                        '
+                      example: Doe
+                    email:
+                      type: string
+                      description: 'Customer billing email.
+
+
+                        ⚠️ Required if currency USD or EUR with VISAMASTER [provider](/glossary#provider).
+
+                        '
+                      example: john_doe@email.com
+                    birthDate:
+                      type: string
+                      format: date
+                      description: 'Customer birth date (Format YYYY-MM-DD).
+
+
+                        ⚠️ Required if currency USD or EUR with VISAMASTER [provider](/glossary#provider).
+
+                        '
+                      example: '1990-01-01'
+                    address:
+                      type: object
+                      properties:
+                        line1:
+                          type: string
+                          description: 'Customer address line1.
+
+
+                            ⚠️ Required if currency USD or EUR with VISAMASTER [provider](/glossary#provider).
+
+                            '
+                          example: Martinez Campos 37
+                        line2:
+                          type: string
+                          description: Customer address line2
+                          example: ''
+                        city:
+                          type: string
+                          description: 'Customer city.
+
+
+                            ⚠️ Required if currency USD or EUR with VISAMASTER [provider](/glossary#provider).
+
+                            '
+                          example: Madrid
+                        zipCode:
+                          type: string
+                          description: 'Customer zip-code.
+
+
+                            ⚠️ Required if currency USD or EUR with VISAMASTER [provider](/glossary#provider).
+
+                            '
+                          example: '28010'
+                        countryCode:
+                          type: string
+                          description: 'Customer country code.
+
+
+                            ⚠️ Required if currency USD or EUR with VISAMASTER [provider](/glossary#provider).
+
+                            '
+                          example: ES
+                successLink:
+                  type: string
+                  description: Customer will be redirected to this URL by acquiring [provider](/glossary#provider) after success deposit. To activate this feature, please contact support
+                  example: https://success.example.com
+                failureLink:
+                  type: string
+                  description: Customer will be redirected to this URL in case of fail or rejection on acquiring provider side. To activate this feature, please contact support
+                  example: https://failure.example.com
+                returnLink:
+                  type: string
+                  description: Customer will be redirected to the URL defined if selects 'back' option after from the payment success or failure page. To activate this feature, define desired link. If not populated, option 'back' won't be displayed
+                  example: https://return.example.com
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            examples:
+              basic:
+                summary: Basic request
+                value:
+                  ticker: UAH
+                  provider: VISAMASTER
+                  amount: '100'
+                  uniqueId: '{{generateID}}'
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              withCustomer:
+                summary: Request with customer fields
+                value:
+                  ticker: UAH
+                  provider: VISAMASTER
+                  amount: '100'
+                  uniqueId: '{{generateID}}'
+                  customer:
+                    firstName: John
+                    lastName: Doe
+                    email: john_doe@email.com
+                    address:
+                      line1: Martinez Campos 37
+                      city: Madrid
+                      zipCode: '28010'
+                      countryCode: ES
+                  request: '{{request}}'
+                  nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: Address for deposit
+              example:
+                url: https://someaddress.com
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                amount:
+                  summary: Amount is too little for deposit
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount is too little for deposit
+                provider:
+                  summary: Cannot find currency for specified provider
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      provider:
+                      - Cannot find currency for specified provider
+                uniqueId:
+                  summary: The unique id has already been taken
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      uniqueId:
+                      - The unique id has already been taken.
+                amount2:
+                  summary: The amount must be a number
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount must be a number.
+                      provider:
+                      - The selected provider is invalid.
+                      ticker:
+                      - The selected ticker is invalid.
+                failedToGenerateDepositUrl:
+                  summary: Failed to generate deposit url
+                  value:
+                    code: 10
+                    message: Failed to generate deposit url
+                amount3:
+                  summary: The amount field is required
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount field is required.
+                      provider:
+                      - The provider field is required.
+                      ticker:
+                      - The ticker field is required.
+                      uniqueId:
+                      - The unique id field is required.
+                successLink:
+                  summary: Your domain is incorrect. Please contact support for more details
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      successLink:
+                      - Your domain is incorrect. Please contact support for more details
+                      failureLink:
+                      - Your domain is incorrect. Please contact support for more details
+                permissionDenied:
+                  summary: No permission to use this endpoint
+                  value:
+                    success: false
+                    message: You don't have permission to use this endpoint. Please contact support for more details
+                    code: 0
+                successLink2:
+                  summary: Your domain scheme incorrect. Use https only
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      successLink:
+                      - Your domain scheme incorrect. Use https only
+                      failureLink:
+                      - Your domain scheme incorrect. Use https only
+                ticker:
+                  summary: Currency is not depositable via API
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - Currency is not depositable via API
+                user:
+                  summary: User not verified
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      user:
+                      - User not verified
+                amount4:
+                  summary: Amount is too big for deposit
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount is too big for deposit
+                amount5:
+                  summary: Daily limit reached
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Daily limit reached
+                amount6:
+                  summary: Expiration date cannot be used for this provider
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Expiration date cannot be used for this provider
+                customerbirthDate:
+                  summary: You must be at least 18 years old
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      customer.birthDate:
+                      - You must be at least 18 years old
+                address:
+                  summary: Invalid credit card number
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      address:
+                      - Invalid credit card number
+        '503':
+          description: Service temporary unavailable
+  /api/card-token:
+    post:
+      tags:
+      - Deposit
+      summary: Issue card token
+      description: 'The endpoint issues a card token for the specified card number.
+
+
+        **Request Headers:**
+
+        - `Authorization`: JWT token from the Issue JWT token response field `data.token` (**Required**)
+
+        - `Content-Type`: `application/json` (**Required**)
+
+
+        Use the `data.token` value returned by Issue JWT token as the `Authorization` header when calling this Fiat Gateway endpoint.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: issueCardToken
+      servers:
+      - url: https://fgw.whitebit.com
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - cardNumber
+              properties:
+                cardNumber:
+                  type: string
+                  description: Target card number
+                  example: '4111111111111111'
+            example:
+              cardNumber: '4111111111111111'
+      responses:
+        '201':
+          description: Validation succeeded and card token is returned
+        '401':
+          description: Request authorization failed
+        '422':
+          description: 'Inner validation failed
+
+
+            Response error codes:
+
+            - 1 - specified card number is invalid
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                invalidCardNumber:
+                  summary: Invalid card number
+                  value:
+                    code: 1
+                    message: Validation failed
+                    errors:
+                      cardNumber:
+                      - The cardNumber field is invalid.
+                tooManyAttempts:
+                  summary: Too many attempts (throttling)
+                  value:
+                    message: Too Many Attempts.
+                    code: 0
+  /api/v4/main-account/refund-deposit:
+    post:
+      tags:
+      - Deposit
+      summary: Refund a deposit
+      description: 'Refund a deposit.
+
+
+        The system processes refunds only for deposits with status `canceled`.
+
+
+        Obtain `transactionId` from the `deposit.canceled` webhook (`uniqueId`) or from the deposit/withdraw history in the WhiteBIT interface after support confirms refund availability.
+
+
+        The refund address must support the same network and asset as the original deposit. The refund address must not be a WhiteBIT address. The refund address can differ from the original deposit sender address.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.
+
+
+        Refund processing does not complete instantly. Use the refund.successful and refund.failed webhooks to receive refund status updates, or check the current status with Get refund history.'
+      operationId: refundDeposit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - transactionId
+              - address
+              - request
+              - nonce
+              properties:
+                transactionId:
+                  type: string
+                  format: uuid
+                  description: 'Transaction UUID of the deposit. Obtain from the [deposit.canceled](/platform/webhook) webhook (`uniqueId` field) or from the deposit/withdraw history in the WhiteBIT interface.
+
+                    '
+                  example: 54bffeb7-7a8f-43f8-bcd8-f14ec10fee85
+                address:
+                  type: string
+                  description: 'Destination wallet address for the refund. The address must support the same network and asset as the original deposit. Cannot be a WhiteBIT address. Does not have to match the original deposit address.
+
+                    '
+                  example: '0x1234567890abcdef1234567890abcdef12345678'
+                memo:
+                  type: string
+                  maxLength: 255
+                  description: 'Destination [memo](/glossary#memodestination-tag) for the refund address. Optional — without it, the refund goes to the address with no memo.
+
+
+                    For a currency that uses memos, the system validates the value; an invalid memo fails the request with a validation error. For other currencies, the value is not validated. It is stored on the refund and returned in the [refund history](/api-reference/account-wallet/get-refund-history) and in the refund webhooks.
+
+                    '
+                  example: '1234567890'
+                request:
+                  type: string
+                  description: 'Base64-encoded request body. See the [authentication guide](/private/http-auth) for signature generation details.
+
+                    '
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: 'A unique identifier for the request. Use a monotonically increasing value such as a Unix timestamp in milliseconds.
+
+                    '
+                  example: 1594297865000
+            example:
+              transactionId: 54bffeb7-7a8f-43f8-bcd8-f14ec10fee85
+              address: '0x1234567890abcdef1234567890abcdef12345678'
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: System accepts refund request
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: Transaction UUID of the deposit, echoed from the request. This is not a refund identifier — the refund's own `refundId` is returned by [Get refund history](/api-reference/account-wallet/get-refund-history).
+                example:
+                  id: 54bffeb7-7a8f-43f8-bcd8-f14ec10fee85
+        '400':
+          description: Validation fails or transaction does not qualify for refund
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notRefundable:
+                  summary: Transaction not refundable
+                  value:
+                    code: 0
+                    message: Transaction not refundable
+                validationFailed:
+                  summary: Required fields missing
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      transactionId:
+                      - The transaction id field is required.
+                      address:
+                      - The address field is required.
+  /api/v4/main-account/refund-history:
+    post:
+      tags:
+      - Deposit
+      summary: Get refund history
+      description: 'The endpoint returns the account''s deposit refunds, including refunds requested through the WhiteBIT interface or through the API.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.
+
+
+        Results are sorted by refund creation, newest first.
+
+
+        The endpoint lists full refunds only. A deposit with at least one partial refund is excluded from the results.
+
+
+        The response does not include a total count. To read the full history, increase `offset` by `limit` until `records` contains fewer than `limit` entries. The maximum `offset` is 10000.'
+      operationId: getRefundHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                depositId:
+                  type: string
+                  maxLength: 255
+                  description: 'Deposit transaction UUID. Returns refunds for this deposit only.
+
+                    '
+                  example: 8f2b0a2e-1c4e-4a2f-9a1d-6f1f4a0d7e31
+                ticker:
+                  type: string
+                  maxLength: 255
+                  description: 'Currency ticker. Exact match, case-insensitive. Matches the currency on every network — for example, `USDT` returns refunds of USDT deposits on all networks. The network of each refund is in the `network` response field.
+
+                    '
+                  example: BTC
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 100
+                  description: Maximum number of records to return.
+                  example: 100
+                offset:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+                  default: 0
+                  description: Number of records to skip.
+                  example: 0
+                request:
+                  type: string
+                  description: 'Request path. See the [authentication guide](/private/http-auth) for signature generation details.
+
+                    '
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: 'A unique identifier for the request. Use a monotonically increasing value such as a Unix timestamp in milliseconds.
+
+                    '
+                  example: 1594297865000
+            example:
+              ticker: BTC
+              limit: 100
+              offset: 0
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Refund history returned
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - limit
+                - offset
+                - records
+                properties:
+                  limit:
+                    type: integer
+                    description: Applied `limit` value
+                  offset:
+                    type: integer
+                    description: Applied `offset` value
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RefundHistoryRecord'
+              example:
+                limit: 100
+                offset: 0
+                records:
+                - depositId: 8f2b0a2e-1c4e-4a2f-9a1d-6f1f4a0d7e31
+                  currency: Bitcoin
+                  ticker: BTC
+                  network: BTC
+                  depositAmount: '0.5'
+                  refundId: 2c9a1f77-9b13-4f0e-9a8b-0d1f7c33ab90
+                  refundAddress: bc1q...
+                  refundAmount: '0.5'
+                  refundHash: 9d0f...
+                  memo: null
+                  status: successful
+                  createdAt: 1756200000
+                  processedAt: 1756203600
+                - depositId: 5e112b38-9652-11ed-a1eb-0242ac120002
+                  currency: Stellar
+                  ticker: XLM
+                  network: XLM
+                  depositAmount: '100'
+                  refundId: 7d4e2b10-3a8c-4f61-b5e2-9c0a1d3f6e47
+                  refundAddress: GDTSOI56...
+                  refundAmount: '100'
+                  refundHash: null
+                  memo: '1234567890'
+                  status: in_process
+                  createdAt: 1756190000
+                  processedAt: null
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                exceedsMaximum:
+                  summary: Exceeds maximum values
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit may not be greater than 100.
+                      offset:
+                      - The offset may not be greater than 10000.
+                belowMinimum:
+                  summary: Below minimum values
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit must be at least 1.
+                      offset:
+                      - The offset must be at least 0.
+  /api/v4/main-account/create-new-address:
+    post:
+      tags:
+      - Deposit
+      summary: Create new address for deposit
+      description: 'The endpoint creates a new address even when the last created address is not used. The endpoint is not available by default, contact support@whitebit.com to get permissions to use the endpoint.
+
+
+        For sub-accounts, crypto deposits must also be enabled for the account (disabled by
+
+        default). To enable them, contact your assigned Account Manager or email institutional@whitebit.com.
+
+
+        **Address types:**
+
+
+        | Currency | Types | Default |
+
+        |----------|---------------------|---------|
+
+        | BTC | p2sh-segwit, bech32 | bech32 |
+
+        | LTC | p2sh-segwit, bech32 | bech32 |
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: createNewAddress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - ticker
+              - request
+              - nonce
+              properties:
+                ticker:
+                  type: string
+                  description: Currency's ticker.
+                  example: XLM
+                network:
+                  type: string
+                  description: 'Currency''s network (for multinetwork currencies). Example: OMNI or TRC20 or ERC20. For USDT default network is ERC20(ETH).
+
+                    '
+                  example: ERC20
+                type:
+                  type: string
+                  description: Address type, available for specific currencies list (see address types table in endpoint description)
+                  enum:
+                  - p2sh-segwit
+                  - bech32
+                  example: bech32
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            examples:
+              basic:
+                summary: Basic request
+                value:
+                  ticker: XLM
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              multinetwork:
+                summary: Multinetwork currency
+                value:
+                  ticker: USDT
+                  network: ERC20
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              withAddressType:
+                summary: BTC with specific address type
+                value:
+                  ticker: BTC
+                  type: bech32
+                  request: '{{request}}'
+                  nonce: 1594297865000
+      responses:
+        '201':
+          description: All validations succeeded and creating transaction is started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account:
+                    type: object
+                    properties:
+                      address:
+                        type: string
+                        description: Deposit address
+                      memo:
+                        type: string
+                        description: Memo if currency requires memo
+                  required:
+                    type: object
+                    properties:
+                      maxAmount:
+                        type: string
+                        description: Max amount of deposit accepted by the exchange. Deposits exceeding this amount are rejected.
+                      minAmount:
+                        type: string
+                        description: Min amount of deposit accepted by the exchange. Deposits below this amount are rejected.
+                      fixedFee:
+                        type: string
+                        description: Fixed deposit fee
+                      flexFee:
+                        type: object
+                        description: Flexible fee - is fee that use percent rate
+                        properties:
+                          maxFee:
+                            type: string
+                            description: Maximum fixed fee charged
+                          minFee:
+                            type: string
+                            description: Minimum fixed fee charged
+                          percent:
+                            type: string
+                            description: Percent of deposit as fee
+              example:
+                account:
+                  address: GDTSOI56XNVAKJNJBLJGRNZIVOCIZJRBIDKTWSCYEYNFAZEMBLN75RMN
+                  memo: '48565488244493'
+                required:
+                  maxAmount: '0'
+                  minAmount: '1'
+                  fixedFee: '0'
+                  flexFee:
+                    maxFee: '0'
+                    minFee: '0'
+                    percent: '0'
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingTicker:
+                  summary: Missing ticker field
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - The ticker field is required.
+                invalidTicker:
+                  summary: Invalid ticker
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - The selected ticker is invalid.
+                unsupportedNetwork:
+                  summary: Unsupported network
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      network:
+                      - Unsupported network
+                noDefaultNetwork:
+                  summary: Network omitted and the currency has no default network
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      network:
+                      - Cannot extract default network
+                currencyNetworkMismatch:
+                  summary: Currency/network combination is invalid
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      network:
+                      - Cannot find currency for specified network
+                invalidTypes:
+                  summary: Invalid data types
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      network:
+                      - The network must be a string.
+                      ticker:
+                      - The ticker must be a string.
+        '422':
+          description: 'Inner validation failed. Returned with `code: 0`; the `errors` field carries the
+
+            condition (the message is localized — match on the condition, not the exact string).
+
+
+            By default a fresh address is generated even when a previous address exists for the
+
+            currency/network. The cases below are the exceptions:
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                notDepositable:
+                  summary: Currency does not support deposits
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      ticker:
+                      - Currency is not depositable
+                fiatUnavailable:
+                  summary: Fiat currency — address creation not allowed
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      ticker:
+                      - Fiat currencies are unavailable for this action
+                currencyUnavailable:
+                  summary: Currency not available to this account (region / verification)
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      message:
+                      - Currency is not available
+                kycRequired:
+                  summary: KYC verification required
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      error:
+                      - KYC required
+                addressInProgress:
+                  summary: Address generation already in progress
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      message:
+                      - Create address in process
+                addressLimitReached:
+                  summary: Per-currency address limit reached
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      message:
+                      - Address limit reached
+components:
+  schemas:
+    ErrorInner:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    RefundHistoryRecord:
+      type: object
+      required:
+      - depositId
+      - depositAmount
+      - refundId
+      - refundAddress
+      - refundAmount
+      - status
+      properties:
+        depositId:
+          type: string
+          format: uuid
+          description: Transaction UUID of the refunded deposit
+          example: 8f2b0a2e-1c4e-4a2f-9a1d-6f1f4a0d7e31
+        currency:
+          type:
+          - string
+          - 'null'
+          description: Currency name. `null` if the currency was removed after the refund.
+          example: Bitcoin
+        ticker:
+          type:
+          - string
+          - 'null'
+          description: Currency [ticker](/glossary#ticker). `null` if the currency was removed after the refund.
+          example: BTC
+        network:
+          type:
+          - string
+          - 'null'
+          description: Deposit network. `null` if the currency was removed after the refund.
+          example: BTC
+        depositAmount:
+          type: string
+          description: Amount of the original deposit
+          example: '0.5'
+        refundId:
+          type: string
+          format: uuid
+          description: Refund UUID
+          example: 2c9a1f77-9b13-4f0e-9a8b-0d1f7c33ab90
+        refundAddress:
+          type: string
+          description: Destination address of the refund
+          example: bc1q...
+        refundAmount:
+          type: string
+          description: Refund amount
+          example: '0.5'
+        refundHash:
+          type:
+          - string
+          - 'null'
+          description: Blockchain transaction hash of the refund. `null` unless `status` is `successful`.
+          example: 9d0f...
+        memo:
+          type:
+          - string
+          - 'null'
+          description: 'Destination [memo](/glossary#memodestination-tag) sent in the [refund request](/api-reference/account-wallet/refund-deposit). `null` if no memo was sent.
+
+            '
+          example: '1234567890'
+        status:
+          type: string
+          enum:
+          - in_process
+          - successful
+          - canceled
+          description: 'Refund status:
+
+            - `in_process` — the refund is not final. Every non-final state maps to this value.
+
+            - `successful` — the refund is complete.
+
+            - `canceled` — the refund is canceled. Final.
+
+            '
+          example: successful
+        createdAt:
+          type:
+          - integer
+          - 'null'
+          description: Refund creation time, Unix timestamp in seconds
+          example: 1756200000
+        processedAt:
+          type:
+          - integer
+          - 'null'
+          description: Time the refund reached its current status, Unix timestamp in seconds. `null` while `status` is `in_process`.
+          example: 1756203600
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

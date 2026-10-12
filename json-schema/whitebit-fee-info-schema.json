@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/whitebit/main/json-schema/whitebit-fee-info-schema.json",
+  "title": "FeeInfo",
+  "description": "Fee and limit details for a single asset. For crypto assets, `withdraw` and `deposit` are flat fee objects. For fiat assets with providers, they are objects keyed by provider ID.\n",
+  "x-generated": "2026-10-13",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/whitebit-http-v4-openapi.yml#/components/schemas/FeeInfo",
+  "type": "object",
+  "properties": {
+    "ticker": {
+      "type": "string",
+      "description": "Asset ticker symbol"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable asset name"
+    },
+    "providers": {
+      "type": "array",
+      "description": "Payment provider identifiers used as the network parameter value for fiat deposits and withdrawals via the API. See GET /api/v4/public/assets providers field for context.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "deposit": {
+      "description": "Deposit fee details. For crypto assets, this is a flat object with `max_amount`, `min_amount`, `fixed`, and `flex` fields. For fiat assets with providers, this is an object keyed by provider ID, where each value contains provider-specific fee details.\n",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/FeeDetails"
+        },
+        {
+          "type": "object",
+          "description": "Map of provider IDs to provider-specific deposit fee details",
+          "additionalProperties": {
+            "$ref": "#/$defs/ProviderFeeDetails"
+          }
+        }
+      ]
+    },
+    "withdraw": {
+      "description": "Withdrawal fee details. For crypto assets, this is a flat object with `max_amount`, `min_amount`, `fixed`, and `flex` fields. For fiat assets with providers, this is an object keyed by provider ID, where each value contains provider-specific fee details.\n",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/FeeDetails"
+        },
+        {
+          "type": "object",
+          "description": "Map of provider IDs to provider-specific withdrawal fee details",
+          "additionalProperties": {
+            "$ref": "#/$defs/ProviderFeeDetails"
+          }
+        }
+      ]
+    },
+    "is_depositable": {
+      "type": "boolean",
+      "description": "Indicates whether deposits are enabled for the currency. May be absent from the response; absence should be treated as equivalent to false."
+    },
+    "is_withdrawal": {
+      "type": "boolean",
+      "description": "Indicates whether withdrawals are enabled for the currency. May be absent from the response; absence should be treated as equivalent to false."
+    },
+    "is_api_withdrawal": {
+      "type": "boolean",
+      "description": "Whether API withdrawals are enabled"
+    },
+    "is_api_depositable": {
+      "type": "boolean",
+      "description": "Whether API deposits are enabled"
+    }
+  },
+  "$defs": {
+    "FeeDetails": {
+      "type": "object",
+      "description": "Fee amounts and transfer limits for a crypto asset",
+      "properties": {
+        "max_amount": {
+          "type": "string",
+          "description": "Maximum transaction amount for the operation and network. May be absent independently from other limit fields; absence typically indicates no upper limit applies."
+        },
+        "min_amount": {
+          "type": "string",
+          "description": "Minimum transaction amount for the operation and network. May be absent independently from other limit fields."
+        },
+        "fixed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Fixed fee amount per transaction. `null` if no fixed fee applies."
+        },
+        "flex": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Percentage-based (flexible) fee. `null` if no flexible fee applies.",
+          "properties": {
+            "percent": {
+              "type": "string",
+              "description": "Fee percentage (e.g., `\"1.5\"` means 1.5%)"
+            },
+            "min_fee": {
+              "type": "string",
+              "description": "Minimum fee amount regardless of percentage calculation"
+            },
+            "max_fee": {
+              "type": "string",
+              "description": "Maximum fee amount regardless of percentage calculation"
+            }
+          }
+        }
+      }
+    },
+    "ProviderFeeDetails": {
+      "type": "object",
+      "description": "Fee details for a specific fiat payment provider",
+      "properties": {
+        "ticker": {
+          "type": "string",
+          "description": "Provider identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable provider name"
+        },
+        "is_depositable": {
+          "type": "boolean",
+          "description": "Whether deposits are enabled via this provider"
+        },
+        "is_api_depositable": {
+          "type": "boolean",
+          "description": "Whether API deposits are enabled via this provider"
+        },
+        "is_withdrawal": {
+          "type": "boolean",
+          "description": "Whether withdrawals are enabled via this provider"
+        },
+        "is_api_withdrawal": {
+          "type": "boolean",
+          "description": "Whether API withdrawals are enabled via this provider"
+        },
+        "max_amount": {
+          "type": "string",
+          "description": "Maximum transfer amount. `\"0\"` means unlimited."
+        },
+        "min_amount": {
+          "type": "string",
+          "description": "Minimum transfer amount"
+        },
+        "fixed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Fixed fee amount per transaction. `null` if no fixed fee applies."
+        },
+        "flex": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "Percentage-based (flexible) fee. `null` if no flexible fee applies.",
+          "properties": {
+            "percent": {
+              "type": "string",
+              "description": "Fee percentage (e.g., `\"1.5\"` means 1.5%)"
+            },
+            "min_fee": {
+              "type": "string",
+              "description": "Minimum fee amount regardless of percentage calculation"
+            },
+            "max_fee": {
+              "type": "string",
+              "description": "Maximum fee amount regardless of percentage calculation"
+            }
+          }
+        }
+      }
+    }
+  }
+}

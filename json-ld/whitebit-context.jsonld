@@ -1,0 +1,841 @@
+{
+  "@context": {
+    "@vocab": "https://whitebit.com/schema#",
+    "schema": "https://schema.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "whitebit": "https://whitebit.com/schema#",
+    "SupportedAsset": "whitebit:SupportedAsset",
+    "asset": {
+      "@id": "whitebit:asset",
+      "@type": "xsd:string"
+    },
+    "network": {
+      "@id": "whitebit:network",
+      "@type": "xsd:string"
+    },
+    "CreateCheckResponse": "whitebit:CreateCheckResponse",
+    "id": {
+      "@id": "whitebit:id",
+      "@type": "xsd:string"
+    },
+    "CreateCheckBalanceError": "whitebit:CreateCheckBalanceError",
+    "errors": {
+      "@id": "whitebit:errors",
+      "@container": "@list"
+    },
+    "CheckResultResponse": "whitebit:CheckResultResponse",
+    "checkedAt": {
+      "@id": "whitebit:checkedAt",
+      "@type": "xsd:integer"
+    },
+    "status": {
+      "@id": "whitebit:status",
+      "@type": "xsd:string"
+    },
+    "riskLevel": {
+      "@id": "whitebit:riskLevel",
+      "@type": "xsd:string"
+    },
+    "riskDescription": {
+      "@id": "whitebit:riskDescription",
+      "@type": "xsd:string"
+    },
+    "CheckHistoryItem": "whitebit:CheckHistoryItem",
+    "address": {
+      "@id": "whitebit:address",
+      "@type": "xsd:string"
+    },
+    "CheckHistoryResponse": "whitebit:CheckHistoryResponse",
+    "data": {
+      "@id": "whitebit:data",
+      "@container": "@list"
+    },
+    "limit": {
+      "@id": "whitebit:limit",
+      "@type": "xsd:integer"
+    },
+    "offset": {
+      "@id": "whitebit:offset",
+      "@type": "xsd:integer"
+    },
+    "EndpointAuthError": "whitebit:EndpointAuthError",
+    "code": {
+      "@id": "whitebit:code",
+      "@type": "xsd:integer"
+    },
+    "message": {
+      "@id": "whitebit:message",
+      "@type": "xsd:string"
+    },
+    "ActiveOrderStatus": "whitebit:ActiveOrderStatus",
+    "OrderHistoryStatus": "whitebit:OrderHistoryStatus",
+    "ExecutedDeal": "whitebit:ExecutedDeal",
+    "clientOrderId": {
+      "@id": "whitebit:clientOrderId",
+      "@type": "xsd:string"
+    },
+    "time": {
+      "@id": "whitebit:time",
+      "@type": "xsd:decimal"
+    },
+    "side": {
+      "@id": "whitebit:side",
+      "@type": "xsd:string"
+    },
+    "role": {
+      "@id": "whitebit:role",
+      "@type": "xsd:integer"
+    },
+    "amount": {
+      "@id": "whitebit:amount",
+      "@type": "xsd:string"
+    },
+    "price": {
+      "@id": "whitebit:price",
+      "@type": "xsd:string"
+    },
+    "deal": {
+      "@id": "whitebit:deal",
+      "@type": "xsd:string"
+    },
+    "fee": {
+      "@id": "whitebit:fee",
+      "@type": "xsd:string"
+    },
+    "orderId": {
+      "@id": "whitebit:orderId",
+      "@type": "xsd:integer"
+    },
+    "feeAsset": {
+      "@id": "whitebit:feeAsset",
+      "@type": "xsd:string"
+    },
+    "LimitOrderRequest": "whitebit:LimitOrderRequest",
+    "market": {
+      "@id": "whitebit:market",
+      "@type": "xsd:string"
+    },
+    "postOnly": {
+      "@id": "whitebit:postOnly",
+      "@type": "xsd:boolean"
+    },
+    "ioc": {
+      "@id": "whitebit:ioc",
+      "@type": "xsd:boolean"
+    },
+    "bboRole": {
+      "@id": "whitebit:bboRole",
+      "@type": "xsd:integer"
+    },
+    "stp": {
+      "@id": "whitebit:stp",
+      "@type": "xsd:string"
+    },
+    "rpi": {
+      "@id": "whitebit:rpi",
+      "@type": "xsd:boolean"
+    },
+    "retail": {
+      "@id": "whitebit:retail",
+      "@type": "xsd:boolean"
+    },
+    "request": {
+      "@id": "whitebit:request",
+      "@type": "xsd:string"
+    },
+    "nonce": {
+      "@id": "whitebit:nonce",
+      "@type": "xsd:integer"
+    },
+    "MarketOrderRequest": "whitebit:MarketOrderRequest",
+    "StopLimitOrderRequest": "whitebit:StopLimitOrderRequest",
+    "activation_price": {
+      "@id": "whitebit:activation_price",
+      "@type": "xsd:string"
+    },
+    "StockMarketOrderRequest": "whitebit:StockMarketOrderRequest",
+    "StopMarketOrderRequest": "whitebit:StopMarketOrderRequest",
+    "BulkOrderItem": "whitebit:BulkOrderItem",
+    "OrderResponse": "whitebit:OrderResponse",
+    "type": {
+      "@id": "whitebit:type",
+      "@type": "xsd:string"
+    },
+    "timestamp": {
+      "@id": "whitebit:timestamp",
+      "@type": "xsd:decimal"
+    },
+    "dealMoney": {
+      "@id": "whitebit:dealMoney",
+      "@type": "xsd:string"
+    },
+    "dealStock": {
+      "@id": "whitebit:dealStock",
+      "@type": "xsd:string"
+    },
+    "left": {
+      "@id": "whitebit:left",
+      "@type": "xsd:string"
+    },
+    "dealFee": {
+      "@id": "whitebit:dealFee",
+      "@type": "xsd:string"
+    },
+    "positionSide": {
+      "@id": "whitebit:positionSide",
+      "@type": "xsd:string"
+    },
+    "oto": {
+      "@id": "whitebit:oto"
+    },
+    "reduceOnly": {
+      "@id": "whitebit:reduceOnly",
+      "@type": "xsd:boolean"
+    },
+    "activated": {
+      "@id": "whitebit:activated",
+      "@type": "xsd:integer"
+    },
+    "activationCondition": {
+      "@id": "whitebit:activationCondition",
+      "@type": "xsd:string"
+    },
+    "OcoOrderLeg": "whitebit:OcoOrderLeg",
+    "post_only": {
+      "@id": "whitebit:post_only",
+      "@type": "xsd:boolean"
+    },
+    "mtime": {
+      "@id": "whitebit:mtime",
+      "@type": "xsd:decimal"
+    },
+    "activation_condition": {
+      "@id": "whitebit:activation_condition",
+      "@type": "xsd:string"
+    },
+    "ConditionalOrderLeg": "whitebit:ConditionalOrderLeg",
+    "activationPrice": {
+      "@id": "whitebit:activationPrice",
+      "@type": "xsd:string"
+    },
+    "BulkCancelOrderItem": "whitebit:BulkCancelOrderItem",
+    "BulkCancelOrderResult": "whitebit:BulkCancelOrderResult",
+    "ErrorResponse": "whitebit:ErrorResponse",
+    "ErrorV1": "whitebit:ErrorV1",
+    "success": {
+      "@id": "whitebit:success",
+      "@type": "xsd:boolean"
+    },
+    "params": {
+      "@id": "whitebit:params",
+      "@container": "@list"
+    },
+    "ErrorV4": "whitebit:ErrorV4",
+    "Asset": "whitebit:Asset",
+    "name": {
+      "@id": "whitebit:name",
+      "@type": "xsd:string"
+    },
+    "unified_cryptoasset_id": {
+      "@id": "whitebit:unified_cryptoasset_id",
+      "@type": "xsd:integer"
+    },
+    "can_withdraw": {
+      "@id": "whitebit:can_withdraw",
+      "@type": "xsd:boolean"
+    },
+    "can_deposit": {
+      "@id": "whitebit:can_deposit",
+      "@type": "xsd:boolean"
+    },
+    "min_withdraw": {
+      "@id": "whitebit:min_withdraw",
+      "@type": "xsd:string"
+    },
+    "max_withdraw": {
+      "@id": "whitebit:max_withdraw",
+      "@type": "xsd:string"
+    },
+    "maker_fee": {
+      "@id": "whitebit:maker_fee",
+      "@type": "xsd:string"
+    },
+    "taker_fee": {
+      "@id": "whitebit:taker_fee",
+      "@type": "xsd:string"
+    },
+    "min_deposit": {
+      "@id": "whitebit:min_deposit",
+      "@type": "xsd:string"
+    },
+    "max_deposit": {
+      "@id": "whitebit:max_deposit",
+      "@type": "xsd:string"
+    },
+    "currency_precision": {
+      "@id": "whitebit:currency_precision",
+      "@type": "xsd:integer"
+    },
+    "is_memo": {
+      "@id": "whitebit:is_memo",
+      "@type": "xsd:boolean"
+    },
+    "memo": {
+      "@id": "whitebit:memo"
+    },
+    "networks": {
+      "@id": "whitebit:networks"
+    },
+    "limits": {
+      "@id": "whitebit:limits"
+    },
+    "confirmations": {
+      "@id": "whitebit:confirmations"
+    },
+    "confirmations_for_trading": {
+      "@id": "whitebit:confirmations_for_trading"
+    },
+    "providers": {
+      "@id": "whitebit:providers"
+    },
+    "OrderbookResponse": "whitebit:OrderbookResponse",
+    "ticker_id": {
+      "@id": "whitebit:ticker_id",
+      "@type": "xsd:string"
+    },
+    "asks": {
+      "@id": "whitebit:asks",
+      "@container": "@list"
+    },
+    "bids": {
+      "@id": "whitebit:bids",
+      "@container": "@list"
+    },
+    "FeeInfo": "whitebit:FeeInfo",
+    "ticker": {
+      "@id": "whitebit:ticker",
+      "@type": "xsd:string"
+    },
+    "deposit": {
+      "@id": "whitebit:deposit"
+    },
+    "withdraw": {
+      "@id": "whitebit:withdraw"
+    },
+    "is_depositable": {
+      "@id": "whitebit:is_depositable",
+      "@type": "xsd:boolean"
+    },
+    "is_withdrawal": {
+      "@id": "whitebit:is_withdrawal",
+      "@type": "xsd:boolean"
+    },
+    "is_api_withdrawal": {
+      "@id": "whitebit:is_api_withdrawal",
+      "@type": "xsd:boolean"
+    },
+    "is_api_depositable": {
+      "@id": "whitebit:is_api_depositable",
+      "@type": "xsd:boolean"
+    },
+    "FeeDetails": "whitebit:FeeDetails",
+    "max_amount": {
+      "@id": "whitebit:max_amount",
+      "@type": "xsd:string"
+    },
+    "min_amount": {
+      "@id": "whitebit:min_amount",
+      "@type": "xsd:string"
+    },
+    "fixed": {
+      "@id": "whitebit:fixed",
+      "@type": "xsd:string"
+    },
+    "flex": {
+      "@id": "whitebit:flex"
+    },
+    "ProviderFeeDetails": "whitebit:ProviderFeeDetails",
+    "FuturesMarket": "whitebit:FuturesMarket",
+    "stock_currency": {
+      "@id": "whitebit:stock_currency",
+      "@type": "xsd:string"
+    },
+    "money_currency": {
+      "@id": "whitebit:money_currency",
+      "@type": "xsd:string"
+    },
+    "last_price": {
+      "@id": "whitebit:last_price",
+      "@type": "xsd:string"
+    },
+    "stock_volume": {
+      "@id": "whitebit:stock_volume",
+      "@type": "xsd:string"
+    },
+    "money_volume": {
+      "@id": "whitebit:money_volume",
+      "@type": "xsd:string"
+    },
+    "bid": {
+      "@id": "whitebit:bid",
+      "@type": "xsd:string"
+    },
+    "ask": {
+      "@id": "whitebit:ask",
+      "@type": "xsd:string"
+    },
+    "high": {
+      "@id": "whitebit:high",
+      "@type": "xsd:string"
+    },
+    "low": {
+      "@id": "whitebit:low",
+      "@type": "xsd:string"
+    },
+    "product_type": {
+      "@id": "whitebit:product_type",
+      "@type": "xsd:string"
+    },
+    "open_interest": {
+      "@id": "whitebit:open_interest",
+      "@type": "xsd:string"
+    },
+    "mark_price": {
+      "@id": "whitebit:mark_price",
+      "@type": "xsd:string"
+    },
+    "index_price": {
+      "@id": "whitebit:index_price",
+      "@type": "xsd:string"
+    },
+    "index_name": {
+      "@id": "whitebit:index_name",
+      "@type": "xsd:string"
+    },
+    "index_currency": {
+      "@id": "whitebit:index_currency",
+      "@type": "xsd:string"
+    },
+    "funding_rate": {
+      "@id": "whitebit:funding_rate",
+      "@type": "xsd:string"
+    },
+    "funding_cap": {
+      "@id": "whitebit:funding_cap",
+      "@type": "xsd:string"
+    },
+    "funding_floor": {
+      "@id": "whitebit:funding_floor",
+      "@type": "xsd:string"
+    },
+    "next_funding_rate_timestamp": {
+      "@id": "whitebit:next_funding_rate_timestamp",
+      "@type": "xsd:string"
+    },
+    "brackets": {
+      "@id": "whitebit:brackets"
+    },
+    "max_leverage": {
+      "@id": "whitebit:max_leverage",
+      "@type": "xsd:integer"
+    },
+    "funding_interval_minutes": {
+      "@id": "whitebit:funding_interval_minutes",
+      "@type": "xsd:integer"
+    },
+    "Error": "whitebit:Error",
+    "ErrorInner": "whitebit:ErrorInner",
+    "TravelRuleDepositVerificationRequest": "whitebit:TravelRuleDepositVerificationRequest",
+    "uniqueId": {
+      "@id": "whitebit:uniqueId",
+      "@type": "xsd:string"
+    },
+    "walletType": {
+      "@id": "whitebit:walletType",
+      "@type": "xsd:string"
+    },
+    "originator": {
+      "@id": "whitebit:originator",
+      "@type": "@id"
+    },
+    "vaspData": {
+      "@id": "whitebit:vaspData",
+      "@type": "@id"
+    },
+    "TravelRuleOriginator": "whitebit:TravelRuleOriginator",
+    "firstName": {
+      "@id": "whitebit:firstName",
+      "@type": "xsd:string"
+    },
+    "lastName": {
+      "@id": "whitebit:lastName",
+      "@type": "xsd:string"
+    },
+    "fullName": {
+      "@id": "whitebit:fullName",
+      "@type": "xsd:string"
+    },
+    "residenceCountry": {
+      "@id": "whitebit:residenceCountry",
+      "@type": "xsd:string"
+    },
+    "walletAddress": {
+      "@id": "whitebit:walletAddress",
+      "@type": "xsd:string"
+    },
+    "TravelRuleBeneficiary": "whitebit:TravelRuleBeneficiary",
+    "TravelRuleAddress": "whitebit:TravelRuleAddress",
+    "country": {
+      "@id": "whitebit:country",
+      "@type": "xsd:string"
+    },
+    "city": {
+      "@id": "whitebit:city",
+      "@type": "xsd:string"
+    },
+    "postCode": {
+      "@id": "whitebit:postCode",
+      "@type": "xsd:string"
+    },
+    "addressLine1": {
+      "@id": "whitebit:addressLine1",
+      "@type": "xsd:string"
+    },
+    "TravelRuleVasp": "whitebit:TravelRuleVasp",
+    "vaspId": {
+      "@id": "whitebit:vaspId",
+      "@type": "xsd:string"
+    },
+    "vaspName": {
+      "@id": "whitebit:vaspName",
+      "@type": "xsd:string"
+    },
+    "TravelRuleWithdrawal": "whitebit:TravelRuleWithdrawal",
+    "beneficiary": {
+      "@id": "whitebit:beneficiary",
+      "@type": "@id"
+    },
+    "WithdrawRequest": "whitebit:WithdrawRequest",
+    "provider": {
+      "@id": "whitebit:provider",
+      "@type": "xsd:string"
+    },
+    "partialEnable": {
+      "@id": "whitebit:partialEnable",
+      "@type": "xsd:boolean"
+    },
+    "customerIp": {
+      "@id": "whitebit:customerIp",
+      "@type": "xsd:string"
+    },
+    "bankBic": {
+      "@id": "whitebit:bankBic",
+      "@type": "xsd:string"
+    },
+    "travelRule": {
+      "@id": "whitebit:travelRule"
+    },
+    "TransactionHistory": "whitebit:TransactionHistory",
+    "unique_id": {
+      "@id": "whitebit:unique_id",
+      "@type": "xsd:string"
+    },
+    "createdAt": {
+      "@id": "whitebit:createdAt",
+      "@type": "xsd:integer"
+    },
+    "currency": {
+      "@id": "whitebit:currency",
+      "@type": "xsd:string"
+    },
+    "method": {
+      "@id": "whitebit:method",
+      "@type": "xsd:integer"
+    },
+    "description": {
+      "@id": "whitebit:description",
+      "@type": "xsd:string"
+    },
+    "transactionHash": {
+      "@id": "whitebit:transactionHash",
+      "@type": "xsd:string"
+    },
+    "transaction_id": {
+      "@id": "whitebit:transaction_id",
+      "@type": "xsd:string"
+    },
+    "details": {
+      "@id": "whitebit:details"
+    },
+    "MainAccountBalanceTransfer": "whitebit:MainAccountBalanceTransfer",
+    "from_balance": {
+      "@id": "whitebit:from_balance",
+      "@type": "xsd:string"
+    },
+    "to_balance": {
+      "@id": "whitebit:to_balance",
+      "@type": "xsd:string"
+    },
+    "created_at": {
+      "@id": "whitebit:created_at",
+      "@type": "xsd:integer"
+    },
+    "CodeInfo": "whitebit:CodeInfo",
+    "date": {
+      "@id": "whitebit:date",
+      "@type": "xsd:integer"
+    },
+    "external_id": {
+      "@id": "whitebit:external_id",
+      "@type": "xsd:string"
+    },
+    "CodeHistory": "whitebit:CodeHistory",
+    "RefundHistoryRecord": "whitebit:RefundHistoryRecord",
+    "depositId": {
+      "@id": "whitebit:depositId",
+      "@type": "xsd:string"
+    },
+    "depositAmount": {
+      "@id": "whitebit:depositAmount",
+      "@type": "xsd:string"
+    },
+    "refundId": {
+      "@id": "whitebit:refundId",
+      "@type": "xsd:string"
+    },
+    "refundAddress": {
+      "@id": "whitebit:refundAddress",
+      "@type": "xsd:string"
+    },
+    "refundAmount": {
+      "@id": "whitebit:refundAmount",
+      "@type": "xsd:string"
+    },
+    "refundHash": {
+      "@id": "whitebit:refundHash",
+      "@type": "xsd:string"
+    },
+    "processedAt": {
+      "@id": "whitebit:processedAt",
+      "@type": "xsd:integer"
+    },
+    "FixedPlan": "whitebit:FixedPlan",
+    "percent": {
+      "@id": "whitebit:percent",
+      "@type": "xsd:string"
+    },
+    "duration": {
+      "@id": "whitebit:duration",
+      "@type": "xsd:integer"
+    },
+    "interestTicker": {
+      "@id": "whitebit:interestTicker",
+      "@type": "xsd:string"
+    },
+    "interestRatio": {
+      "@id": "whitebit:interestRatio",
+      "@type": "xsd:string"
+    },
+    "minInvestment": {
+      "@id": "whitebit:minInvestment",
+      "@type": "xsd:string"
+    },
+    "maxInvestment": {
+      "@id": "whitebit:maxInvestment",
+      "@type": "xsd:string"
+    },
+    "maxPossibleInvestment": {
+      "@id": "whitebit:maxPossibleInvestment",
+      "@type": "xsd:string"
+    },
+    "Investment": "whitebit:Investment",
+    "plan": {
+      "@id": "whitebit:plan",
+      "@type": "@id"
+    },
+    "created": {
+      "@id": "whitebit:created",
+      "@type": "xsd:integer"
+    },
+    "updated": {
+      "@id": "whitebit:updated",
+      "@type": "xsd:integer"
+    },
+    "paymentTime": {
+      "@id": "whitebit:paymentTime",
+      "@type": "xsd:integer"
+    },
+    "interestPaid": {
+      "@id": "whitebit:interestPaid",
+      "@type": "xsd:string"
+    },
+    "InterestPayment": "whitebit:InterestPayment",
+    "planId": {
+      "@id": "whitebit:planId",
+      "@type": "xsd:string"
+    },
+    "investmentId": {
+      "@id": "whitebit:investmentId",
+      "@type": "xsd:string"
+    },
+    "FlexPlan": "whitebit:FlexPlan",
+    "maxRate": {
+      "@id": "whitebit:maxRate",
+      "@type": "xsd:string"
+    },
+    "FlexInvestment": "whitebit:FlexInvestment",
+    "invested": {
+      "@id": "whitebit:invested",
+      "@type": "xsd:string"
+    },
+    "withAutoReinvest": {
+      "@id": "whitebit:withAutoReinvest",
+      "@type": "xsd:boolean"
+    },
+    "updatedAt": {
+      "@id": "whitebit:updatedAt",
+      "@type": "xsd:integer"
+    },
+    "FlexInvestmentHistory": "whitebit:FlexInvestmentHistory",
+    "actionType": {
+      "@id": "whitebit:actionType",
+      "@type": "xsd:integer"
+    },
+    "SubAccount": "whitebit:SubAccount",
+    "alias": {
+      "@id": "whitebit:alias",
+      "@type": "xsd:string"
+    },
+    "userId": {
+      "@id": "whitebit:userId",
+      "@type": "xsd:string"
+    },
+    "email": {
+      "@id": "whitebit:email",
+      "@type": "xsd:string"
+    },
+    "color": {
+      "@id": "whitebit:color",
+      "@type": "xsd:string"
+    },
+    "kyc": {
+      "@id": "whitebit:kyc"
+    },
+    "permissions": {
+      "@id": "whitebit:permissions"
+    },
+    "SubAccountTransfer": "whitebit:SubAccountTransfer",
+    "direction": {
+      "@id": "whitebit:direction",
+      "@type": "xsd:string"
+    },
+    "SubAccountApiKey": "whitebit:SubAccountApiKey",
+    "subAccountId": {
+      "@id": "whitebit:subAccountId",
+      "@type": "xsd:string"
+    },
+    "title": {
+      "@id": "whitebit:title",
+      "@type": "xsd:string"
+    },
+    "isEnabled": {
+      "@id": "whitebit:isEnabled",
+      "@type": "xsd:boolean"
+    },
+    "apiKey": {
+      "@id": "whitebit:apiKey",
+      "@type": "xsd:string"
+    },
+    "apiSecret": {
+      "@id": "whitebit:apiSecret",
+      "@type": "xsd:string"
+    },
+    "lastActivity": {
+      "@id": "whitebit:lastActivity",
+      "@type": "xsd:integer"
+    },
+    "restrictAccess": {
+      "@id": "whitebit:restrictAccess",
+      "@type": "xsd:boolean"
+    },
+    "accessEndpoints": {
+      "@id": "whitebit:accessEndpoints",
+      "@container": "@list"
+    },
+    "SubAccountApiKeyList": "whitebit:SubAccountApiKeyList",
+    "MiningReward": "whitebit:MiningReward",
+    "miningAccountName": {
+      "@id": "whitebit:miningAccountName",
+      "@type": "xsd:string"
+    },
+    "payoutDestination": {
+      "@id": "whitebit:payoutDestination",
+      "@type": "xsd:string"
+    },
+    "payoutTransactionHash": {
+      "@id": "whitebit:payoutTransactionHash",
+      "@type": "xsd:string"
+    },
+    "payoutAddress": {
+      "@id": "whitebit:payoutAddress",
+      "@type": "xsd:string"
+    },
+    "payoutTime": {
+      "@id": "whitebit:payoutTime",
+      "@type": "xsd:integer"
+    },
+    "rewardCurrency": {
+      "@id": "whitebit:rewardCurrency",
+      "@type": "xsd:string"
+    },
+    "totalReward": {
+      "@id": "whitebit:totalReward",
+      "@type": "xsd:string"
+    },
+    "reward": {
+      "@id": "whitebit:reward",
+      "@type": "xsd:string"
+    },
+    "fppsRate": {
+      "@id": "whitebit:fppsRate",
+      "@type": "xsd:string"
+    },
+    "hashRate": {
+      "@id": "whitebit:hashRate",
+      "@type": "xsd:string"
+    },
+    "CreditLine": "whitebit:CreditLine",
+    "totalFunding": {
+      "@id": "whitebit:totalFunding",
+      "@type": "xsd:string"
+    },
+    "currentLtv": {
+      "@id": "whitebit:currentLtv",
+      "@type": "xsd:string"
+    },
+    "initialLtv": {
+      "@id": "whitebit:initialLtv",
+      "@type": "xsd:string"
+    },
+    "marginCallLtv": {
+      "@id": "whitebit:marginCallLtv",
+      "@type": "xsd:string"
+    },
+    "liquidationLtv": {
+      "@id": "whitebit:liquidationLtv",
+      "@type": "xsd:string"
+    }
+  },
+  "@type": "schema:Dataset",
+  "schema:name": "WhiteBIT API JSON-LD context",
+  "schema:description": "A JSON-LD @context for the objects WhiteBIT's own API contract declares: one class per component schema, one property per declared field, typed from the contract. Derived by script (derive-json-ld.py, 2026-10-13) from openapi/whitebit-address-checker-openapi.yml, openapi/whitebit-http-trade-v4-openapi.yml, openapi/whitebit-http-v1-openapi.yml.",
+  "dcterms:created": "2026-10-13",
+  "dcterms:source": [
+    "openapi/whitebit-address-checker-openapi.yml",
+    "openapi/whitebit-http-trade-v4-openapi.yml",
+    "openapi/whitebit-http-v1-openapi.yml",
+    "openapi/whitebit-http-v4-openapi.yml",
+    "openapi/whitebit-main-api-v4-openapi.yml"
+  ]
+}

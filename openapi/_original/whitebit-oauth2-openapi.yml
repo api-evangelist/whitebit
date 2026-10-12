@@ -1,0 +1,754 @@
+# x-archived-from: whitebit-oauth2-openapi.yml
+# x-archived-on: 2026-10-13
+openapi: 3.0.3
+info:
+  title: OAuth 2.0 API Reference
+  description: WhiteBIT OAuth 2.0 API for authentication and account management
+  version: 1.0.0
+servers:
+  - url: https://whitebit.com
+    description: WhiteBIT Global Server
+  - url: https://whitebit.eu
+    description: WhiteBIT EU Server
+
+paths:
+  /auth/login:
+    get:
+      summary: OAuth 2.0 Authorization
+      description: |
+        The endpoint initiates the OAuth 2.0 authorization flow for user authentication and obtaining an authorization code.
+
+        **Using the State Parameter (Best Practice)**
+
+        The `state` parameter is crucial for security in OAuth flows:
+
+        - Generate a cryptographically secure random string
+        - Store it in the session before redirecting
+        - Validate it matches when handling the callback
+        - This prevents CSRF attacks
+        <Note>
+        **Note:** OAuth scopes are predefined during client application setup and cannot be modified during the authorization request. The access token will include all scopes that were approved during client creation.
+        </Note>
+      tags:
+        - Authentication
+      parameters:
+        - name: clientId
+          in: query
+          required: true
+          description: The application's client ID
+          schema:
+            type: string
+            example: YOUR_CLIENT_ID
+        - name: state
+          in: query
+          required: false
+          description: A secure random string used to maintain state between the request and callback and prevent CSRF attacks (Recommended)
+          schema:
+            type: string
+            example: SECURE_RANDOM_STATE
+      responses:
+        "302":
+          description: Redirect to authorization page
+
+  /oauth2/token:
+    post:
+      summary: Get Access Token
+      description: |
+        The endpoint activates an access token by exchanging an authorization code.
+
+        <Warning>
+        **Important Notes:**
+
+        - Access token duration is 300 seconds
+        - The IP of the client must be added to WB Allowlist
+        </Warning>
+
+        **Request Headers:**
+        - Content-Type: application/x-www-form-urlencoded
+        
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - client_id
+                - client_secret
+                - code
+              properties:
+                client_id:
+                  type: string
+                  description: The application's client ID
+                  example: YOUR_CLIENT_ID
+                client_secret:
+                  type: string
+                  description: The application's client secret
+                  example: YOUR_CLIENT_SECRET
+                code:
+                  type: string
+                  description: The authorization code received from the authorization endpoint
+                  example: AUTHORIZATION_CODE
+      responses:
+        "200":
+          description: Successful token exchange
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        description: The access token for API requests
+                        example: MZM1MDBMMJYTNWM4MI0ZNTIYLTKXNDATNZY1MZHKM2Y2MJY3
+                      expires_in:
+                        type: integer
+                        description: Token expiration time in seconds
+                        example: 300
+                      refresh_token:
+                        type: string
+                        description: Token used to refresh the access token
+                        example: ODK5ZTVKZDUTYTI5ZC01NWJHLTGZZDMTYWFKYTNMNJHHMGZM
+                      scope:
+                        type: string
+                        description: Comma-separated list of granted scopes
+                        example: codes.apply,show.userinfo
+                      token_type:
+                        type: string
+                        description: Type of the token
+                        example: Bearer
+        "401":
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Invalid request"]
+        "422":
+          description: Validation errors
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: object
+                    properties:
+                      client_id:
+                        type: array
+                        items:
+                          type: string
+                        example: ["validation.required"]
+                      client_secret:
+                        type: array
+                        items:
+                          type: string
+                        example: ["validation.required"]
+                      code:
+                        type: array
+                        items:
+                          type: string
+                        example: ["validation.required"]
+                  notification:
+                    type: string
+                    nullable: true
+                    example: null
+
+  /oauth2/refresh_token:
+    post:
+      summary: Refresh Token
+      description: |
+        This endpoint creates a new access token using a refresh token.
+
+        **Request Headers:**
+        - Content-Type: application/x-www-form-urlencoded
+
+        <Warning>
+        **Important Notes:**
+
+        - Refresh token duration is 600 seconds
+        - Rate limit: 1 request per second
+        - The IP of the client must be added to WB Allowlist
+        </Warning>
+
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - client_id
+                - client_secret
+                - token
+              properties:
+                client_id:
+                  type: string
+                  description: The application's client ID
+                  example: YOUR_CLIENT_ID
+                client_secret:
+                  type: string
+                  description: The application's client secret
+                  example: YOUR_CLIENT_SECRET
+                token:
+                  type: string
+                  description: The refresh token received from the token endpoint
+                  example: REFRESH_TOKEN
+      responses:
+        "200":
+          description: Successful token refresh
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      access_token:
+                        type: string
+                        description: The new access token for API requests
+                        example: NTBLZJKYNZETNJFIZC0ZNGM1LWJMYTMTODBJYZRKNWE2NMRM
+                      expires_in:
+                        type: integer
+                        description: Token expiration time in seconds
+                        example: 300
+                      refresh_token:
+                        type: string
+                        description: New refresh token
+                        example: ODZMNMRHM2ETMZQZZI01OTQYLWEWMZATNWQ0NDYZNJBMOWUW
+                      scope:
+                        type: string
+                        description: Comma-separated list of granted scopes
+                        example: codes.apply,show.userinfo
+                      token_type:
+                        type: string
+                        description: Type of the token
+                        example: Bearer
+        "400":
+          description: Invalid token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Invalid token."]
+
+  /api/v4/accounts/transactions:
+    post:
+      summary: Get Account Transactions
+      description: This endpoint retrieves a paginated list of account transactions.
+      tags:
+        - Account Endpoints
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-main-v4#get-depositwithdraw-history
+
+  /api/v4/accounts/converts:
+    post:
+      summary: Get Currency Conversions
+      description: This endpoint retrieves the history of currency conversions.
+      tags:
+        - Account Endpoints
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-trade-v4#convert-history
+
+  /api/v4/accounts/orders:
+    post:
+      summary: Get Orders History
+      description: This endpoint retrieves the history of trading orders.
+      tags:
+        - Account Endpoints
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-trade-v4#query-executed-orders
+
+  /api/v4/accounts/deals:
+    post:
+      summary: Get Executed Deals
+      description: This endpoint retrieves the history of executed deals.
+      tags:
+        - Account Endpoints
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-trade-v4#query-executed-order-history
+
+  /api/v4/accounts/balances/main:
+    post:
+      summary: Get Main Account Balance
+      description: This endpoint retrieves the main account balance information.
+      tags:
+        - Account Endpoints
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-main-v4#main-balance
+
+  /api/v4/accounts/balances/spot:
+    post:
+      summary: Get Spot Account Balance
+      description: This endpoint retrieves the spot trading account balance information.
+      tags:
+        - Account Endpoints
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-trade-v4#trading-balance
+
+  /oauth2/api-key/info:
+    get:
+      summary: Check OAuth API key existence
+      description: |
+        The endpoint returns whether a partner-issued API key already exists for the authenticated user and OAuth2 client pair. The endpoint is Bearer-authenticated, so it is reachable only once the partner holds a token for that user: a returning partner calls it before redirecting the user again, while a first-time authorization reaches it only after the authorization code has been exchanged. When a key already exists, skip the redirect and surface the appropriate message to the user.
+
+        The endpoint reports absence through the payload, never through an error status. A key that was deleted, a key belonging to a different OAuth2 client, and a manually created key are all reported as `exists: false` with an empty `permissions` list. The only failure status is `401`, which covers every problem with the token itself.
+
+        **Required scope:** `apikeys.read`.
+
+        **Region availability:** The endpoint is available on the global server (`https://whitebit.com`) only.
+      tags:
+        - OAuth API Keys
+      security:
+        - BearerAuth: []
+      servers:
+        - url: https://whitebit.com
+          description: WhiteBIT Global Server
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      exists:
+                        type: boolean
+                        description: A partner-issued API key exists for the authenticated user and OAuth2 client pair. `false` covers every absence case — no key was ever created, the key was deleted by the user or by the system, the key belongs to a different OAuth2 client, or the key was created manually rather than through OAuth.
+                        example: true
+                      isEnabled:
+                        type: boolean
+                        description: The existing key is active. `false` when no key exists or when a key exists but is disabled (post-inactivity, awaiting user deletion from the dashboard).
+                        example: true
+                      externalId:
+                        type: string
+                        format: uuid
+                        nullable: true
+                        description: External UUID of the existing key. `null` when `exists` is `false`.
+                        example: 550e8400-e29b-41d4-a716-446655440000
+                      permissions:
+                        type: array
+                        description: Permission groups assigned to the key. Empty array when `exists` is `false`, and also when the user granted zero permissions during the OAuth handshake — the key is still created in that case, and the user deletes it and re-runs the flow to grant a usable set. For a disabled key (`isEnabled` is `false`), the array still reflects the permissions the user granted at creation time, so the partner can show the original scope.
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: Locale-independent identifier of the permission group. Use the value for partner-side logic.
+                              example: trading
+                            title:
+                              type: string
+                              description: Translated label of the permission group. The value depends on the authenticated user's locale — display only, never branch on the value.
+                              example: Trading
+                            urls:
+                              type: array
+                              description: Endpoint permissions inside the group. `enable` set to `true` means the user granted the action during the OAuth handshake; `enable` set to `false` means the action was offered but not granted.
+                              items:
+                                type: object
+                                properties:
+                                  url:
+                                    type: string
+                                    description: Endpoint path the permission controls.
+                                    example: /v2/order
+                                  enable:
+                                    type: boolean
+                                    description: The user granted the action during the OAuth handshake.
+                                    example: true
+        "401":
+          description: Missing, invalid, or expired Bearer token. A token that does not carry the `apikeys.read` scope returns the same status — an insufficient scope is not reported separately.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Unauthorized."]
+
+  /oauth2/api-key/{externalId}/secret:
+    get:
+      summary: Retrieve OAuth API key secret
+      description: |
+        The endpoint retrieves the API secret for a partner-issued API key. The endpoint returns the secret exactly once per key — a subsequent call returns `409 Conflict`.
+
+        **Required scope:** `apikeys.read`.
+
+        **Region availability:** The endpoint is available on the global server (`https://whitebit.com`) only.
+
+        <Warning>
+        Store the API secret in encrypted backend storage on first retrieval. The secret is not recoverable after this call returns.
+        </Warning>
+      tags:
+        - OAuth API Keys
+      security:
+        - BearerAuth: []
+      servers:
+        - url: https://whitebit.com
+          description: WhiteBIT Global Server
+      parameters:
+        - name: externalId
+          in: path
+          required: true
+          description: External UUID of the API key. Obtain the value from `GET /oauth2/api-key/info`.
+          schema:
+            type: string
+            format: uuid
+            example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        "200":
+          description: Successful response. The secret is returned exactly once.
+          headers:
+            Cache-Control:
+              description: Always `no-store` to prevent the secret from being cached.
+              schema:
+                type: string
+                example: no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      apiSecret:
+                        type: string
+                        description: The API secret. Persist immediately in encrypted backend storage — the secret is not recoverable.
+                        example: YOUR_API_SECRET
+        "401":
+          description: Missing or invalid Bearer token, or token does not carry the `apikeys.read` scope.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Unauthorized."]
+        "403":
+          description: The key does not belong to the authenticated OAuth2 client, or the key is not a partner-issued key.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Forbidden."]
+        "404":
+          description: Key not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Key not found."]
+        "409":
+          description: The secret has already been retrieved for this key. Recovery requires deleting the key and restarting the OAuth API key flow.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Secret already retrieved."]
+        "423":
+          description: A concurrent secret-retrieval attempt holds the lock. Retry after a short delay.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Temporary lock, retry shortly."]
+
+  /oauth2/api-key/{externalId}:
+    delete:
+      summary: Delete OAuth API key
+      description: |
+        The endpoint deletes a partner-issued API key owned by the authenticated OAuth2 client. The deletion triggers an email notification to the user. The endpoint applies to active keys — disabled keys must be removed by the user from the WhiteBIT dashboard.
+
+        **Required scope:** `apikeys.delete`.
+
+        **Region availability:** The endpoint is available on the global server (`https://whitebit.com`) only.
+      tags:
+        - OAuth API Keys
+      security:
+        - BearerAuth: []
+      servers:
+        - url: https://whitebit.com
+          description: WhiteBIT Global Server
+      parameters:
+        - name: externalId
+          in: path
+          required: true
+          description: External UUID of the API key.
+          schema:
+            type: string
+            format: uuid
+            example: 550e8400-e29b-41d4-a716-446655440000
+      responses:
+        "200":
+          description: Successful deletion.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {}
+                    example: []
+        "401":
+          description: Missing or invalid Bearer token, or token does not carry the `apikeys.delete` scope.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Unauthorized."]
+        "403":
+          description: The key does not belong to the authenticated OAuth2 client.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Forbidden."]
+        "404":
+          description: Key not found.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Key not found."]
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        OAuth 2.0 Bearer Token authentication. Include the access token in the Authorization header.
+
+        Example: `Authorization: Bearer YOUR_ACCESS_TOKEN`
+
+tags:
+  - name: Authentication
+    description: |
+      OAuth 2.0 authentication endpoints for obtaining and refreshing access tokens.
+
+      Available Scopes (requested during client setup):
+      - general: General API access
+      - show.userinfo: Access to basic user information
+      - users.read: Read user data
+      - users.email.read: Read user email information
+      - users.kyc.read: Information about whether a user has passed KYC verification
+      - orders.read: Read trading orders
+      - orders.create: Create trading orders
+      - orders.delete: Delete trading orders
+      - balances.read: Read account balances
+      - markets.read: Read market information
+      - deals.read: Read trading deals
+      - orders_history.read: Read order history
+      - users.transactions.read: Read user transactions
+      - users.converts.read: Read currency conversion history
+      - users.balances.read: Read user account balances
+      - users.orders.read: Read user orders
+      - users.deals.read: Read user deals
+      - apikeys.create: Issue an OAuth-bound API key during the consent flow
+      - apikeys.read: Read OAuth-issued API key state and retrieve its secret once
+      - apikeys.delete: Delete an OAuth-issued API key linked to the partner
+  - name: Account Endpoints
+    description: Endpoints for retrieving account information, balances, and transaction history
+  - name: OAuth API Keys
+    description: |
+      Partner-facing endpoints for managing API keys created via the OAuth API key flow.
+
+      Available on the global server (`https://whitebit.com`) only. The EU server (`https://whitebit.eu`) does not expose these endpoints in this release.
+
+      Required scopes:
+      - `apikeys.read` for `GET /oauth2/api-key/info` and `GET /oauth2/api-key/{externalId}/secret`
+      - `apikeys.delete` for `DELETE /oauth2/api-key/{externalId}`
+
+      A third scope, `apikeys.create`, authorizes key creation on the WhiteBIT consent screen and is not consumed by any endpoint here. Holding at least one of the three admits an OAuth2 client to the flow.

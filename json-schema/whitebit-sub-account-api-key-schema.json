@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/whitebit/main/json-schema/whitebit-sub-account-api-key-schema.json",
+  "title": "SubAccountApiKey",
+  "x-generated": "2026-10-13",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/SubAccountApiKey",
+  "type": "object",
+  "properties": {
+    "subAccountId": {
+      "type": "string",
+      "description": "Sub-account identifier"
+    },
+    "id": {
+      "type": "string",
+      "description": "API key identifier"
+    },
+    "title": {
+      "type": "string",
+      "description": "API key title/name"
+    },
+    "isEnabled": {
+      "type": "boolean",
+      "description": "Whether the API key is enabled"
+    },
+    "apiKey": {
+      "type": "string",
+      "description": "API key"
+    },
+    "apiSecret": {
+      "type": "string",
+      "description": "API secret"
+    },
+    "type": {
+      "type": "integer",
+      "description": "API key type (1 - info and trading, 2 - info, trading, deposit and withdraw)"
+    },
+    "lastActivity": {
+      "type": "integer",
+      "description": "Last activity timestamp"
+    },
+    "restrictAccess": {
+      "type": "boolean",
+      "description": "Whether access is restricted"
+    },
+    "accessEndpoints": {
+      "type": "array",
+      "description": "Permission groups for the key. Each group lists its individual endpoint URLs and whether\neach is enabled. On a newly created key every URL defaults to `enable: false`; enable the\nrequired URLs with [Edit Sub-Account API Key](/api-reference/sub-accounts/edit-sub-account-api-key)\nbefore calling them (for example `/api/v4/main-account/withdraw`).\n",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Permission group name"
+          },
+          "title": {
+            "type": "string",
+            "description": "Permission group title"
+          },
+          "urls": {
+            "type": "array",
+            "description": "Endpoint URLs in this group and their enabled state",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "enable": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

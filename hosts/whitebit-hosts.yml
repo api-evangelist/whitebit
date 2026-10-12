@@ -1,0 +1,159 @@
+generated: '2026-10-13'
+method: derived
+source: the pre-flight dossier, apis.yml pointers, spec servers, well-known, vendors -- nothing fetched here
+generator: derive-hosts.py
+summary:
+  hosts: 10
+  own: 8
+  other_domain: 1
+  platform: 1
+  roles:
+  - api
+  - docs
+  - marketing
+  - other
+  - source
+  - status
+  - support
+  - website
+hosts:
+- host: api.whitebit.com
+  found_by:
+  - contract-discovery
+  types: []
+  serves: []
+  registrable_domain: whitebit.com
+  role: api
+  relation: own
+- host: blog.whitebit.com
+  found_by:
+  - pointer
+  - probed
+  - site-links
+  - contract-discovery
+  - well-known
+  types:
+  - Blog
+  serves: []
+  registrable_domain: whitebit.com
+  role: marketing
+  relation: own
+- host: cdn.whitebit.com
+  found_by:
+  - probed
+  - site-links
+  - contract-discovery
+  - well-known
+  types: []
+  serves: []
+  registrable_domain: whitebit.com
+  role: other
+  relation: own
+- host: docs.whitebit.com
+  found_by:
+  - pointer
+  - apis[]
+  - probed
+  - site-links
+  - namespace-probe
+  - docs-index
+  - contract-discovery
+  - well-known
+  - vendor-detect
+  types:
+  - Documentation
+  - APIReference
+  - GettingStarted
+  - LLMs
+  - MCPServer
+  serves:
+  - docs
+  - hosting
+  title: WhiteBIT API Platform - WhiteBIT
+  status: 200
+  vendor: vercel
+  registrable_domain: whitebit.com
+  role: docs
+  relation: own
+- host: github.com
+  found_by:
+  - pointer
+  types:
+  - GitHubOrganization
+  - SourceCode
+  serves: []
+  registrable_domain: github.com
+  role: source
+  relation: platform
+- host: help.whitebit.com
+  found_by:
+  - pointer
+  - probed
+  - site-links
+  - docs-index
+  - well-known
+  - vendor-detect
+  types:
+  - Support
+  serves:
+  - docs
+  - support
+  vendor: zendesk
+  registrable_domain: whitebit.com
+  role: support
+  relation: own
+- host: institutional.whitebit.com
+  found_by:
+  - probed
+  - site-links
+  - well-known
+  types: []
+  serves: []
+  registrable_domain: whitebit.com
+  role: other
+  relation: own
+- host: mintlify.com
+  found_by:
+  - docs-index
+  types: []
+  serves:
+  - docs
+  registrable_domain: mintlify.com
+  role: other
+  relation: other-domain
+- host: status.whitebit.com
+  found_by:
+  - pointer
+  - probed
+  - site-links
+  - well-known
+  types:
+  - StatusPage
+  serves: []
+  registrable_domain: whitebit.com
+  role: status
+  relation: own
+- host: whitebit.com
+  found_by:
+  - pointer
+  - apis[]
+  - probed
+  - docs-index
+  - contract-discovery
+  - well-known
+  - vendor-detect
+  types:
+  - TermsOfService
+  - PrivacyPolicy
+  - Newsroom
+  - Login
+  - SignUp
+  - Website
+  serves:
+  - api
+  - docs
+  - cdn
+  vendor: cloudflare
+  registrable_domain: whitebit.com
+  role: website
+  relation: own

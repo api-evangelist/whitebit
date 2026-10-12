@@ -1,0 +1,809 @@
+openapi: 3.2.0
+info:
+  title: Private HTTP API V4 - Collateral Trading Convert API
+  description: 'WhiteBIT Private HTTP API V4 for collateral/margin trading operations.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.
+
+
+    Authentication required for all endpoints.'
+  version: 4.0.0
+  license:
+    name: WhiteBIT Terms of Service
+    url: https://whitebit.com/terms
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Convert
+paths:
+  /api/v4/convert/estimate:
+    post:
+      summary: Convert Estimate
+      description: 'The endpoint creates a quote for converting one currency to another. Quote lifetime is 10 seconds, then quote will be expired.
+
+
+        The minimum convert size is derived from the resulting proceeds, not a fixed per-pair floor: a request is rejected as too small when `rate × amount` rounds to zero in the target currency. Account balance is pre-checked at estimate time and re-checked at confirm time, because balance can change within the 10-second quote window. There is an absolute server-side maximum on the conversion amount.
+
+
+        The endpoint can be used to obtain a pre-execution price estimate for a market order. Call the endpoint with the desired amount before placing a market order to see the approximate execution price.
+
+
+        Error `message` values may be returned as translation keys (for example `validation.required`) rather than finalized English strings. Treat the `code` and the field name under `errors` as the stable contract.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      operationId: convertEstimate
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - from
+              - to
+              - direction
+              - amount
+              properties:
+                from:
+                  type: string
+                  description: 'From currency. Example: BTC'
+                  example: BTC
+                to:
+                  type: string
+                  description: 'To currency. Example: USDT'
+                  example: USDT
+                direction:
+                  type: string
+                  description: Convert amount direction, defines in which currency corresponding "amount" field is populated. Use "to" in case amount is in "to" currency, use "from" if amount is in "from" currency
+                  enum:
+                  - from
+                  - to
+                  example: to
+                amount:
+                  type: string
+                  description: Amount to convert or receive. The value is silently truncated to 8 decimal places before evaluation; excess decimals do not raise an error.
+                  example: 35,103.1
+                nonce:
+                  type: integer
+                  description: Nonce for request
+                  example: 1699260637
+                request:
+                  type: string
+                  description: Request path
+                  example: '{{request}}'
+            examples:
+              estimateReceive:
+                summary: Estimate convert of BTC to receive 35,103.1 USDT
+                value:
+                  amount: 35,103.1
+                  direction: to
+                  from: BTC
+                  to: USDT
+              estimateGive:
+                summary: Estimate convert of 1 BTC to USDT
+                value:
+                  amount: '1'
+                  direction: from
+                  from: BTC
+                  to: USDT
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Quote ID
+                    example: '123'
+                  from:
+                    type: string
+                    description: From currency
+                    example: BTC
+                  to:
+                    type: string
+                    description: To currency
+                    example: USDT
+                  give:
+                    type: string
+                    description: Amount to give
+                    example: '50'
+                  receive:
+                    type: string
+                    description: Amount to receive
+                    example: '1714988.41577452'
+                  rate:
+                    type: string
+                    description: 'Conversion rate expressed in the from→to direction: units of the ''to'' currency received per one unit of the ''from'' currency. Example: if from=BTC and to=USDT, a rate of "34299.76" means 1 BTC is worth approximately 34 299.76 USDT at the time of the quote.'
+                    example: '34299.76831549'
+                  expireAt:
+                    type: integer
+                    description: Quote expiration timestamp
+                    example: 1699016476
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                amountTooBig:
+                  summary: Amount Above Maximum
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - frontendServerSide.converter.amountIsTooBig
+                insufficientBalance:
+                  summary: Insufficient Balance
+                  value:
+                    code: 37
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - validation.balance
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                termsNotAccepted:
+                  summary: Terms Not Accepted
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      user:
+                      - Terms of exchange are not accepted
+                directionInvalid:
+                  summary: Direction Invalid
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      direction:
+                      - Direction field does not exist in [from,to].
+                marketsNotAvailable:
+                  summary: Markets Not Available
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      from:
+                      - Conversion markets not available
+                amountTooSmall:
+                  summary: Amount Below Minimum
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - validation.amount_too_small
+                missingRequiredField:
+                  summary: Missing Required Field
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - validation.required
+      tags:
+      - Convert
+  /api/v4/convert/confirm:
+    post:
+      summary: Convert Confirm
+      description: 'The endpoint confirms an estimated quote.
+
+
+        An expired quote returns code `20` (`api.converter.quoteExpired`), which is distinct from a quote that could not be found (code `0`). Balance is re-checked at confirm time and can fail with code `37` even when the estimate succeeded, because balance may change within the 10-second quote window.
+
+
+        A re-confirmed (already used) quote and a quote that never existed both return code `0` with the `quoteId` field key `frontendServerSide.converter.quoteInvalid`. The response alone does not distinguish "already used" from "never existed".
+
+
+        Error `message` values may be returned as translation keys (for example `api.converter.quoteExpired`) rather than finalized English strings. Treat the `code` and the field name under `errors` as the stable contract.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      operationId: convertConfirm
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - quoteId
+              properties:
+                quoteId:
+                  type: string
+                  description: Quote ID
+                  example: '4050'
+                nonce:
+                  type: integer
+                  description: Nonce for request
+                  example: 1699260637
+                request:
+                  type: string
+                  description: Request path
+                  example: '{{request}}'
+            example:
+              quoteId: '4050'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  finalGive:
+                    type: string
+                    description: Final amount given
+                    example: '0.00002901'
+                  finalReceive:
+                    type: string
+                    description: Final amount received
+                    example: '1'
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                quoteExpired:
+                  summary: Quote Expired
+                  value:
+                    code: 20
+                    message: Validation failed
+                    errors:
+                      quoteId:
+                      - api.converter.quoteExpired
+                insufficientBalance:
+                  summary: Insufficient Balance At Confirm
+                  value:
+                    code: 37
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - validation.balance
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                quoteNotFound:
+                  summary: Quote Not Found
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      quoteId:
+                      - Quote could not be found
+                quoteAlreadyUsed:
+                  summary: Quote Already Confirmed
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      quoteId:
+                      - frontendServerSide.converter.quoteInvalid
+                quoteIdNonNumeric:
+                  summary: Quote ID Not Numeric
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      quoteId:
+                      - validation.numeric_integer
+                quoteIdTooLong:
+                  summary: Quote ID Exceeds Max Length
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      quoteId:
+                      - validation.numeric_field_length
+      tags:
+      - Convert
+  /api/v4/convert/auto-confirm:
+    post:
+      summary: Convert Auto Confirm
+      description: 'The endpoint requests a conversion quote and accepts it in a single call. No separate confirm step and no expiry window apply, so the 10-second quote lifetime that governs Convert Estimate followed by Convert Confirm cannot elapse mid-flow. The spot balance funds the conversion and receives the converted amount, matching the two-step flow.
+
+
+        The endpoint reports a conversion as executed only when the quote is filled and the converted amount is non-zero.
+
+
+        `idempotencyKey` makes a retry safe. The key is scoped to the authenticated account and is claimed before anything is funded or executed. The first request claims the key and converts; a repeat returns the recorded conversion without converting again; a duplicate that arrives while the claim is held waits for the original and receives the same reply. A request that fails before anything was executed frees the key, so a retry converts. Without a key, a retry converts a second time.
+
+
+        The key is bound to the request that first executed it. Reuse with different parameters returns `409` (`frontendServerSide.converter.idempotencyKeyReused`) instead of replaying the earlier conversion.
+
+
+        The `id` returned on success is the quote ID of the executed conversion and is accepted as the `quoteId` filter on Convert History.
+
+
+        **Rate limit:** 10,000 requests / 10 sec per IP address — the default for all endpoints. See Rate limits.
+
+
+        The idempotency claim is held for a few seconds and is configurable. The claim is taken once and is never renewed, and execution can outlast it. A retry sent after the claim lapses but before the original request finishes converts a second time.
+
+
+        For errors forwarded from the conversion service — `409` and `502` — the top-level `code` field is `0` and the top-level `message` field is the generic value `api.httpErrors.invalidRequest`. The specific condition appears in `errors.[0]`. Branch on the HTTP status code rather than on `code`.
+
+
+        Do not retry a `502`, with the same key or a new one — contact support to reconcile. A retry with the same key returns the same `502`.
+
+
+        Error `message` values may be returned as translation keys (for example `validation.balance`) rather than finalized English strings. Treat the `code` and the field name under `errors` as the stable contract.'
+      operationId: convertAutoConfirm
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - from
+              - to
+              - direction
+              - amount
+              properties:
+                from:
+                  type: string
+                  description: 'From currency. Example: BTC'
+                  example: BTC
+                to:
+                  type: string
+                  description: 'To currency. Example: USDT'
+                  example: USDT
+                direction:
+                  type: string
+                  description: Convert amount direction, defines in which currency corresponding "amount" field is populated. Use "to" in case amount is in "to" currency, use "from" if amount is in "from" currency
+                  enum:
+                  - from
+                  - to
+                  example: from
+                amount:
+                  type: string
+                  description: Amount to convert or receive. The value is silently truncated to 8 decimal places before evaluation; excess decimals do not raise an error.
+                  example: '0.1'
+                idempotencyKey:
+                  type: string
+                  minLength: 8
+                  maxLength: 128
+                  description: Optional idempotency key. Any characters are accepted; the bounds are a length check on a free-form string and never a comparison of a digits-only key as a number, so `"12345678"` is valid and `"123"` is too short. A UUID is the usual choice.
+                  example: 9f1c2b7e-4d3a-4f21-9c88-6e5b0a71d240
+                nonce:
+                  type: integer
+                  description: Nonce for request
+                  example: 1699260637
+                request:
+                  type: string
+                  description: Request path
+                  example: '{{request}}'
+            example:
+              from: BTC
+              to: USDT
+              direction: from
+              amount: '0.1'
+              idempotencyKey: 9f1c2b7e-4d3a-4f21-9c88-6e5b0a71d240
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Quote ID of the executed conversion. Accepted as the `quoteId` filter on the convert history endpoint.
+                    example: '987654321'
+                  finalGive:
+                    type: string
+                    description: Final amount given, in the `from` currency
+                    example: '0.10000000'
+                  finalReceive:
+                    type: string
+                    description: Final amount received, in the `to` currency
+                    example: '6543.21000000'
+              example:
+                id: '987654321'
+                finalGive: '0.10000000'
+                finalReceive: '6543.21000000'
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficientBalance:
+                  summary: Insufficient Balance
+                  value:
+                    code: 37
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - validation.balance
+                amountTooBig:
+                  summary: Amount Above Maximum
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - frontendServerSide.converter.amountIsTooBig
+        '409':
+          description: 'Idempotency key conflict. The endpoint executed no conversion.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                requestInFlight:
+                  summary: Duplicate Request Still Running
+                  value:
+                    code: 0
+                    message: api.httpErrors.invalidRequest
+                    errors:
+                      request:
+                      - frontendServerSide.converter.requestInFlight
+                idempotencyKeyReused:
+                  summary: Key Reused For A Different Request
+                  value:
+                    code: 0
+                    message: api.httpErrors.invalidRequest
+                    errors:
+                      request:
+                      - frontendServerSide.converter.idempotencyKeyReused
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingRequiredField:
+                  summary: Missing Required Field
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - validation.required
+                directionInvalid:
+                  summary: Direction Invalid
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      direction:
+                      - Direction field does not exist in [from,to].
+                amountTooSmall:
+                  summary: Amount Below Minimum
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - validation.amount_too_small
+                termsNotAccepted:
+                  summary: Terms Not Accepted
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      user:
+                      - Terms of exchange are not accepted
+                marketsNotAvailable:
+                  summary: Markets Not Available
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      from:
+                      - Conversion markets not available
+        '502':
+          description: 'The conversion service returned no usable verdict. The conversion may have executed. Two states produce a `502` and the response does not distinguish between the two: a transfer may still be outstanding, or the conversion was delivered and only the idempotency record failed to persist.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: 0
+                message: api.httpErrors.invalidRequest
+                errors:
+                  request:
+                  - frontendServerSide.converter.outcomeUnknown
+        '503':
+          description: Conversion is disabled on the platform by the convert kill switch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+      - Convert
+  /api/v4/convert/history:
+    post:
+      summary: Convert History
+      description: 'The endpoint returns convert history, sorted by `id` descending (newest first).
+
+
+        The `from`–`to` window is capped at 30 days per request, even though data is retained for 6 months. A wider range is rejected with code `30` (`api.validation.dateTime.maxRange`).
+
+
+        Rate limit: 10000 requests/10 sec.
+
+
+        Error `message` values may be returned as translation keys (for example `api.validation.dateTime.maxRange`) rather than finalized English strings. Treat the `code` and the field name under `errors` as the stable contract.
+
+
+        **Note:** The endpoint can retrieve data not older than 6 months from the current month. For older data, use the Report on the History page.'
+      operationId: convertHistory
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fromTicker:
+                  type: string
+                  description: 'From currency. Example: BTC'
+                  example: BTC
+                toTicker:
+                  type: string
+                  description: 'To currency. Example: USDT'
+                  example: USDT
+                from:
+                  type: string
+                  description: 'From time filter (Unix seconds). Must be no more than 30 days before `to` and no older than 6 months. Example: 1699260637. Default: now()'
+                  example: '1699260637'
+                to:
+                  type: string
+                  description: 'To time filter (Unix seconds). Must be no more than 30 days after `from`. Example: 1699260637. Default: now()'
+                  example: '1699260637'
+                quoteId:
+                  type: string
+                  description: 'Quote Id. Example: 4050'
+                  example: '4050'
+                limit:
+                  type: integer
+                  description: 'How many records to receive. Allowed range: 1–100. Default: 100'
+                  minimum: 1
+                  maximum: 100
+                  example: 100
+                offset:
+                  type: integer
+                  description: 'Number of records to skip for pagination. Minimum: 0. Default: 0'
+                  minimum: 0
+                  example: 0
+                nonce:
+                  type: integer
+                  description: Nonce for request
+                  example: 1699260637
+                request:
+                  type: string
+                  description: Request path
+                  example: '{{request}}'
+            example:
+              fromTicker: BTC
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          description: Convert record ID
+                          example: '4030'
+                        date:
+                          type: integer
+                          description: Conversion timestamp
+                          example: 1699020642
+                        give:
+                          type: string
+                          description: Amount given
+                          example: '0.00002901'
+                        receive:
+                          type: string
+                          description: Amount received
+                          example: '1'
+                        rate:
+                          type: string
+                          description: Conversion rate
+                          example: '34470.87211306'
+                        path:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              from:
+                                type: string
+                                example: BTC
+                              to:
+                                type: string
+                                example: USDT
+                              rate:
+                                type: string
+                                example: '34470.87211306'
+                  total:
+                    type: integer
+                    description: Total number of records
+                    example: 4
+                  limit:
+                    type: integer
+                    description: Limit used in request
+                    example: 1
+                  offset:
+                    type: integer
+                    description: Offset used in request
+                    example: 0
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                fromTickerInvalid:
+                  summary: FromTicker Invalid
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      fromTicker:
+                      - fromTicker is invalid.
+                toTickerInvalid:
+                  summary: ToTicker Invalid
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      toTicker:
+                      - toTicker is invalid.
+                dateRangeExceeded:
+                  summary: Date Range Exceeds 30 Days
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      from:
+                      - api.validation.dateTime.maxRange
+                      to:
+                      - api.validation.dateTime.maxRange
+                dateNonInteger:
+                  summary: Date Not An Integer Timestamp
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      from:
+                      - validation.numeric_integer
+                dateOutOfRange:
+                  summary: Date Outside Allowed Range
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      from:
+                      - validation.numeric_field_length
+                limitOutOfRange:
+                  summary: Limit Out Of Range
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - validation.numeric_field_length
+                offsetNegative:
+                  summary: Offset Below Minimum
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      offset:
+                      - validation.length_min
+      tags:
+      - Convert
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Error code
+          example: 30
+        message:
+          type: string
+          description: Error message
+          example: Validation failed
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Detailed error information
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

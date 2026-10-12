@@ -1,0 +1,182 @@
+openapi: 3.2.0
+info:
+  title: OAuth 2.0 API Reference Account Endpoints API
+  description: WhiteBIT OAuth 2.0 API for authentication and account management
+  version: 1.0.0
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+tags:
+- name: Account Endpoints
+  description: Endpoints for retrieving account information, balances, and transaction history
+paths:
+  /api/v4/accounts/transactions:
+    post:
+      summary: Get Account Transactions
+      description: This endpoint retrieves a paginated list of account transactions.
+      tags:
+      - Account Endpoints
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-main-v4#get-depositwithdraw-history
+      operationId: postApiV4AccountsTransactions
+      x-operation-id-source: derived
+  /api/v4/accounts/converts:
+    post:
+      summary: Get Currency Conversions
+      description: This endpoint retrieves the history of currency conversions.
+      tags:
+      - Account Endpoints
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-trade-v4#convert-history
+      operationId: postApiV4AccountsConverts
+      x-operation-id-source: derived
+  /api/v4/accounts/orders:
+    post:
+      summary: Get Orders History
+      description: This endpoint retrieves the history of trading orders.
+      tags:
+      - Account Endpoints
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-trade-v4#query-executed-orders
+      operationId: postApiV4AccountsOrders
+      x-operation-id-source: derived
+  /api/v4/accounts/deals:
+    post:
+      summary: Get Executed Deals
+      description: This endpoint retrieves the history of executed deals.
+      tags:
+      - Account Endpoints
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-trade-v4#query-executed-order-history
+      operationId: postApiV4AccountsDeals
+      x-operation-id-source: derived
+  /api/v4/accounts/balances/main:
+    post:
+      summary: Get Main Account Balance
+      description: This endpoint retrieves the main account balance information.
+      tags:
+      - Account Endpoints
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-main-v4#main-balance
+      operationId: postApiV4AccountsBalancesMain
+      x-operation-id-source: derived
+  /api/v4/accounts/balances/spot:
+    post:
+      summary: Get Spot Account Balance
+      description: This endpoint retrieves the spot trading account balance information.
+      tags:
+      - Account Endpoints
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+      externalDocs:
+        description: View complete documentation
+        url: /private/http-trade-v4#trading-balance
+      operationId: postApiV4AccountsBalancesSpot
+      x-operation-id-source: derived
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'OAuth 2.0 Bearer Token authentication. Include the access token in the Authorization header.
+
+
+        Example: `Authorization: Bearer YOUR_ACCESS_TOKEN`
+
+        '

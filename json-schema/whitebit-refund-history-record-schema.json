@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/whitebit/main/json-schema/whitebit-refund-history-record-schema.json",
+  "title": "RefundHistoryRecord",
+  "x-generated": "2026-10-13",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/RefundHistoryRecord",
+  "type": "object",
+  "required": [
+    "depositId",
+    "depositAmount",
+    "refundId",
+    "refundAddress",
+    "refundAmount",
+    "status"
+  ],
+  "properties": {
+    "depositId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Transaction UUID of the refunded deposit"
+    },
+    "currency": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Currency name. `null` if the currency was removed after the refund."
+    },
+    "ticker": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Currency [ticker](/glossary#ticker). `null` if the currency was removed after the refund."
+    },
+    "network": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Deposit network. `null` if the currency was removed after the refund."
+    },
+    "depositAmount": {
+      "type": "string",
+      "description": "Amount of the original deposit"
+    },
+    "refundId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Refund UUID"
+    },
+    "refundAddress": {
+      "type": "string",
+      "description": "Destination address of the refund"
+    },
+    "refundAmount": {
+      "type": "string",
+      "description": "Refund amount"
+    },
+    "refundHash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Blockchain transaction hash of the refund. `null` unless `status` is `successful`."
+    },
+    "memo": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Destination [memo](/glossary#memodestination-tag) sent in the [refund request](/api-reference/account-wallet/refund-deposit). `null` if no memo was sent.\n"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_process",
+        "successful",
+        "canceled"
+      ],
+      "description": "Refund status:\n- `in_process` — the refund is not final. Every non-final state maps to this value.\n- `successful` — the refund is complete.\n- `canceled` — the refund is canceled. Final.\n"
+    },
+    "createdAt": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Refund creation time, Unix timestamp in seconds"
+    },
+    "processedAt": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "Time the refund reached its current status, Unix timestamp in seconds. `null` while `status` is `in_process`."
+    }
+  }
+}

@@ -1,0 +1,174 @@
+openapi: 3.2.0
+info:
+  title: WhiteBIT Private HTTP API V4 Fees API
+  description: 'WhiteBIT Private HTTP API V4 for Main balance changes.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.'
+  version: 4.0.0
+  contact:
+    name: WhiteBIT Support
+    email: support@whitebit.com
+    url: https://whitebit.com
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Fees
+  description: Fee information
+paths:
+  /api/v4/main-account/fee:
+    post:
+      tags:
+      - Fees
+      summary: Get fees
+      description: 'Returns an array of objects containing deposit/withdrawal fees for the corresponding currencies.
+
+        Zero value in amount fields means that the setting is disabled.
+
+
+        The endpoint takes no input beyond the signed request envelope and returns the full per-currency fee schedule on success. It can return only the common authentication errors.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getFees
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeeInfo'
+components:
+  schemas:
+    FeeInfo:
+      type: object
+      properties:
+        ticker:
+          type: string
+          description: Currency [ticker](/glossary#ticker)
+          example: ETH
+        name:
+          type: string
+          description: Currency name
+          example: Ethereum
+        can_deposit:
+          type: boolean
+          description: Deposit status (currency availability)
+          example: true
+        can_withdraw:
+          type: boolean
+          description: Withdrawal status (currency availability)
+          example: true
+        deposit:
+          type: object
+          description: Deposit fees and limits
+          properties:
+            minFlex:
+              type: string
+              description: Minimum fee amount when flex fee is enabled
+              example: '0'
+            maxFlex:
+              type: string
+              description: Maximum fee amount when flex fee is enabled
+              example: '0'
+            percentFlex:
+              type: string
+              description: Flex fee percent
+              example: '0'
+            fixed:
+              type: string
+              description: Fixed fee
+              example: '0'
+            minAmount:
+              type: string
+              description: Minimum deposit amount
+              example: '0.01'
+            maxAmount:
+              type: string
+              description: Maximum deposit amount
+              example: '0'
+        withdraw:
+          type: object
+          description: Withdrawal fees and limits
+          properties:
+            minFlex:
+              type: string
+              description: Minimum fee amount when flex fee is enabled
+              example: '0'
+            maxFlex:
+              type: string
+              description: Maximum fee amount when flex fee is enabled
+              example: '0'
+            percentFlex:
+              type: string
+              description: Flex fee percent
+              example: '0'
+            fixed:
+              type: string
+              description: Fixed fee
+              example: '0.0004'
+            minAmount:
+              type: string
+              description: Minimum withdrawal amount
+              example: '0.01'
+            maxAmount:
+              type: string
+              description: Maximum withdrawal amount
+              example: '0'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

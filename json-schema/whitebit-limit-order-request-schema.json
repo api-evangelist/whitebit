@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/whitebit/main/json-schema/whitebit-limit-order-request-schema.json",
+  "title": "LimitOrderRequest",
+  "x-generated": "2026-10-13",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/LimitOrderRequest",
+  "type": "object",
+  "required": [
+    "market",
+    "side",
+    "amount",
+    "request",
+    "nonce"
+  ],
+  "properties": {
+    "market": {
+      "type": "string",
+      "description": "Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets."
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "buy",
+        "sell"
+      ],
+      "description": "Order side. Allowed values: `buy`, `sell`."
+    },
+    "amount": {
+      "type": "string",
+      "description": "Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`. Precision: `stockPrec`."
+    },
+    "price": {
+      "type": "string",
+      "description": "Limit price per unit in quote (money) currency. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Precision: `moneyPrec`."
+    },
+    "clientOrderId": {
+      "type": "string",
+      "description": "Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores."
+    },
+    "postOnly": {
+      "type": "boolean",
+      "default": false,
+      "description": "Post-only flag. When `true`, the order executes only as a [maker](/glossary#maker) order and the system rejects the order if it would match immediately. Allowed only when `bboRole` is not set. Do not combine with `rpi=true` — RPI orders apply post-only behavior automatically, and a request setting both flags fails validation. Default: `false`."
+    },
+    "ioc": {
+      "type": "boolean",
+      "default": false,
+      "description": "Immediate-or-cancel (IOC) flag. When `true`, the matching engine executes all or part of the order immediately and cancels any unfilled portion. Default: `false`.\n\nIOC does not support `rpi=true` because RPI uses post-only behavior by design.\nThe API returns error code `40` when a request sets both `ioc=true` and `rpi=true`.\nIOC cannot be combined with `postOnly=true` (error code `37`), and with `bboRole` it is allowed only for the Counterparty method (`2`).\n\nRefer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.\n"
+    },
+    "bboRole": {
+      "type": "integer",
+      "enum": [
+        1,
+        2
+      ],
+      "description": "Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method.\n\nWhen `bboRole` is set, `price` is not required — the BBO method determines the execution price. `postOnly` is allowed only when `bboRole` is not set; `ioc` can be combined only with the Counterparty method (`2`). Use method `2` with the `ioc` flag.\n\nRefer to [Order Parameter Rules](/guides/order-parameter-rules) for the full interaction rules.\n"
+    },
+    "stp": {
+      "type": "string",
+      "enum": [
+        false,
+        "cb",
+        "cn",
+        "co"
+      ],
+      "default": false,
+      "description": "Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.\n\nLegacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.\n\nSee [Self-Trade Prevention](/platform/self-trade-prevention).\n"
+    },
+    "rpi": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enables Retail Price Improvement (RPI) mode. Default: `false`.\n\nRPI orders apply post-only behavior automatically — do not also send an explicit `postOnly=true`: a request combining the two flags fails validation. An RPI order does not support `ioc=true`.\nThe API returns error code `40` when a request sets both `rpi=true` and `ioc=true`.\nRPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).\nRPI executions may apply custom fees or rebates, especially when trading via sub-accounts. Use Query Market Fees to verify effective fees.\n\nRefer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.\n"
+    },
+    "retail": {
+      "type": "boolean",
+      "default": false,
+      "description": "Retail-source taker flag. When `true`, the order is eligible to match against orders submitted by RPI makers and may receive price improvement at execution. Default: `false`.\n\nThe Retail flag must be enabled on the account before a private-API request can set `retail=true`. Contact the account manager to enable the Retail flag.\n\nThe flag has no effect on a `postOnly=true` or `rpi=true` order. Post-only and RPI orders are [makers](/glossary#maker); only takers carry the retail designation. An order with both `rpi=true` and `retail=true` matches exactly like an RPI order.\n\nRefer to [Retail flag](/glossary#retail-flag) and [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.\n"
+    },
+    "request": {
+      "type": "string"
+    },
+    "nonce": {
+      "type": "integer"
+    }
+  }
+}

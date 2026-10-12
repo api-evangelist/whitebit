@@ -1,0 +1,509 @@
+openapi: 3.2.0
+info:
+  title: WhiteBIT Private HTTP API V4 Transfer API
+  description: 'WhiteBIT Private HTTP API V4 for Main balance changes.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.'
+  version: 4.0.0
+  contact:
+    name: WhiteBIT Support
+    email: support@whitebit.com
+    url: https://whitebit.com
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Transfer
+  description: Balance transfer operations
+paths:
+  /api/v4/main-account/transfer:
+    post:
+      tags:
+      - Transfer
+      summary: Transfer between balances
+      description: 'The endpoint transfers the specified amount between main, trade and collateral balances.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.
+
+
+        Also, fiat currencies can''t be transferred without KYC verification.'
+      operationId: transferBetweenBalances
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - ticker
+              - amount
+              - request
+              - nonce
+              properties:
+                method:
+                  type: string
+                  description: 'Transfer method.
+
+
+                    ⚠️ We highly recommend to use **from** and **to** fields, which provides more flexibility. This way will be deprecated in future.
+
+
+                    Example: **deposit** to transfer from [main](/glossary#balance-main) to [trade](/glossary#balance-spotbalance-trade) / **withdraw** to transfer from [trade](/glossary#balance-spotbalance-trade) balance to [main](/glossary#balance-main). For [collateral balances](/glossary#balance-collateral) use **collateral-deposit** to transfer from main to collateral and **collateral-withdraw** to transfer from collateral to main
+
+
+                    **Not required** if **from** and **to** are set.
+
+                    '
+                  enum:
+                  - deposit
+                  - withdraw
+                  - collateral-deposit
+                  - collateral-withdraw
+                  example: deposit
+                from:
+                  type: string
+                  description: 'Balance FROM which funds will move to. Acceptable values: [**main**](/glossary#balance-main), [**spot**](/glossary#balance-spotbalance-trade), [**collateral**](/glossary#balance-collateral)
+
+
+                    **Not required** if **method** is set.
+
+                    '
+                  enum:
+                  - main
+                  - spot
+                  - collateral
+                  example: main
+                to:
+                  type: string
+                  description: 'Balance TO which funds will move to. Acceptable values: [**main**](/glossary#balance-main), [**spot**](/glossary#balance-spotbalance-trade), [**collateral**](/glossary#balance-collateral)
+
+
+                    **Not required** if **method** is set.
+
+                    '
+                  enum:
+                  - main
+                  - spot
+                  - collateral
+                  example: spot
+                ticker:
+                  type: string
+                  description: 'Currency''s [ticker](/glossary#ticker). Example: BTC'
+                  example: XLM
+                amount:
+                  type: string
+                  description: Amount to transfer. Max [precision](/glossary#precision) = 8, value must be greater than zero and less than or equal to the available balance.
+                  example: '0.9'
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            examples:
+              usingMethod:
+                summary: Using method field (deprecated)
+                value:
+                  ticker: XLM
+                  amount: '0.9'
+                  method: deposit
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              usingFromTo:
+                summary: Using from/to fields (recommended)
+                value:
+                  ticker: XLM
+                  amount: '0.9'
+                  from: main
+                  to: spot
+                  request: '{{request}}'
+                  nonce: 1594297865000
+      responses:
+        '201':
+          description: All validations succeeded and creating transaction is started
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+                description: Empty array indicates success
+              example: []
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount field is required.
+                      method:
+                      - The method field is required.
+                      ticker:
+                      - The ticker field is required.
+                invalidTicker:
+                  summary: Invalid ticker
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - The selected ticker is invalid.
+                unconfirmedUser:
+                  summary: Unconfirmed user (without KYC)
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - This currency has no active pairs or it may have been delisted. Its rate cannot be calculated at the moment.
+                      - Current limit exceeded
+                accountVerification:
+                  summary: Account must be verified for fiat currencies
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Your account must be verified
+                invalidMethod:
+                  summary: Invalid method
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      method:
+                      - The selected method is invalid.
+                invalidFromTo:
+                  summary: Invalid from/to balance type
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      from:
+                      - The selected from is invalid.
+                      to:
+                      - The selected to is invalid.
+                sameFromTo:
+                  summary: Source and destination balance are the same
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      to:
+                      - The to and from must be different.
+                amountTooSmall:
+                  summary: Amount too small
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount must be at least 0.00000001.
+                invalidAmount:
+                  summary: Invalid amount format
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount must be a number.
+                      - Invalid number
+                throttling:
+                  summary: Rate limiting/throttling
+                  value:
+                    message: Too Many Attempts.
+                    code: 0
+        '422':
+          description: "Inner validation failed\n\nResponse error codes:\n- 1 - transfers from [trade](/glossary#balance-spotbalance-trade) to [main](/glossary#balance-main) are disabled, or withdraw of this currency is disabled\n- 2 - transfers from [main](/glossary#balance-main) to [trade](/glossary#balance-spotbalance-trade) are disabled, or deposit of this currency is disabled\n- 3 - not enough balance\n\nAdditional account-state outcomes are returned here with `code: 0` (the message is\nlocalized — match on the condition, not the exact string):\n- **Collateral transfer unavailable** — the [collateral](/glossary#balance-collateral)\n  (margin) feature is not available to this account; on field `error`, e.g.\n  `Unavailable for legal reasons`.\n- **Operation not permitted for a sub-account** — on field `error`, e.g.\n  `Not permitted for sub-account`.\n- **Maximum collateral balance exceeded** — the transfer would push the\n  [collateral balance](/glossary#balance-collateral) past its cap; on field `form`.\n- **Amount still held back by an unconfirmed deposit** — moving to the\n  [collateral balance](/glossary#balance-collateral) is rejected while deposits\n  credited before full network confirmation are held back; on field `amount`. Transfers\n  to the [trade balance](/glossary#balance-spotbalance-trade) are never restricted this\n  way. See [Withdrawable balance](/api-reference/account-wallet/withdrawable-balance).\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                notEnoughBalance:
+                  summary: Not enough balance
+                  value:
+                    code: 3
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - 'You don''t have such amount for transfer (available 34.68, in amount: 1000000)'
+                currencyWithdrawDisabled:
+                  summary: Withdraw of this currency is disabled
+                  value:
+                    code: 1
+                    message: Inner validation failed
+                    errors:
+                      currency:
+                      - Withdraw from this currency is disabled
+                currencyDepositDisabled:
+                  summary: Deposit to this currency is disabled
+                  value:
+                    code: 2
+                    message: Inner validation failed
+                    errors:
+                      currency:
+                      - Deposit to this currency is disabled
+  /api/v4/main-account/transfer/history:
+    post:
+      tags:
+      - Transfer
+      summary: Get transfer history
+      description: 'The endpoint returns the history of transfers between the main, spot and collateral balances of the authenticated account, newest first.
+
+
+        The endpoint requires an API key with the **Balance transfer** permission enabled — the same permission as Transfer between balances.
+
+
+        For transfers between a main account and its sub-accounts, use Get Sub-Account Transfer History instead.
+
+
+        Every transfer is recorded with the main balance on one side. A transfer between the spot and collateral balances executes as two steps through the main balance, so such a transfer appears as two records — `spot → main` and `main → collateral` — each carrying a separate identifier and the full transferred amount. Account for both records when summing amounts. Filter combinations that cannot be stored (`spot` with `collateral`, `collateral` with `spot`, or the same balance on both sides) return an empty `data` array — filter by the individual legs instead.
+
+
+        Records are ordered from newest to oldest by the order of execution. Neither `id` nor `created_at` is a sort key — `id` is a random identifier, and two records can share the same `created_at` second — so page through the history with `limit` and `offset`. The response carries no total count and no cursor: a returned count below `limit` marks the last page, and an empty array means no further records. `offset` cannot exceed `10000` — for a longer history, use report generation on the History page.
+
+
+        The API does not cache the response. `POST /api/v4/main-account/transfer` returns `201` as soon as a transfer is queued, so a request sent immediately afterwards can return no records yet. The history also covers transfers the platform performs for the account, such as mining-pool conversions, and transfers in delisted currencies. Every returned transfer is completed.'
+      operationId: getMainAccountTransferHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                from_balance:
+                  type: string
+                  description: 'Balance FROM which funds moved. Acceptable values: [**main**](/glossary#balance-main), [**spot**](/glossary#balance-spotbalance-trade), [**collateral**](/glossary#balance-collateral). Do not send this parameter in order to receive transfers from every balance.
+
+
+                    Values are case-sensitive — `main`, not `MAIN`. An empty string counts as no filter.
+
+                    '
+                  enum:
+                  - main
+                  - spot
+                  - collateral
+                  example: main
+                to_balance:
+                  type: string
+                  description: 'Balance TO which funds moved. Acceptable values: [**main**](/glossary#balance-main), [**spot**](/glossary#balance-spotbalance-trade), [**collateral**](/glossary#balance-collateral). Do not send this parameter in order to receive transfers to every balance.
+
+
+                    Values are case-sensitive — `main`, not `MAIN`. An empty string counts as no filter.
+
+                    '
+                  enum:
+                  - main
+                  - spot
+                  - collateral
+                  example: spot
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 100
+                  description: 'Number of records to return. Default: 100, Min: 1, Max: 100'
+                  example: 50
+                offset:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+                  default: 0
+                  description: 'Number of records to skip. Default: 0, Min: 0, Max: 10000'
+                  example: 0
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            examples:
+              firstPage:
+                summary: First page, transfers between all balances
+                value:
+                  limit: 50
+                  offset: 0
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              secondPage:
+                summary: Second page, filtered by source balance
+                value:
+                  from_balance: main
+                  limit: 50
+                  offset: 50
+                  request: '{{request}}'
+                  nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    description: Transfers ordered from newest to oldest.
+                    items:
+                      $ref: '#/components/schemas/MainAccountBalanceTransfer'
+                  limit:
+                    type: integer
+                    description: Number of records requested, echoed from the request.
+                  offset:
+                    type: integer
+                    description: Number of records skipped, echoed from the request.
+              example:
+                data:
+                - id: b1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+                  currency: USDT
+                  amount: '150.5'
+                  from_balance: main
+                  to_balance: spot
+                  created_at: 1755000000
+                - id: 9c8b7a6d-5e4f-4a3b-9c8d-7e6f5a4b3c2d
+                  currency: USDT
+                  amount: '40'
+                  from_balance: main
+                  to_balance: collateral
+                  created_at: 1754990000
+                - id: 5f4e3d2c-1b0a-4c9d-8e7f-6a5b4c3d2e1f
+                  currency: USDT
+                  amount: '40'
+                  from_balance: spot
+                  to_balance: main
+                  created_at: 1754990000
+                limit: 50
+                offset: 0
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                unsupportedBalance:
+                  summary: Unsupported balance value
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      from_balance:
+                      - The selected from_balance is invalid.
+components:
+  schemas:
+    ErrorInner:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    MainAccountBalanceTransfer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Transfer identifier (UUID). Each record carries a separate identifier, including both records of a transfer between the spot and collateral balances.
+          example: b1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d
+        currency:
+          type: string
+          description: 'Currency''s [ticker](/glossary#ticker). Example: USDT'
+          example: USDT
+        amount:
+          type: string
+          description: Transferred amount, with trailing zeros trimmed.
+          example: '150.5'
+        from_balance:
+          type: string
+          description: 'Balance FROM which funds moved: [**main**](/glossary#balance-main), [**spot**](/glossary#balance-spotbalance-trade) or [**collateral**](/glossary#balance-collateral)'
+          enum:
+          - main
+          - spot
+          - collateral
+          example: main
+        to_balance:
+          type: string
+          description: 'Balance TO which funds moved: [**main**](/glossary#balance-main), [**spot**](/glossary#balance-spotbalance-trade) or [**collateral**](/glossary#balance-collateral)'
+          enum:
+          - main
+          - spot
+          - collateral
+          example: spot
+        created_at:
+          type: integer
+          description: Time the transfer was executed, as a Unix timestamp in seconds. Not the time the transfer request was accepted.
+          example: 1755000000
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

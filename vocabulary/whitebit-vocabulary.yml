@@ -1,0 +1,448 @@
+generated: '2026-10-13'
+method: derived
+generator: derive-vocabulary.py
+source:
+- openapi/whitebit-address-checker-openapi.yml
+- openapi/whitebit-http-trade-v4-openapi.yml
+- openapi/whitebit-http-v1-openapi.yml
+- openapi/whitebit-http-v4-openapi.yml
+- openapi/whitebit-main-api-v4-openapi.yml
+vocabulary:
+  name: WhiteBIT Domain Vocabulary
+  description: 'Terms declared by WhiteBIT''s own API contract: its resource groups, objects and enumerations, with the contract''s definitions.
+    Derived, not authored.'
+  version: '2026-10-13'
+  terms:
+  - term: Address Checker
+    definition: Address Checker endpoints for B2B address screening
+    tags:
+    - Resource Group
+    source: openapi/whitebit-address-checker-openapi.yml
+  - term: Collateral Trading
+    definition: Endpoints for collateral/margin trading operations
+    tags:
+    - Resource Group
+    source: openapi/whitebit-http-trade-v4-openapi.yml
+  - term: Spot Trading
+    definition: Endpoints for spot trading operations
+    tags:
+    - Resource Group
+    source: openapi/whitebit-http-trade-v4-openapi.yml
+  - term: Market Fee
+    definition: Endpoints for querying trading fees
+    tags:
+    - Resource Group
+    source: openapi/whitebit-http-trade-v4-openapi.yml
+  - term: Public API V1
+    definition: Public endpoints for market data and trading information
+    tags:
+    - Resource Group
+    source: openapi/whitebit-http-v1-openapi.yml
+  - term: Public API V4
+    definition: Public endpoints for market data, trading information, and platform status
+    tags:
+    - Resource Group
+    source: openapi/whitebit-http-v4-openapi.yml
+  - term: Main Account
+    definition: Main account balance and operations
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Deposit
+    definition: Cryptocurrency and fiat deposit operations
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Withdraw
+    definition: Cryptocurrency and fiat withdrawal operations
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Transfer
+    definition: Balance transfer operations
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Codes
+    definition: WhiteBIT codes operations
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Crypto Lending - Fixed
+    definition: Fixed crypto lending plans
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Crypto Lending - Flex
+    definition: Flexible crypto lending plans
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Fees
+    definition: Fee information
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Sub-Account
+    definition: Sub-account management
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Sub-Account API Keys
+    definition: Sub-account API key management
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Mining Pool
+    definition: Mining pool operations
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Credit Line
+    definition: Credit line information
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: JWT
+    definition: JWT token management
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Travel Rule
+    definition: Travel Rule compliance endpoints for deposits and withdrawals
+    tags:
+    - Resource Group
+    source: openapi/whitebit-main-api-v4-openapi.yml
+  - term: Authentication
+    definition: 'OAuth 2.0 authentication endpoints for obtaining and refreshing access tokens. Available Scopes (requested during client setup):
+      - general: General API access - show.userinfo: Access to basic user information - users.read: Read user data - users.email.read: Read user
+      email information - users.kyc.read: Information about whether a user has passed KYC verification - orders.read: Read trading orders '
+    tags:
+    - Resource Group
+    source: openapi/whitebit-oauth2-openapi.yml
+  - term: Account Endpoints
+    definition: Endpoints for retrieving account information, balances, and transaction history
+    tags:
+    - Resource Group
+    source: openapi/whitebit-oauth2-openapi.yml
+  - term: OAuth API Keys
+    definition: 'Partner-facing endpoints for managing API keys created via the OAuth API key flow. Available on the global server (`https://whitebit.com`)
+      only. The EU server (`https://whitebit.eu`) does not expose these endpoints in this release. Required scopes: - `apikeys.read` for `GET
+      /oauth2/api-key/info` and `GET /oauth2/api-key/{externalId}/secret` - `apikeys.delete` for `DELETE /oauth2/api-key/{externalI'
+    tags:
+    - Resource Group
+    source: openapi/whitebit-oauth2-openapi.yml
+  - term: SupportedAsset
+    definition: 'Object declared by the contract with fields: asset, network.'
+    tags:
+    - Object
+    source: openapi/whitebit-address-checker-openapi.yml#/components/schemas/SupportedAsset
+  - term: CreateCheckResponse
+    definition: 'Object declared by the contract with fields: id.'
+    tags:
+    - Object
+    source: openapi/whitebit-address-checker-openapi.yml#/components/schemas/CreateCheckResponse
+  - term: CreateCheckBalanceError
+    definition: Returned with HTTP 200 when the main balance is insufficient to perform the address check. The account is not charged.
+    tags:
+    - Object
+    source: openapi/whitebit-address-checker-openapi.yml#/components/schemas/CreateCheckBalanceError
+  - term: CheckResultResponse
+    definition: 'Object declared by the contract with fields: id, checkedAt, status, riskLevel, riskDescription.'
+    tags:
+    - Object
+    source: openapi/whitebit-address-checker-openapi.yml#/components/schemas/CheckResultResponse
+  - term: CheckHistoryItem
+    definition: 'Object declared by the contract with fields: id, asset, network, address, riskLevel, riskDescription, status, checkedAt.'
+    tags:
+    - Object
+    source: openapi/whitebit-address-checker-openapi.yml#/components/schemas/CheckHistoryItem
+  - term: CheckHistoryResponse
+    definition: 'Object declared by the contract with fields: data, limit, offset.'
+    tags:
+    - Object
+    source: openapi/whitebit-address-checker-openapi.yml#/components/schemas/CheckHistoryResponse
+  - term: EndpointAuthError
+    definition: 'Object declared by the contract with fields: code, message.'
+    tags:
+    - Object
+    source: openapi/whitebit-address-checker-openapi.yml#/components/schemas/EndpointAuthError
+  - term: ActiveOrderStatus
+    definition: Order status. `FILLED` — fully executed. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED` — canceled
+      before full execution. REST uses the single-`L` spelling `CANCELED`; the double-`L` `CANCELLED` and the WebSocket-only `NEW` state are not
+      returned by this API.
+    tags:
+    - Enumeration
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/ActiveOrderStatus
+  - term: OrderStatus
+    definition: 'Order lifecycle status. `FILLED` — fully executed. `CANCELED` — canceled before execution. `PARTIALLY_FILLED` — partially executed,
+      remainder still active. `CANCELED_TAKER_BAND` — partially filled up to the taker band limit, remainder canceled to protect against excessive
+      order book slippage. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was '
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/OrderStatus
+  - term: OrderHistoryStatus
+    definition: Order status returned by this endpoint, in uppercase. `FILLED` — fully executed. `CANCELED` — canceled before full execution;
+      the endpoint also returns `AUTO_CANCELED_MARGIN_EXCHANGE_BALANCE` (order auto-canceled on insufficient margin or exchange balance) collapsed
+      into `CANCELED`. `AUTO_CANCELED_LIQUIDATION` — auto-canceled because the associated position was force-liquidated. `AUTO_CANCELED_RED
+    tags:
+    - Enumeration
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/OrderHistoryStatus
+  - term: ExecutedDeal
+    definition: 'Object declared by the contract with fields: id, clientOrderId, time, side, role, amount, price, deal, fee, orderId, feeAsset.'
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/ExecutedDeal
+  - term: LimitOrderRequest
+    definition: 'Object declared by the contract with fields: market, side, amount, price, clientOrderId, postOnly, ioc, bboRole, stp, rpi, retail,
+      request. (1 more)'
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/LimitOrderRequest
+  - term: MarketOrderRequest
+    definition: 'Object declared by the contract with fields: market, side, amount, clientOrderId, stp, request, nonce.'
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/MarketOrderRequest
+  - term: StopLimitOrderRequest
+    definition: 'Object declared by the contract with fields: market, side, amount, price, activation_price, clientOrderId, bboRole, stp, request,
+      nonce.'
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/StopLimitOrderRequest
+  - term: StockMarketOrderRequest
+    definition: 'Object declared by the contract with fields: market, side, amount, clientOrderId, stp, request, nonce.'
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/StockMarketOrderRequest
+  - term: StopMarketOrderRequest
+    definition: 'Object declared by the contract with fields: market, side, amount, activation_price, clientOrderId, stp, request, nonce.'
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/StopMarketOrderRequest
+  - term: BulkOrderItem
+    definition: 'Object declared by the contract with fields: side, amount, price, market, postOnly, ioc, clientOrderId, bboRole, stp, rpi, retail.'
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/BulkOrderItem
+  - term: OrderResponse
+    definition: Shared order shape returned by the order-creation, cancel, active-orders list, and modify endpoints. Field presence varies by
+      endpoint and order type — see the per-field notes.
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/OrderResponse
+  - term: CancelOrderResponse
+    definition: Final state of a canceled order.
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/CancelOrderResponse
+  - term: OcoOrderLeg
+    definition: OCO order leg as returned by `/api/v4/oco-orders` and `/api/v4/order/oco-cancel`. Field names use snake_case (`post_only`, `activation_price`)
+      — unlike the camelCase legs returned by `/api/v4/conditional-orders`.
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/OcoOrderLeg
+  - term: ConditionalOrderLeg
+    definition: Conditional-order leg as returned by `/api/v4/conditional-orders`. Field names use camelCase (`postOnly`, `activationPrice`) —
+      unlike the snake_case legs returned by `/api/v4/oco-orders` and `/api/v4/order/oco-cancel`; do not treat the two shapes as interchangeable.
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/ConditionalOrderLeg
+  - term: BulkCancelOrderItem
+    definition: A single cancel target. Provide `market` and exactly one of `orderId` or `clientOrderId`. Sending both, or neither, returns a
+      per-item validation error.
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/BulkCancelOrderItem
+  - term: BulkCancelOrderResult
+    definition: Acknowledgement that a single item was canceled. The endpoint echoes the identifiers from the request item and, when available,
+      the order's `timestamp` and `mtime`. Full order state is not returned. Use the single Cancel order endpoint when post-cancel order state
+      is required.
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/BulkCancelOrderResult
+  - term: BulkCancelOrderResponse
+    definition: Per-item cancel results. `response[i]` corresponds to `request.orders[i]`. Each item contains either `result` (cancellation succeeded)
+      or `error` (cancellation failed for that item) — never both.
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/BulkCancelOrderResponse
+  - term: ErrorResponse
+    definition: 'Object declared by the contract with fields: code, message, errors.'
+    tags:
+    - Object
+    source: openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/ErrorResponse
+  - term: ErrorV1
+    definition: 'Object declared by the contract with fields: success, message, params.'
+    tags:
+    - Object
+    source: openapi/whitebit-http-v1-openapi.yml#/components/schemas/ErrorV1
+  - term: ErrorV4
+    definition: Generic wrapped error envelope (fallback). Market-data validation errors use the flat PublicValidationError shape (HTTP 422) instead,
+      and infrastructure-level failures (maintenance, rate limit, internal error, unknown route) are non-JSON or flat. See the API description
+      for the full set of public error shapes.
+    tags:
+    - Object
+    source: openapi/whitebit-http-v4-openapi.yml#/components/schemas/ErrorV4
+  - term: PublicValidationError
+    definition: Flat field-keyed validation error (HTTP 422) returned by the market-data endpoints. Each key is the offending request field and
+      the value is an array of human-readable messages. There is no success/message envelope and no `params` field.
+    tags:
+    - Object
+    source: openapi/whitebit-http-v4-openapi.yml#/components/schemas/PublicValidationError
+  - term: Asset
+    definition: 'Object declared by the contract with fields: name, unified_cryptoasset_id, can_withdraw, can_deposit, min_withdraw, max_withdraw,
+      maker_fee, taker_fee, min_deposit, max_deposit, currency_precision, is_memo. (6 more)'
+    tags:
+    - Object
+    source: openapi/whitebit-http-v4-openapi.yml#/components/schemas/Asset
+  - term: OrderbookResponse
+    definition: 'Object declared by the contract with fields: ticker_id, timestamp, asks, bids.'
+    tags:
+    - Object
+    source: openapi/whitebit-http-v4-openapi.yml#/components/schemas/OrderbookResponse
+  - term: FeeInfo
+    definition: Fee and limit details for a single asset. For crypto assets, `withdraw` and `deposit` are flat fee objects. For fiat assets with
+      providers, they are objects keyed by provider ID.
+    tags:
+    - Object
+    source: openapi/whitebit-http-v4-openapi.yml#/components/schemas/FeeInfo
+  - term: FeeDetails
+    definition: Fee amounts and transfer limits for a crypto asset
+    tags:
+    - Object
+    source: openapi/whitebit-http-v4-openapi.yml#/components/schemas/FeeDetails
+  - term: ProviderFeeDetails
+    definition: Fee details for a specific fiat payment provider
+    tags:
+    - Object
+    source: openapi/whitebit-http-v4-openapi.yml#/components/schemas/ProviderFeeDetails
+  - term: FuturesMarket
+    definition: 'Object declared by the contract with fields: ticker_id, stock_currency, money_currency, last_price, stock_volume, money_volume,
+      bid, ask, high, low, product_type, open_interest. (11 more)'
+    tags:
+    - Object
+    source: openapi/whitebit-http-v4-openapi.yml#/components/schemas/FuturesMarket
+  - term: Error
+    definition: 'Object declared by the contract with fields: code, message, errors.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/Error
+  - term: ErrorInner
+    definition: 'Object declared by the contract with fields: code, message, errors.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/ErrorInner
+  - term: TravelRuleDepositVerificationRequest
+    definition: 'Object declared by the contract with fields: uniqueId, walletType, originator, vaspData, request, nonce.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/TravelRuleDepositVerificationRequest
+  - term: TravelRuleOriginator
+    definition: Originator information for travel rule compliance
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/TravelRuleOriginator
+  - term: TravelRuleBeneficiary
+    definition: Beneficiary information for travel rule compliance
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/TravelRuleBeneficiary
+  - term: TravelRuleAddress
+    definition: Physical address for travel rule compliance
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/TravelRuleAddress
+  - term: TravelRuleVasp
+    definition: VASP (Virtual Asset Service Provider) information. Required when `walletType` is `hosted`. Provide either `vaspId` (if VASP is
+      in the list from `/travel-rule/vasps`) or `vaspName` (if not in list).
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/TravelRuleVasp
+  - term: TravelRuleWithdrawal
+    definition: 'Travel Rule data for withdrawals. Required when the Travel Rule API is enabled for the user''s region and the withdrawal is Travel
+      Rule-eligible. **Backward Compatibility**: When the Travel Rule API is disabled for the user''s region, this new format is still accepted
+      and automatically mapped to the legacy format.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/TravelRuleWithdrawal
+  - term: WithdrawRequest
+    definition: 'Object declared by the contract with fields: ticker, amount, address, memo, uniqueId, provider, network, partialEnable, customerIp,
+      bankBic, beneficiary, travelRule. (2 more)'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/WithdrawRequest
+  - term: TransactionHistory
+    definition: 'Object declared by the contract with fields: address, unique_id, createdAt, currency, ticker, method, amount, description, memo,
+      fee, status, network. (4 more)'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/TransactionHistory
+  - term: MainAccountBalanceTransfer
+    definition: 'Object declared by the contract with fields: id, currency, amount, from_balance, to_balance, created_at.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/MainAccountBalanceTransfer
+  - term: CodeInfo
+    definition: 'Object declared by the contract with fields: amount, code, date, status, ticker, external_id.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/CodeInfo
+  - term: CodeHistory
+    definition: 'Object declared by the contract with fields: amount, code, date, status, ticker, external_id.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/CodeHistory
+  - term: RefundHistoryRecord
+    definition: 'Object declared by the contract with fields: depositId, currency, ticker, network, depositAmount, refundId, refundAddress, refundAmount,
+      refundHash, memo, status, createdAt. (1 more)'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/RefundHistoryRecord
+  - term: FixedPlan
+    definition: 'Object declared by the contract with fields: id, ticker, status, percent, duration, interestTicker, interestRatio, minInvestment,
+      maxInvestment, maxPossibleInvestment.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/FixedPlan
+  - term: Investment
+    definition: 'Object declared by the contract with fields: id, plan, status, created, updated, paymentTime, amount, interestPaid.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/Investment
+  - term: InterestPayment
+    definition: 'Object declared by the contract with fields: planId, investmentId, amount, ticker, timestamp.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/InterestPayment
+  - term: FlexPlan
+    definition: 'Object declared by the contract with fields: id, ticker, minInvestment, maxInvestment, maxRate.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/FlexPlan
+  - term: FlexInvestment
+    definition: 'Object declared by the contract with fields: id, planId, currency, invested, withAutoReinvest, status, createdAt, updatedAt.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/FlexInvestment
+  - term: FlexInvestmentHistory
+    definition: 'Object declared by the contract with fields: createdAt, planId, investmentId, currency, amount, transaction_id, actionType.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/FlexInvestmentHistory
+  - term: SubAccount
+    definition: 'Object declared by the contract with fields: id, alias, userId, email, status, color, kyc, permissions.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/SubAccount
+  - term: SubAccountTransfer
+    definition: 'Object declared by the contract with fields: transaction_id, id, direction, currency, amount, createdAt.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/SubAccountTransfer
+  - term: SubAccountApiKey
+    definition: 'Object declared by the contract with fields: subAccountId, id, title, isEnabled, apiKey, apiSecret, type, lastActivity, restrictAccess,
+      accessEndpoints.'
+    tags:
+    - Object
+    source: openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/SubAccountApiKey

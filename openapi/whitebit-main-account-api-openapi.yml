@@ -1,0 +1,609 @@
+openapi: 3.2.0
+info:
+  title: WhiteBIT Private HTTP API V4 Main Account API
+  description: 'WhiteBIT Private HTTP API V4 for Main balance changes.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.'
+  version: 4.0.0
+  contact:
+    name: WhiteBIT Support
+    email: support@whitebit.com
+    url: https://whitebit.com
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Main Account
+  description: Main account balance and operations
+paths:
+  /api/v4/main-account/balance:
+    post:
+      tags:
+      - Main Account
+      summary: Get main balance
+      description: 'The endpoint retrieves the main balance by currency ticker or all balances.
+
+
+        An unknown or non-existent `ticker` is not an error: the endpoint returns a zero balance (`{"main_balance": "0"}`) for it. Omitting `ticker` returns balances for every currency.
+
+
+        `main_balance` already includes deposits credited before the network fully confirms them. The part of it that is still held back is reported separately as `pending_deposit_amount`: that amount is tradable but cannot be withdrawn, sent as a WhiteBIT Code, or moved to the collateral balance until the network confirms the deposit. To see the held amount across the whole account, and what remains withdrawable, use Withdrawable balance.
+
+
+        Beyond the validation error above, this endpoint can return only the common authentication errors.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getMainBalance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                ticker:
+                  type: string
+                  description: Currency's ticker.
+                  example: BTC
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    main_balance:
+                      type: string
+                      description: Main balance volume
+                    pending_deposit_amount:
+                      type: string
+                      description: 'Part of `main_balance` that comes from deposits credited before the network fully confirmed them. Tradable, but not withdrawable until confirmation completes. `0` when nothing is held back.
+
+                        '
+              example:
+                BSV:
+                  main_balance: '0'
+                  pending_deposit_amount: '0'
+                BTC:
+                  main_balance: '0'
+                  pending_deposit_amount: '0'
+                BTG:
+                  main_balance: '0'
+                  pending_deposit_amount: '0'
+                BTT:
+                  main_balance: '0'
+                  pending_deposit_amount: '0'
+                XLM:
+                  main_balance: '36.48'
+                  pending_deposit_amount: '12.5'
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                ticker0:
+                  summary: validation.string
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - validation.string
+  /api/v4/main-account/withdrawable-balance:
+    post:
+      tags:
+      - Main Account
+      summary: Get withdrawable balance
+      description: 'The endpoint reports how much of the account is held back because deposits were credited before the network fully confirmed them, and how much remains withdrawable.
+
+
+        Amounts ending in `Stable` are expressed in a stable-coin equivalent, so figures for different currencies can be summed. `assets` breaks the free amount down per currency, in that currency''s own units.
+
+
+        The held amount is tradable: it can be moved to the trade balance and traded. It cannot be withdrawn, sent as a WhiteBIT Code, or moved to the collateral balance until the network confirms the deposit. Two limits apply at once — the free amount of the currency itself, shown in `assets`, and the free value of the whole account, shown in `availableBalanceStable`. Whichever is smaller decides.
+
+
+        `assets` lists a currency when it has a free amount, and lists it with `"0"` when the currency is fully held back. Currencies with neither a balance nor a hold are omitted.
+
+
+        The collateral balance is excluded from every figure here, because funds moved there are already outside the hold.
+
+
+        Beyond the common authentication errors, this endpoint returns no errors of its own.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getWithdrawableBalance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalBalanceStable:
+                    type: string
+                    description: Total value of the main and trade balances, in a stable-coin equivalent.
+                  lockedBalanceStable:
+                    type: string
+                    description: Value held back by unconfirmed deposits, in a stable-coin equivalent.
+                  availableBalanceStable:
+                    type: string
+                    description: Value that can still be withdrawn, in a stable-coin equivalent. Never negative.
+                  assets:
+                    type: object
+                    description: Free amount per currency, in that currency's own units. A currency that is fully held back is reported as `"0"`.
+                    additionalProperties:
+                      type: string
+              example:
+                totalBalanceStable: '795.738'
+                lockedBalanceStable: '247.869'
+                availableBalanceStable: '547.869'
+                assets:
+                  ETH: '0.1'
+                  USDT: '300'
+  /api/v4/main-account/history:
+    post:
+      tags:
+      - Main Account
+      summary: Get deposit/withdraw history
+      description: 'The endpoint retrieves the history of deposits and withdraws.
+
+
+        **Deposit status codes:**
+
+        - `Successful` - 3, 7
+
+        - `Canceled` - 4, 9
+
+        - `Unconfirmed by user` - 5
+
+        - `AML frozen` - 21
+
+        - `Uncredited` - 22
+
+        - `Pending` - 15
+
+
+        `Successful` (3, 7) is a final state. A credited deposit does not later transition to `AML frozen` (21) or `Uncredited` (22); those checks happen before crediting.
+
+
+        **Travel Rule Deposit check status codes:**
+
+        - `Awaiting verification` - 27: The transaction has been frozen due to the lack of data required under the Travel Rule. The user is required to provide this data manually through the exchange interface.
+
+        - `Confirmation in progress` - 28: The Travel Rule data provided by the user is currently being verified by WhiteBIT.
+
+
+        ⚠️ Due to regulatory requirements in Turkey and EU, the system places every inbound crypto deposit on hold (frozen) until confirming the transaction''s origin. The sender must provide certain details if the transaction is from another Virtual Asset Service Provider (VASP) or verify the address if from a self-hosted wallet. The system credits deposited funds to the account only after successful verification.
+
+
+        **Withdraw status codes:**
+
+        - `Pending` - 1, 2, 6, 10–17 (withdrawal in progress).
+
+        - `Successful` - 3, 7
+
+        - `Canceled` - 4
+
+        - `Unconfirmed by user` - 5
+
+        - `AML frozen` - 21
+
+        - `Partially successful` - 18
+
+
+        Rate limit: 200 requests/10 sec.
+
+
+        Requests with `limit` values above 100 return large payloads. Use high limits only when necessary and ensure the client application can handle large response sizes.
+
+
+        The API does not cache the response.
+
+
+        Results are sorted newest first (descending by timestamp).
+
+
+        **No date filtering:** the endpoint does not accept `startDate` / `endDate` parameters, and pagination is capped at `offset + limit ≤ 10000` (requests beyond the cap return `Offset is too big. Please use offset + limit less than 10000.`). To read more than 10,000 records, narrow the result set with the available filters (`transactionMethod`, `ticker`, `status`) and paginate within each subset; for a complete history export beyond the cap, use the Report on the History page.'
+      operationId: getDepositWithdrawHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                transactionMethod:
+                  type: integer
+                  description: 'Method. Example: **1** to display deposits / **2** to display withdraws. Do not send this parameter in order to receive both deposits and withdraws.
+
+                    '
+                  enum:
+                  - 1
+                  - 2
+                  example: 1
+                ticker:
+                  type: string
+                  description: 'Currency''s [ticker](/glossary#ticker). Example: BTC'
+                  example: BTC
+                address:
+                  type: string
+                  description: Can be used for filtering transactions by specific address.
+                  example: 3ApEASLcrQtZpg1TsssFgYF5V5YQJAKvuE
+                memo:
+                  type: string
+                  description: Can be used for filtering transactions by specific [memo](/glossary#memodestination-tag)
+                  example: '48565488244493'
+                addresses:
+                  type: array
+                  items:
+                    type: string
+                  maxItems: 20
+                  description: Can be used for filtering transactions by specific array of addresses.
+                  example:
+                  - 3ApEASLcrQtZpg1TsssFgYF5V5YQJAKvuE
+                unique_id:
+                  type: string
+                  description: Can be used for filtering transactions by specific unique id
+                  example: '24529041'
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 500
+                  default: 50
+                  description: 'LIMIT is a special clause used to limit records a particular query can return. Default: 50, Min: 1, Max: 500'
+                  example: 100
+                offset:
+                  type: integer
+                  minimum: 0
+                  maximum: 10000
+                  default: 0
+                  description: Use the OFFSET clause to return entries starting from a particular line.
+                  example: 0
+                status:
+                  type: array
+                  items:
+                    type: integer
+                  description: 'Can be used for filtering transactions by status codes.
+
+
+                    ⚠️ Caution: Use this parameter with the appropriate `transactionMethod` and valid status codes for that method. See the endpoint description above for valid codes. Example: `"status": [3,7]`
+
+                    '
+                  example:
+                  - 3
+                  - 7
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              transactionMethod: 1
+              ticker: BTC
+              offset: 0
+              limit: 100
+              status:
+              - 3
+              - 7
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '201':
+          description: All validations succeeded and creating transaction is started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TransactionHistory'
+                  total:
+                    type: integer
+                    description: Total number of transactions, use this for calculating 'limit' and 'offset'
+              example:
+                limit: 100
+                offset: 0
+                records:
+                - address: 3ApEASLcrQtZpg1TsssFgYF5V5YQJAKvuE
+                  unique_id: null
+                  createdAt: 1593437922
+                  currency: Bitcoin
+                  ticker: BTC
+                  method: 1
+                  amount: '0.0006'
+                  description: ''
+                  memo: ''
+                  fee: '0'
+                  status: 15
+                  network: null
+                  transactionHash: a275a514013e4e0f927fd0d1bed215e7f6f2c4c6ce762836fe135ec22529d886
+                  transaction_id: 5e112b38-9652-11ed-a1eb-0242ac120002
+                  details:
+                    partial:
+                      requestAmount: '50000'
+                      processedAmount: '39000'
+                      processedFee: '273'
+                      normalizeTransaction: ''
+                  confirmations:
+                    actual: 1
+                    required: 2
+                total: 300
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit field is required.
+                      offset:
+                      - The offset field is required.
+                      transactionMethod:
+                      - The transaction method field is required.
+                invalidTicker:
+                  summary: Invalid ticker
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - The selected ticker is invalid.
+                invalidTransactionMethod:
+                  summary: Invalid transaction method
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      transactionMethod:
+                      - The selected transaction method is invalid.
+                limitOffsetTooLarge:
+                  summary: Limit or offset too large
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit may not be greater than 500.
+                      offset:
+                      - The offset may not be greater than 10000.
+                limitOffsetTooSmall:
+                  summary: Limit or offset too small
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit must be at least 1.
+                      offset:
+                      - The offset must be at least 0.
+                invalidLimitOffset:
+                  summary: Invalid limit or offset type
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit must be an integer.
+                      offset:
+                      - The offset must be an integer.
+                invalidStatus:
+                  summary: Invalid status
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      status:
+                      - The selected status is invalid.
+        '422':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+components:
+  schemas:
+    TransactionHistory:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Deposit/Withdraw address
+          example: 3ApEASLcrQtZpg1TsssFgYF5V5YQJAKvuE
+        unique_id:
+          type:
+          - string
+          - 'null'
+          description: Unique Id of deposit/withdraw. Unique per user.
+          example: null
+        createdAt:
+          type: integer
+          description: Timestamp of deposit/withdraw
+          example: 1593437922
+        currency:
+          type: string
+          description: Deposit/Withdraw currency full name
+          example: Bitcoin
+        ticker:
+          type: string
+          description: Deposit/Withdraw currency [ticker](/glossary#ticker)
+          example: BTC
+        method:
+          type: integer
+          description: 'Called method: 1 - deposit, 2 - withdraw'
+          example: 1
+        amount:
+          type: string
+          description: Amount of deposit/withdraw
+          example: '0.0006'
+        description:
+          type: string
+          description: Deposit/Withdraw description
+          example: ''
+        memo:
+          type: string
+          description: '[Memo](/glossary#memodestination-tag) for deposit/withdraw'
+          example: ''
+        fee:
+          type: string
+          description: '[Fee](/glossary#fee) for deposit/withdraw'
+          example: '0'
+        status:
+          type: integer
+          description: Transaction status (see endpoint description for status codes)
+          example: 15
+        network:
+          type:
+          - string
+          - 'null'
+          description: Network if currency is multinetwork
+          example: null
+        transactionHash:
+          type: string
+          description: Deposit/Withdraw transaction hash. A single hash can map to multiple records (e.g. several outputs to a WhiteBIT address in one on-chain transaction); use `transaction_id` to distinguish them.
+          example: 3b49d7b8cf7a4d3c1234567890abcdef
+        transaction_id:
+          type: string
+          description: Transaction UUID. Unique across the whole system and never reused.
+          example: 5e112b38-9652-11ed-a1eb-0242ac120002
+        details:
+          type:
+          - object
+          - 'null'
+          description: Additional details for the transaction
+        confirmations:
+          type:
+          - object
+          - 'null'
+          description: Confirmation details for crypto transactions
+          properties:
+            actual:
+              type: integer
+              description: Actual number of confirmations
+              example: 3
+            required:
+              type: integer
+              description: Required number of confirmations
+              example: 6
+    ErrorInner:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

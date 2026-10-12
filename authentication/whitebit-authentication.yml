@@ -1,0 +1,49 @@
+generated: '2026-10-13'
+method: derived
+source: openapi/whitebit-address-checker-openapi.yml, openapi/whitebit-http-trade-v4-openapi.yml,
+  openapi/whitebit-main-api-v4-openapi.yml, openapi/whitebit-oauth2-openapi.yml
+summary:
+  types:
+  - apiKey
+  - http
+  api_key_in:
+  - header
+schemes:
+- name: ApiKeyAuth
+  type: apiKey
+  in: header
+  parameter: X-TXC-APIKEY
+  description: The public WhiteBIT API key. The key must include the Address Checker permission.
+  sources:
+  - openapi/whitebit-address-checker-openapi.yml
+  - openapi/whitebit-http-trade-v4-openapi.yml
+  - openapi/whitebit-main-api-v4-openapi.yml
+- name: PayloadAuth
+  type: apiKey
+  in: header
+  parameter: X-TXC-PAYLOAD
+  description: Base64-encoded JSON request body.
+  sources:
+  - openapi/whitebit-address-checker-openapi.yml
+  - openapi/whitebit-http-trade-v4-openapi.yml
+  - openapi/whitebit-main-api-v4-openapi.yml
+- name: SignatureAuth
+  type: apiKey
+  in: header
+  parameter: X-TXC-SIGNATURE
+  description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload,
+    api_secret)).
+  sources:
+  - openapi/whitebit-address-checker-openapi.yml
+  - openapi/whitebit-http-trade-v4-openapi.yml
+  - openapi/whitebit-main-api-v4-openapi.yml
+- name: BearerAuth
+  type: http
+  scheme: bearer
+  bearerFormat: JWT
+  description: |-
+    OAuth 2.0 Bearer Token authentication. Include the access token in the Authorization header.
+
+    Example: `Authorization: Bearer YOUR_ACCESS_TOKEN`
+  sources:
+  - openapi/whitebit-oauth2-openapi.yml

@@ -1,0 +1,30 @@
+generated: '2026-10-13'
+method: searched
+status: published
+source: https://docs.whitebit.com/llms.txt
+servers:
+- name: whitebit-docs
+  description: Hosted documentation MCP server on the WhiteBIT docs site (search and read the docs; not trading).
+  transport: http
+  url: https://docs.whitebit.com/mcp
+  official: true
+  verified: tools/list answered 2026-10-13
+  tools:
+  - name: search_white_bit
+    description: Search across the WhiteBIT knowledge base.
+  - name: query_docs_filesystem_white_bit
+    description: Read-only shell-like query over a virtual filesystem of the docs.
+  - name: submit_feedback
+    description: Report a problem with the documentation site.
+- name: whitebit-mcp
+  description: Self-hosted MCP server (Docker, HTTP transport) exposing 100+ trading and account tools generated from the official Python SDK.
+  transport: http
+  repository: https://github.com/whitebit-exchange/whitebit-mcp
+  official: true
+deployment:
+  mode: both
+  endpoint: https://docs.whitebit.com/mcp
+  install: null
+  package: null
+  auth: none
+  verified: probed

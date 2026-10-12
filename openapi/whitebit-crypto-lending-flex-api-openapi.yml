@@ -1,0 +1,1226 @@
+openapi: 3.2.0
+info:
+  title: WhiteBIT Private HTTP API V4 Crypto Lending - Flex API
+  description: 'WhiteBIT Private HTTP API V4 for Main balance changes.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.'
+  version: 4.0.0
+  contact:
+    name: WhiteBIT Support
+    email: support@whitebit.com
+    url: https://whitebit.com
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Crypto Lending - Flex
+  description: Flexible crypto lending plans
+paths:
+  /api/v4/main-account/smart-flex/plans:
+    post:
+      tags:
+      - Crypto Lending - Flex
+      summary: Get Flex Plans
+      description: 'The endpoint returns flex investment plan configurations with active status, filtered by the authenticated user''s region and plan visibility. Results include public plans and private plans assigned to the account.
+
+
+        Available after September 22, 2025.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getFlexPlans
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                limit:
+                  type: integer
+                  maximum: 100
+                  default: 100
+                  description: Pagination limit.
+                  example: 50
+                offset:
+                  type: integer
+                  minimum: 0
+                  default: 0
+                  description: Pagination offset.
+                  example: 0
+                ticker:
+                  type: string
+                  description: 'Filter by currency [ticker](/glossary#ticker). Example: USDT'
+                  example: USDT
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              limit: 50
+              offset: 0
+              ticker: USDT
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlexPlan'
+              example:
+              - id: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                ticker: USDT
+                minInvestment: '10.0'
+                maxInvestment: '100000.0'
+                maxRate: '0.15'
+              - id: 7e1d8c2b-9a3b-3b1c-8d4e-5a6b7c8d9e0f
+                ticker: BTC
+                minInvestment: '0.001'
+                maxInvestment: '10.0'
+                maxRate: '0.12'
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidFields:
+                  summary: Invalid parameters
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - The selected ticker is invalid.
+                      limit:
+                      - The limit must be an integer.
+                      - The limit may not be greater than 100.
+                      offset:
+                      - The offset must be an integer.
+                      - The offset must be at least 0.
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart-flex/investments:
+    post:
+      tags:
+      - Crypto Lending - Flex
+      summary: Get User Flex Investments
+      description: 'Retrieve user''s investment portfolio with optional filtering.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getUserFlexInvestments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                limit:
+                  type: integer
+                  default: 100
+                  description: 'Pagination limit. Default: 100.'
+                  example: 100
+                offset:
+                  type: integer
+                  default: 0
+                  description: 'Pagination offset. Default: 0.'
+                  example: 0
+                ticker:
+                  type: string
+                  description: 'Filter by currency [ticker](/glossary#ticker). Example: USDT.'
+                  example: USDT
+                plan:
+                  type: string
+                  description: Filter by plan ID (UUID).
+                  example: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                investment:
+                  type: string
+                  description: Filter by investment ID.
+                  example: inv_7e2d9c3b-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                investmentStatus:
+                  type: integer
+                  description: Filter by status (1=ACTIVE, 0=CLOSED).
+                  enum:
+                  - 0
+                  - 1
+                  example: 1
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              limit: 100
+              offset: 0
+              ticker: USDT
+              plan: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+              investment: invest_id_123
+              investmentStatus: 1
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FlexInvestment'
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+              example:
+                data:
+                - id: inv_7e2d9c3b-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                  planId: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                  currency: USDT
+                  invested: '1500.75'
+                  withAutoReinvest: true
+                  status: 1
+                  createdAt: 1640995200
+                  updatedAt: 1641081600
+                limit: 100
+                offset: 0
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidFields:
+                  summary: Invalid parameters
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - The selected ticker is invalid.
+                      plan:
+                      - The selected plan is invalid.
+                      investment:
+                      - The selected investment is invalid.
+                      investmentStatus:
+                      - The selected investment status is invalid.
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart-flex/investments/history:
+    post:
+      tags:
+      - Crypto Lending - Flex
+      summary: Get Flex Investment History
+      description: 'Retrieve complete investment operations history with advanced filtering.
+
+
+        **Available Action Types:**
+
+        - 1: INVEST - Investment creation
+
+        - 2: REINVEST - Automatic reinvestment
+
+        - 3: WITHDRAW_FROM_INVESTMENT - Partial withdrawal
+
+        - 4: DAILY_EARNING - Daily earnings
+
+        - 5: CLOSE_INVESTMENT - Investment closure
+
+        - 6: OPEN_INVESTMENT - Investment opening
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getFlexInvestmentHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                limit:
+                  type: integer
+                  default: 50
+                  description: Pagination limit.
+                  example: 50
+                offset:
+                  type: integer
+                  default: 0
+                  description: Pagination offset.
+                  example: 0
+                plan:
+                  type: string
+                  description: Filter by plan ID (UUID).
+                  example: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                investment:
+                  type: string
+                  description: Filter by investment ID.
+                  example: inv_7e2d9c3b-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                transaction:
+                  type: string
+                  description: Filter by transaction ID.
+                  example: tx_9f3e0d4c-2b5c-4d3e-8f6g-7a8b9c0d1e2f
+                dateFrom:
+                  type: integer
+                  description: Filter from date (timestamp).
+                  example: 1640995200
+                dateTo:
+                  type: integer
+                  description: Filter to date (timestamp).
+                  example: 1641081600
+                actionTypes:
+                  type: array
+                  items:
+                    type: integer
+                  description: Array of operation type IDs. See table below.
+                  example:
+                  - 1
+                  - 2
+                  - 4
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              limit: 50
+              offset: 0
+              plan: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+              investment: inv_123
+              transaction: tx_456
+              dateFrom: 1640995200
+              dateTo: 1641081600
+              actionTypes:
+              - 1
+              - 2
+              - 4
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FlexInvestmentHistory'
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+              example:
+                data:
+                - createdAt: 1640995200
+                  planId: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                  investmentId: inv_7e2d9c3b-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                  currency: USDT
+                  amount: '15.75'
+                  transaction_id: tx_9f3e0d4c-2b5c-4d3e-8f6g-7a8b9c0d1e2f
+                  actionType: 1
+                limit: 50
+                offset: 0
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: Validation failed
+                errors:
+                  plan:
+                  - The selected plan is invalid.
+                  investment:
+                  - The selected investment is invalid.
+                  transaction:
+                  - The selected transaction is invalid.
+                  dateFrom:
+                  - The date from is invalid.
+                  dateTo:
+                  - The date to is invalid.
+                  actionTypes:
+                  - The action types must be an array.
+                  actionTypes.0:
+                  - The selected action type is invalid.
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart-flex/investments/payment-history:
+    post:
+      tags:
+      - Crypto Lending - Flex
+      summary: Get Flex Payment History
+      description: 'Retrieve investment earnings history (ONLY DAILY_EARNING operations).
+
+
+        **Note:** The endpoint automatically filters to show ONLY DAILY_EARNING operations (type 4).
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: getFlexPaymentHistory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                limit:
+                  type: integer
+                  default: 50
+                  description: Pagination limit.
+                  example: 50
+                offset:
+                  type: integer
+                  default: 0
+                  description: Pagination offset.
+                  example: 0
+                plan:
+                  type: string
+                  description: Filter by plan ID (UUID).
+                  example: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                investment:
+                  type: string
+                  description: Filter by investment ID.
+                  example: inv_7e2d9c3b-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                transaction:
+                  type: string
+                  description: Filter by transaction ID.
+                  example: tx_9f3e0d4c-2b5c-4d3e-8f6g-7a8b9c0d1e2f
+                dateFrom:
+                  type: integer
+                  description: Filter from date (timestamp).
+                  example: 1640995200
+                dateTo:
+                  type: integer
+                  description: Filter to date (timestamp).
+                  example: 1641081600
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              limit: 50
+              offset: 0
+              plan: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+              investment: inv_123
+              transaction: tx_456
+              dateFrom: 1640995200
+              dateTo: 1641081600
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FlexInvestmentHistory'
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+              example:
+                data:
+                - createdAt: 1640995200
+                  planId: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                  investmentId: inv_7e2d9c3b-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                  currency: USDT
+                  amount: '15.75'
+                  transaction_id: tx_9f3e0d4c-2b5c-4d3e-8f6g-7a8b9c0d1e2f
+                  actionType: 4
+                limit: 50
+                offset: 0
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: Validation failed
+                errors:
+                  plan:
+                  - The selected plan is invalid.
+                  investment:
+                  - The selected investment is invalid.
+                  transaction:
+                  - The selected transaction is invalid.
+                  dateFrom:
+                  - The date from is invalid.
+                  dateTo:
+                  - The date to is invalid.
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart-flex/investments/invest:
+    post:
+      tags:
+      - Crypto Lending - Flex
+      summary: Create Flex Investment
+      description: 'Create new investment in a Flex plan.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: createFlexInvestment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - plan
+              - amount
+              - request
+              - nonce
+              properties:
+                plan:
+                  type: string
+                  description: Plan external ID (UUID).
+                  example: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                amount:
+                  type: string
+                  description: Investment amount.
+                  example: '1000.500000'
+                withReinvest:
+                  type: boolean
+                  default: false
+                  description: Enable auto-reinvestment.
+                  example: true
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              plan: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+              amount: '1000.500000'
+              withReinvest: true
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '201':
+          description: Investment created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      transaction_id:
+                        type: string
+                        description: Transaction ID for the investment
+              example:
+                data:
+                  transaction_id: tx_9f3e0d4c-2b5c-4d3e-8f6g-7a8b9c0d1e2f
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidPlan:
+                  summary: Plan not found or inactive
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      plan:
+                      - The selected plan is invalid.
+                invalidAmount:
+                  summary: Invalid amount format
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - The amount field must be a valid number
+        '422':
+          description: 'Inner validation failed
+
+
+            Response error codes:
+
+            - 0 - Validation failed (plan unavailable/paused, amount too small, private plan, investment cap exceeded)
+
+            - 2 - Amount is less than min investment amount
+
+            - 3 - Amount is greater than max investment amount
+
+            - 4 - Not enough balance to create investment
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                planUnavailable:
+                  summary: Plan unavailable
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      plan:
+                      - Plan is unavailable
+                planPaused:
+                  summary: Plan is paused
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      plan:
+                      - Plan is paused
+                amountTooLow:
+                  summary: Amount below plan minimum
+                  value:
+                    code: 2
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Amount is less than min investment
+                amountTooHigh:
+                  summary: Amount exceeds plan maximum
+                  value:
+                    code: 3
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Amount is more than max investment
+                insufficientBalance:
+                  summary: Insufficient balance
+                  value:
+                    code: 4
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Available 9 < 10
+                amountTooSmall:
+                  summary: Amount zero or negative
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Amount is too small
+                privatePlan:
+                  summary: Private plan not available for user
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      plan:
+                      - Private plan not available for this user
+                investmentLimit:
+                  summary: Cumulative investment cap exceeded
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Investment limit is exceeded
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart-flex/investments/withdraw:
+    post:
+      tags:
+      - Crypto Lending - Flex
+      summary: Withdraw from Flex Investment
+      description: 'Withdraw specified amount from user''s investment.
+
+
+        **Note:** Plan must be active and accessible to user.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: withdrawFromFlexInvestment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - plan
+              - amount
+              - request
+              - nonce
+              properties:
+                plan:
+                  type: string
+                  description: Plan external ID (UUID).
+                  example: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                amount:
+                  type: string
+                  description: Withdrawal amount.
+                  example: '500.250000'
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              plan: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+              amount: '500.250000'
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '201':
+          description: Withdrawal successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      transaction_id:
+                        type: string
+                        description: Transaction ID for the withdrawal
+              example:
+                data:
+                  transaction_id: tx_9f3e0d4c-2b5c-4d3e-8f6g-7a8b9c0d1e2f
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidPlan:
+                  summary: Plan not found
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      plan:
+                      - The selected plan is invalid.
+        '422':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                investmentNotFound:
+                  summary: Investment not found or not owned
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Investment does not exist
+                investmentClosed:
+                  summary: Investment is closed
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      investment:
+                      - Cannot withdraw from closed investment
+                amountTooSmall:
+                  summary: Withdraw amount zero or negative
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Withdraw amount is too small
+                exceedsInvested:
+                  summary: Withdraw exceeds total invested
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Withdraw amount exceeds total invested
+                belowMinLeft:
+                  summary: Remaining balance would drop below minimum
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      minAmountLeft:
+                      - Amount left < min investment
+                belowMinPossible:
+                  summary: Withdrawal below minimum threshold
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Cannot withdraw amount < min possible
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart-flex/investments/close:
+    post:
+      tags:
+      - Crypto Lending - Flex
+      summary: Close Flex Investment
+      description: 'Completely close investment and withdraw all funds.
+
+
+        **Validation Rules:**
+
+        - plan: required, string, UUID format, must exist
+
+        - Investment must be ACTIVE
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: closeFlexInvestment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - plan
+              - request
+              - nonce
+              properties:
+                plan:
+                  type: string
+                  description: Plan external ID (UUID).
+                  example: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              plan: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '201':
+          description: Investment closed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      transaction_id:
+                        type: string
+                        description: Transaction ID for the closure
+              example:
+                data:
+                  transaction_id: tx_9f3e0d4c-2b5c-4d3e-8f6g-7a8b9c0d1e2f
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidPlan:
+                  summary: Plan not found
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      plan:
+                      - The selected plan is invalid.
+        '422':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                investmentNotFound:
+                  summary: Investment not found or not owned
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Investment does not exist
+                alreadyClosed:
+                  summary: Investment already closed
+                  value:
+                    code: 0
+                    message: Inner validation failed
+                    errors:
+                      investment:
+                      - Cannot withdraw from closed investment
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+  /api/v4/main-account/smart-flex/investments/auto-invest:
+    post:
+      tags:
+      - Crypto Lending - Flex
+      summary: Update Flex Auto-Reinvestment
+      description: 'Enable/disable automatic reinvestment for user''s investment.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: updateFlexAutoReinvestment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - plan
+              - request
+              - nonce
+              properties:
+                plan:
+                  type: string
+                  description: Plan external ID (UUID).
+                  example: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+                enabled:
+                  type: boolean
+                  default: false
+                  description: Enable or disable auto-reinvestment.
+                  example: true
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              plan: 8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f
+              enabled: true
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Auto-reinvestment updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {}
+              example:
+                data: []
+        '400':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: Validation failed
+                errors:
+                  plan:
+                  - The plan field is required.
+                  enabled:
+                  - The enabled field must be true or false.
+        '422':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              example:
+                code: 0
+                message: Inner validation failed
+                errors:
+                  plan:
+                  - No existing investments for this plan
+        '403':
+          description: Lending API access is not enabled on the account. Request access via the institutional services form (https://whitebit.com/institutional-services/b2b).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 0
+                message: You don't have permission to use this endpoint. Please contact support for more details
+components:
+  schemas:
+    ErrorInner:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    FlexInvestment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Flex investment identifier
+          example: '2765'
+        planId:
+          type: string
+          description: Flex plan identifier
+          example: '12'
+        currency:
+          type: string
+          description: Investment currency
+          example: USDT
+        invested:
+          type: string
+          description: Invested amount
+          example: '100'
+        withAutoReinvest:
+          type: boolean
+          description: Auto-reinvestment enabled
+          example: true
+        status:
+          type: integer
+          description: Investment status (1=ACTIVE, 0=CLOSED)
+          example: 1
+        createdAt:
+          type: integer
+          description: Investment creation timestamp
+          example: 1588345560
+        updatedAt:
+          type: integer
+          description: Investment last update timestamp
+          example: 1588345560
+    FlexInvestmentHistory:
+      type: object
+      properties:
+        createdAt:
+          type: integer
+          description: Transaction creation timestamp
+          example: 1588345560
+        planId:
+          type: string
+          description: Flex plan identifier
+          example: '12'
+        investmentId:
+          type: string
+          description: Flex investment identifier
+          example: '2765'
+        currency:
+          type: string
+          description: Transaction currency
+          example: USDT
+        amount:
+          type: string
+          description: Transaction amount
+          example: '100'
+        transaction_id:
+          type: string
+          description: Transaction identifier
+          example: tx_123456
+        actionType:
+          type: integer
+          description: 'Action type: 1-INVEST, 2-REINVEST, 3-WITHDRAW_FROM_INVESTMENT, 4-DAILY_EARNING, 5-CLOSE_INVESTMENT, 6-OPEN_INVESTMENT'
+          example: 1
+    FlexPlan:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Flex plan identifier
+          example: '12'
+        ticker:
+          type: string
+          description: Currency [ticker](/glossary#ticker)
+          example: USDT
+        minInvestment:
+          type: string
+          description: Minimum investment amount
+          example: '10.0'
+        maxInvestment:
+          type: string
+          description: Maximum investment amount
+          example: '100000.0'
+        maxRate:
+          type: string
+          description: Maximum interest rate
+          example: '0.0030'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

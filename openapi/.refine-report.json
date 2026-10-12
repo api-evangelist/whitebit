@@ -1,0 +1,62 @@
+{
+  "provider": "whitebit",
+  "sources": [
+    "whitebit-address-checker-openapi.yml",
+    "whitebit-http-trade-v4-openapi.yml",
+    "whitebit-http-v1-openapi.yml",
+    "whitebit-http-v4-openapi.yml",
+    "whitebit-main-api-v4-openapi.yml",
+    "whitebit-oauth2-openapi.yml"
+  ],
+  "outputs": [
+    "whitebit-address-checker-api-openapi.yml",
+    "whitebit-collateral-trading-api-openapi.yml",
+    "whitebit-convert-api-openapi.yml",
+    "whitebit-market-fee-api-openapi.yml",
+    "whitebit-spot-trading-api-openapi.yml",
+    "whitebit-public-api-v1-api-openapi.yml",
+    "whitebit-public-api-v4-api-openapi.yml",
+    "whitebit-codes-api-openapi.yml",
+    "whitebit-credit-line-api-openapi.yml",
+    "whitebit-crypto-lending-fixed-api-openapi.yml",
+    "whitebit-crypto-lending-flex-api-openapi.yml",
+    "whitebit-deposit-api-openapi.yml",
+    "whitebit-fees-api-openapi.yml",
+    "whitebit-jwt-api-openapi.yml",
+    "whitebit-main-account-api-openapi.yml",
+    "whitebit-mining-pool-api-openapi.yml",
+    "whitebit-sub-account-api-openapi.yml",
+    "whitebit-sub-account-api-keys-api-openapi.yml",
+    "whitebit-transfer-api-openapi.yml",
+    "whitebit-travel-rule-api-openapi.yml",
+    "whitebit-withdraw-api-openapi.yml",
+    "whitebit-account-endpoints-api-openapi.yml",
+    "whitebit-authentication-api-openapi.yml",
+    "whitebit-oauth-api-keys-api-openapi.yml"
+  ],
+  "archived": [
+    "archived openapi/whitebit-address-checker-openapi.yml",
+    "archived openapi/whitebit-http-trade-v4-openapi.yml",
+    "archived openapi/whitebit-http-v1-openapi.yml",
+    "archived openapi/whitebit-http-v4-openapi.yml",
+    "archived openapi/whitebit-main-api-v4-openapi.yml",
+    "archived openapi/whitebit-oauth2-openapi.yml"
+  ],
+  "errors": [],
+  "warnings": [],
+  "notes": [
+    "whitebit-address-checker-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
+    "whitebit-http-trade-v4-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
+    "whitebit-http-trade-v4-openapi.yml: tagged paths POST /api/v4/convert/estimate -> Convert",
+    "whitebit-http-trade-v4-openapi.yml: tagged paths POST /api/v4/convert/confirm -> Convert",
+    "whitebit-http-trade-v4-openapi.yml: tagged paths POST /api/v4/convert/auto-confirm -> Convert",
+    "whitebit-http-trade-v4-openapi.yml: tagged paths POST /api/v4/convert/history -> Convert",
+    "whitebit-http-trade-v4-openapi.yml: declared missing tag: Convert",
+    "whitebit-http-v1-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
+    "whitebit-http-v4-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
+    "whitebit-main-api-v4-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
+    "whitebit-oauth2-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
+    "apis.yml register: written (+24 apis, 25 total)"
+  ],
+  "skipped": []
+}

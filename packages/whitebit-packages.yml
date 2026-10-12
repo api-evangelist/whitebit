@@ -1,0 +1,44 @@
+generated: '2026-10-13'
+method: searched
+source: https://docs.whitebit.com/sdks.md
+packages:
+- language: python
+  registry: pypi
+  name: whitebit-python-sdk
+  url: https://pypi.org/project/whitebit-python-sdk/
+  install: pip install whitebit-python-sdk
+  repository: https://github.com/whitebit-exchange/python-sdk
+  official: true
+  ownership_audit: metadata names whitebit.com
+- language: go
+  registry: go
+  name: github.com/whitebit-exchange/go-sdk
+  url: https://pkg.go.dev/github.com/whitebit-exchange/go-sdk
+  install: go get github.com/whitebit-exchange/go-sdk
+  repository: https://github.com/whitebit-exchange/go-sdk
+  official: true
+- language: php
+  registry: packagist
+  name: whitebit/php-sdk
+  url: https://packagist.org/packages/whitebit/php-sdk
+  install: composer require whitebit/php-sdk
+  repository: https://github.com/whitebit-exchange/php-sdk
+  official: false
+  ownership_audit: 'registry metadata names neither the provider''s domain nor its GitHub org: official downgraded (harvest-packages.py --audit)'
+- language: javascript
+  registry: npm
+  name: whitebit-typescript-sdk
+  url: https://www.npmjs.com/package/whitebit-typescript-sdk
+  install: npm install whitebit-typescript-sdk
+  repository: https://github.com/whitebit-exchange/typescript-sdk
+  official: true
+  ownership_audit: metadata names whitebit.com
+- language: javascript
+  registry: npm
+  name: whitebit-cli
+  url: https://www.npmjs.com/package/whitebit-cli
+  install: npm install -g whitebit-cli
+  repository: https://github.com/whitebit-exchange/whitebit-cli
+  official: true
+  kind: cli
+  ownership_audit: metadata names whitebit.com

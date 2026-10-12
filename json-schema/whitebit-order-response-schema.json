@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/whitebit/main/json-schema/whitebit-order-response-schema.json",
+  "title": "OrderResponse",
+  "description": "Shared order shape returned by the order-creation, cancel, active-orders list, and modify endpoints. Field presence varies by endpoint and order type — see the per-field notes.",
+  "x-generated": "2026-10-13",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/whitebit-http-trade-v4-openapi.yml#/components/schemas/OrderResponse",
+  "type": "object",
+  "properties": {
+    "orderId": {
+      "type": "integer",
+      "description": "Unique identifier assigned to the order by the matching engine."
+    },
+    "clientOrderId": {
+      "type": "string",
+      "description": "Custom client order identifier supplied in the request. Returns an empty string when not specified."
+    },
+    "market": {
+      "type": "string",
+      "description": "Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`)."
+    },
+    "side": {
+      "type": "string",
+      "description": "Order side. Possible values: `buy`, `sell`."
+    },
+    "type": {
+      "type": "string",
+      "description": "Order type. Possible values: `limit`, `market`, `stock market`, `stop limit`, `stop market`."
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Unix timestamp in seconds (UTC) of order creation, with microsecond precision."
+    },
+    "dealMoney": {
+      "type": "string",
+      "description": "Filled amount in quote currency. Returns `\"0\"` while the order remains unfilled."
+    },
+    "dealStock": {
+      "type": "string",
+      "description": "Filled amount in base currency. Returns `\"0\"` while the order remains unfilled."
+    },
+    "amount": {
+      "type": "string",
+      "description": "Order quantity in base currency for limit and stop-limit orders, or in quote currency for buy market orders."
+    },
+    "left": {
+      "type": "string",
+      "description": "Remaining unfilled quantity. Equals `amount` for new orders and `\"0\"` for fully filled orders."
+    },
+    "dealFee": {
+      "type": "string",
+      "description": "Cumulative trading fee charged for filled portions, denominated in the fee asset."
+    },
+    "feeAsset": {
+      "type": "string",
+      "description": "Currency ticker of the asset used to pay the trading fee. Omitted when empty."
+    },
+    "price": {
+      "type": "string",
+      "description": "Limit price per unit in quote currency. Present for orders that carry a price (limit and stop-limit shapes); omitted on market and stop-market order shapes."
+    },
+    "postOnly": {
+      "type": "boolean",
+      "description": "Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Omitted when not set."
+    },
+    "ioc": {
+      "type": "boolean",
+      "description": "Immediate-or-cancel flag. When `true`, the order executes available quantity immediately and cancels the unfilled remainder. Default: `false`."
+    },
+    "status": {
+      "$ref": "#/$defs/OrderStatus"
+    },
+    "stp": {
+      "type": "string",
+      "description": "Self-trade prevention mode applied to the order. Possible values: `no`, `cb`, `cn`, `co`. The response always returns the abbreviated form, even when the request used a legacy value. Default: `no`."
+    },
+    "positionSide": {
+      "type": "string",
+      "description": "Position side (for collateral orders). Returned on the cancel, active-orders list, and modify responses; omitted when not set. Spot order-creation responses do not include the field."
+    },
+    "oto": {
+      "type": "object",
+      "description": "OTO order data. Present only when the order belongs to an [OTO](/glossary#one-triggers-the-other-oto) group — returned on the cancel, active-orders list, and modify responses.",
+      "properties": {
+        "otoId": {
+          "type": "integer",
+          "description": "OTO order identifier"
+        },
+        "takeProfit": {
+          "type": "string",
+          "description": "Take profit order price"
+        },
+        "stopLoss": {
+          "type": "string",
+          "description": "Stop loss order price"
+        }
+      }
+    },
+    "rpi": {
+      "type": "boolean",
+      "description": "Indicates Retail Price Improvement (RPI) mode for the order."
+    },
+    "retail": {
+      "type": "boolean",
+      "description": "Retail-source taker flag. The field is present only when the order was placed with `retail=true`. See [Retail flag](/glossary#retail-flag)."
+    },
+    "reduceOnly": {
+      "type": "boolean",
+      "description": "Reduce-only flag. When `true`, the order can only reduce or close an existing position. Returned on the cancel, active-orders list, and modify responses; spot order-creation responses do not include the field. See [reduce-only](/glossary#reduce-only)."
+    },
+    "activated": {
+      "type": "integer",
+      "description": "Activation status of the stop order. 0 = not yet triggered (waiting for the activation_price condition to be met). 1 = triggered (the stop condition has been met and the order is now active). Returned for stop orders; omitted on other order shapes."
+    },
+    "activationCondition": {
+      "type": "string",
+      "enum": [
+        "lte",
+        "gte"
+      ],
+      "description": "Trigger condition for the stop order. Response-only — not accepted in the request body, and cannot be overridden. Derived from `side`:\n\n- `side = buy` → `gte`. The order activates when the market price rises to or above `activation_price`.\n- `side = sell` → `lte`. The order activates when the market price falls to or below `activation_price`.\n"
+    },
+    "activation_price": {
+      "type": "string",
+      "description": "The trigger price for the stop order. Always equals the activation_price value submitted in the request. Returned for stop orders; omitted on other order shapes."
+    }
+  },
+  "$defs": {
+    "OrderStatus": {
+      "type": "string",
+      "description": "Order lifecycle status. `FILLED` — fully executed. `CANCELED` — canceled before execution. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED_TAKER_BAND` — partially filled up to the taker band limit, remainder canceled to protect against excessive order book slippage. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `AUTO_CANCELED_LIQUIDATION` — pending order auto-canceled because the associated position was force-liquidated. `CANCELED_STP` — order canceled by [Self-Trade Prevention](/platform/self-trade-prevention). REST returns the single-`L` spelling throughout; `NEW` and `PARTIAL_FILLED` are not REST values (`NEW` is WebSocket-only; the partially-filled state is `PARTIALLY_FILLED`)."
+    }
+  }
+}

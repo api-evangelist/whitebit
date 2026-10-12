@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/whitebit/main/json-schema/whitebit-withdraw-request-schema.json",
+  "title": "WithdrawRequest",
+  "x-generated": "2026-10-13",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/whitebit-main-api-v4-openapi.yml#/components/schemas/WithdrawRequest",
+  "type": "object",
+  "required": [
+    "ticker",
+    "amount",
+    "address",
+    "uniqueId",
+    "request",
+    "nonce"
+  ],
+  "properties": {
+    "ticker": {
+      "type": "string",
+      "description": "Currencies [ticker](/glossary#ticker). Example: BTC ⚠️ Currencies ticker must have \"can_deposit\" status equal to \"true\". Use [Asset Status endpoint](/public/http-v4/asset-status-list) to know more about currency."
+    },
+    "amount": {
+      "type": "string",
+      "description": "Withdraw amount (including [fee](/glossary#fee)). To add the fee to the specified amount, use the /main-account/withdraw-pay request"
+    },
+    "address": {
+      "type": "string",
+      "description": "Target address (wallet address for cryptocurrencies, identifier/[card token](/glossary#card-token) for [fiat](/glossary#fiat) currencies)"
+    },
+    "memo": {
+      "type": "string",
+      "description": "Required if currency is memoable. See [memo](/glossary#memodestination-tag) for details."
+    },
+    "uniqueId": {
+      "type": "string",
+      "description": "Unique transaction identifier. Any string up to 255 characters; not validated as a UUID. ⚠️ Generate a new unique ID for each withdrawal request."
+    },
+    "provider": {
+      "type": "string",
+      "description": "[Fiat](/glossary#fiat) currency [provider](/glossary#provider). Example: VISAMASTER ⚠️ Currency provider should be taken from [Asset Status endpoint](/public/http-v4/asset-status-list) response. Required if currency is fiat."
+    },
+    "network": {
+      "type": "string",
+      "description": "Cryptocurrency network. Available for [multinetwork](/glossary#multinetwork) currencies. Example: OMNI ⚠️ Currency network should be taken from [Asset Status endpoint](/public/http-v4/asset-status-list) response. Default for USDT is ERC20"
+    },
+    "partialEnable": {
+      "type": "boolean",
+      "description": "Optional parameter for [FIAT](/glossary#fiat) withdrawals with increased Maximum Limit if set as \"true\". To use this parameter, the application must support \"Partially successful\" withdrawal status and latest updates in deposit/withdrawal history."
+    },
+    "customerIp": {
+      "type": "string",
+      "description": "End-customer IP address forwarded to the [fiat](/glossary#fiat) [provider](/glossary#provider) for antifraud checks before the withdrawal is processed. ⚠️ Required if currency [ticker](/glossary#ticker) is USD or EUR with VISAMASTER [provider](/glossary#provider)."
+    },
+    "bankBic": {
+      "type": "string",
+      "description": "Beneficiary bank's BIC (SWIFT) code, identifying the destination bank for SEPA and other bank-rail [fiat](/glossary#fiat) withdrawals. ⚠️ Required if the fiat [provider](/glossary#provider) is one of: SEPA, SEPA_CLEAR_JUNCTION, SEPA_BCB_GROUP, FINCI, ZEN, BANKING_CIRCLE."
+    },
+    "beneficiary": {
+      "type": "object",
+      "description": "Beneficiary information data. Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER, USD, EUR"
+    },
+    "travelRule": {
+      "type": "object",
+      "description": "Travel Rule information data. Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)"
+    },
+    "request": {
+      "type": "string",
+      "description": "Request signature"
+    },
+    "nonce": {
+      "type": "integer",
+      "description": "Unique request identifier"
+    }
+  }
+}

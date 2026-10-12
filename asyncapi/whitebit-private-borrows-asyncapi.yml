@@ -1,0 +1,271 @@
+asyncapi: 3.0.0
+info:
+  title: WhiteBit Borrows
+  version: 1.0.0
+  description: |
+    Subscribe to borrows updates. The channel does not support query operations — only subscribe, update, and unsubscribe.
+  x-auth-required: true
+  x-rate-limits:
+    connections-per-minute: 1000
+    requests-per-10-seconds: 12000
+
+servers:
+  production:
+    host: wss.whitebit.com
+    protocol: wss
+    description: WhiteBIT Global Server
+  eu:
+    host: api.whitebit.eu
+    protocol: wss
+    description: WhiteBIT EU Server
+
+channels:
+  /ws:
+    address: /ws
+    description: Borrows operations
+    messages:
+      borrowsSubscribe:
+        $ref: '#/components/messages/borrowsSubscribe'
+      borrowsSubscribeResponse:
+        $ref: '#/components/messages/borrowsSubscribeResponse'
+      borrowsUpdate:
+        $ref: '#/components/messages/borrowsUpdate'
+      borrowsUnsubscribe:
+        $ref: '#/components/messages/borrowsUnsubscribe'
+      borrowsUnsubscribeResponse:
+        $ref: '#/components/messages/borrowsUnsubscribeResponse'
+
+operations:
+  sendBorrowsSubscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/borrowsSubscribe'
+
+  receiveBorrowsSubscribeResponse:
+    action: send
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/borrowsSubscribeResponse'
+
+  receiveBorrowsUpdates:
+    action: send
+    description: "Receive real-time borrows updates (Update interval: 1.5 sec)"
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/borrowsUpdate'
+
+  sendBorrowsUnsubscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/borrowsUnsubscribe'
+
+  receiveBorrowsUnsubscribeResponse:
+    action: send
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/borrowsUnsubscribeResponse'
+
+components:
+  messages:
+    borrowsSubscribe:
+      name: BorrowsSubscribe
+      title: Subscribe to Borrows
+      summary: "Subscribe to borrows updates (Update interval: 1.5 sec)"
+      payload:
+        $ref: '#/components/schemas/BorrowsSubscribe'
+      examples:
+        - name: subscribeToBorrows
+          summary: |
+            Subscribe to borrows updates:
+            - params: Empty array (subscribes to all borrows)
+          payload:
+            id: 18
+            method: borrowsMargin_subscribe
+            params: []
+
+    borrowsSubscribeResponse:
+      name: BorrowsSubscribeResponse
+      title: Subscribe Response
+      summary: Subscription confirmation
+      payload:
+        $ref: '#/components/schemas/SubscriptionResponse'
+      examples:
+        - name: subscriptionSuccess
+          summary: Subscription successful
+          payload:
+            id: 18
+            result:
+              status: success
+            error: null
+
+    borrowsUpdate:
+      name: BorrowsUpdate
+      title: Borrows Update
+      summary: Current borrow state for all open borrows
+      payload:
+        $ref: '#/components/schemas/BorrowsUpdate'
+      examples:
+        - name: borrowUpdate
+          summary: |
+            Borrow update event containing:
+            - params: Object with total count and records array
+            - Each borrow record includes: asset (borrowed asset), amount, unrealized_funding, liq_price, and timestamps
+          payload:
+            method: borrowsMargin_update
+            params:
+              total: 1
+              records:
+                - asset: "BTC"
+                  ctime: 1704067200
+                  mtime: 1704067200
+                  amount: "-0.81"
+                  unrealized_funding: "0.00005042"
+                  liq_price: "70000"
+            id: null
+
+    borrowsUnsubscribe:
+      name: BorrowsUnsubscribe
+      title: Unsubscribe from Borrows
+      summary: Stop receiving borrows updates
+      payload:
+        $ref: '#/components/schemas/UnsubscribeRequest'
+      examples:
+        - name: unsubscribe
+          summary: Unsubscribe from borrows
+          payload:
+            id: 19
+            method: borrowsMargin_unsubscribe
+            params: []
+
+    borrowsUnsubscribeResponse:
+      name: BorrowsUnsubscribeResponse
+      title: Unsubscribe Response
+      summary: Unsubscription confirmation
+      payload:
+        $ref: '#/components/schemas/SubscriptionResponse'
+      examples:
+        - name: unsubscribeSuccess
+          summary: Unsubscription successful
+          payload:
+            id: 19
+            result:
+              status: success
+            error: null
+
+  schemas:
+    BorrowsSubscribe:
+      type: object
+      required:
+        - id
+        - method
+        - params
+      properties:
+        id:
+          type: integer
+          description: Unique request identifier
+        method:
+          type: string
+          const: borrowsMargin_subscribe
+          description: "Method name. Fixed value: `borrowsMargin_subscribe`."
+        params:
+          type: array
+          items: {}
+          maxItems: 0
+          description: Empty array for borrows subscription
+
+    SubscriptionResponse:
+      type: object
+      required:
+        - id
+        - result
+        - error
+      properties:
+        id:
+          type: integer
+          description: Request identifier matching the request
+        result:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              const: success
+              description: "Fixed value: `success`."
+        error:
+          type: "null"
+          description: Error object (null on success)
+
+    BorrowsUpdate:
+      type: object
+      required:
+        - id
+        - method
+        - params
+      properties:
+        id:
+          type: "null"
+          description: Update events have null id
+        method:
+          type: string
+          const: borrowsMargin_update
+          description: "Method name. Fixed value: `borrowsMargin_update`."
+        params:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: "Borrows count"
+            records:
+              type: array
+              items:
+                $ref: '#/components/schemas/BorrowRecord'
+
+    BorrowRecord:
+      type: object
+      properties:
+        asset:
+          type: string
+          description: "Borrowed asset"
+        ctime:
+          type: number
+          description: "Borrow created date in Unix time"
+        mtime:
+          type: number
+          description: "Last update time in Unix time"
+        amount:
+          type: string
+          description: "Borrow amount (negative value)"
+        unrealized_funding:
+          type: string
+          description: "Funding to be paid on the next borrow stage change"
+        liq_price:
+          type: string
+          description: "Borrow liquidation price"
+
+    UnsubscribeRequest:
+      type: object
+      required:
+        - id
+        - method
+        - params
+      properties:
+        id:
+          type: integer
+          description: Unique request identifier
+        method:
+          type: string
+          const: borrowsMargin_unsubscribe
+          description: "Method name. Fixed value: `borrowsMargin_unsubscribe`."
+        params:
+          type: array
+          items: {}
+          maxItems: 0
+          description: Empty array for unsubscribe

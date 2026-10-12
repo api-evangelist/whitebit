@@ -1,0 +1,1149 @@
+openapi: 3.2.0
+info:
+  title: WhiteBIT Private HTTP API V4 Withdraw API
+  description: 'WhiteBIT Private HTTP API V4 for Main balance changes.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.'
+  version: 4.0.0
+  contact:
+    name: WhiteBIT Support
+    email: support@whitebit.com
+    url: https://whitebit.com
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Withdraw
+  description: Cryptocurrency and fiat withdrawal operations
+paths:
+  /api/v4/main-account/withdraw:
+    post:
+      tags:
+      - Withdraw
+      summary: Create withdraw request
+      description: 'The endpoint creates withdraw for the specified ticker.
+
+
+        A withdrawal created with a sub-account API key does not settle immediately. The transaction enters `unconfirmed_by_main_account` status and is held until the main account approves it. List the pending withdrawals with `POST /api/v4/sub-account/withdraw/unconfirmed-list` and approve each one by transaction id with `POST /api/v4/sub-account/withdraw/confirm`.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.
+
+
+        Also, fiat currencies can''t be withdrawn without KYC verification.'
+      operationId: createWithdraw
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - ticker
+              - amount
+              - address
+              - uniqueId
+              - request
+              - nonce
+              properties:
+                ticker:
+                  type: string
+                  description: 'Currency''s [ticker](/glossary#ticker). Example: BTC
+
+
+                    ⚠️ Currencies ticker must have "can_deposit" status equal to "true". Use [Asset Status endpoint](/public/http-v4/asset-status-list) to know more about currency.
+
+                    '
+                  example: ETH
+                amount:
+                  type: string
+                  description: 'Withdraw amount (including [fee](/glossary#fee)). To add the fee to the specified amount, use the /main-account/withdraw-pay request.
+
+                    '
+                  example: '0.9'
+                address:
+                  type: string
+                  description: Target address (wallet address for cryptocurrencies, identifier/[card token](/glossary#card-token) for [fiat](/glossary#fiat) currencies)
+                  example: '0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c'
+                memo:
+                  type: string
+                  description: '[Memo](/glossary#memodestination-tag).
+
+
+                    ⚠️ Required if currency is memoable.
+
+                    '
+                  example: '48565488244493'
+                uniqueId:
+                  type: string
+                  description: 'Unique transaction identifier. Any string up to 255 characters; not validated as a UUID.
+
+
+                    ⚠️ Generate a new unique ID for each withdrawal request.
+
+                    '
+                  example: '24529041'
+                provider:
+                  type: string
+                  description: '[Fiat](/glossary#fiat) currency [provider](/glossary#provider). Example: VISAMASTER
+
+
+                    ⚠️ Required for fiat currencies. Currency provider should be taken from [Asset Status endpoint](/public/http-v4/asset-status-list) response.
+
+                    '
+                  example: VISAMASTER
+                network:
+                  type: string
+                  description: 'Cryptocurrency network. Available for multi network currencies. Example: OMNI
+
+
+                    ⚠️ Currency network should be taken from [Asset Status endpoint](/public/http-v4/asset-status-list) response. Default for USDT is ERC20
+
+                    '
+                  example: ERC20
+                partialEnable:
+                  type: boolean
+                  description: Optional parameter for [FIAT](/glossary#fiat) withdrawals with increased Maximum Limit if set as "true". To use this parameter, the application must support "Partially successful" withdrawal status and latest updates in deposit/withdrawal history.
+                  example: false
+                customerIp:
+                  type: string
+                  description: 'End-customer IP address forwarded to the [fiat](/glossary#fiat) [provider](/glossary#provider) for antifraud checks before the withdrawal is processed.
+
+
+                    ⚠️ Required if currency [ticker](/glossary#ticker) is USD or EUR with VISAMASTER [provider](/glossary#provider).
+
+                    '
+                  example: 203.0.113.42
+                bankBic:
+                  type: string
+                  description: 'Beneficiary bank''s BIC (SWIFT) code, identifying the destination bank for SEPA and other bank-rail [fiat](/glossary#fiat) withdrawals.
+
+
+                    ⚠️ Required if the fiat [provider](/glossary#provider) is one of: SEPA, SEPA_CLEAR_JUNCTION, SEPA_BCB_GROUP, FINCI, ZEN, BANKING_CIRCLE.
+
+                    '
+                  example: DEUTDEFF
+                beneficiary:
+                  type: object
+                  description: 'Beneficiary information.
+
+
+                    ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER, USD, EUR.
+
+
+                    Per-field requirements vary by currency and provider. Card-related fields (`cardToken`, `card.*`, `cardTokenSave`, `fingerprintSession`) apply only to card-acquiring rails; bank-related fields (`bank.*`) apply to bank-rail withdrawals; `phone`, `email`, and `birthDate` are required for VISAMASTER/Mercuryo rails. See `/asset-status-list` for the active provider per currency.
+
+                    '
+                  properties:
+                    firstName:
+                      type: string
+                      description: 'Beneficiary first name. Max length: 40 symbols, latin letters and special characters.
+
+
+                        ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, USD, EUR
+
+                        '
+                      example: Firstname
+                    lastName:
+                      type: string
+                      description: 'Beneficiary last name. Max length: 40 symbols, latin letters and special characters.
+
+
+                        ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, USD, EUR
+
+                        '
+                      example: Lastname
+                    phone:
+                      type: string
+                      description: 'Beneficiary phone number.
+
+
+                        ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER
+
+                        '
+                      example: '1234567891'
+                    email:
+                      type: string
+                      description: 'Beneficiary email.
+
+
+                        ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER
+
+                        '
+                      example: john_doe@email.com
+                    birthDate:
+                      type: string
+                      format: date
+                      description: 'Beneficiary birth date. Format: YYYY-MM-DD.
+
+
+                        ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER, or when withdrawing through Mercuryo.
+
+                        '
+                      example: '1990-01-01'
+                    code:
+                      type: string
+                      description: 'Beneficiary verification code returned by a prior verification step. Used by some card-acquiring flows that require a one-time verification challenge before settlement.
+
+                        '
+                      example: '123456'
+                    cardToken:
+                      type: string
+                      description: 'Tokenized payment-card identifier for card-acquiring rails. Use instead of raw PAN; obtain from the card-tokenisation endpoint or from a prior successful settlement on the same card.
+
+                        '
+                      example: tok_4f7c8e2a
+                    cardTokenSave:
+                      type: boolean
+                      description: 'If `true`, request the acquiring provider to persist the card token for reuse on subsequent withdrawals to the same beneficiary.
+
+                        '
+                      example: false
+                    fingerprintSession:
+                      type: string
+                      description: 'Anti-fraud device-fingerprint session identifier captured at the partner''s checkout surface and forwarded to the acquiring provider. Required by some VISAMASTER configurations.
+
+                        '
+                      example: fps_abc123
+                    card:
+                      type: object
+                      description: 'Card details for card-acquiring rails. Use `cardToken` instead when available; raw card details apply only when a fresh card is being added.
+
+                        '
+                      properties:
+                        save:
+                          type: boolean
+                          description: If `true`, persist the card for reuse on subsequent withdrawals.
+                          example: false
+                        name:
+                          type: string
+                          description: Cardholder name as embossed on the card.
+                          example: John Doe
+                        firstName:
+                          type: string
+                          description: Cardholder first name.
+                          example: John
+                        lastName:
+                          type: string
+                          description: Cardholder last name.
+                          example: Doe
+                        number:
+                          type: string
+                          description: Primary Account Number (PAN). Treat as PCI-scope sensitive data on the partner side.
+                          example: '4111111111111111'
+                        month:
+                          type: string
+                          description: Card expiry month as a two-digit string (`01`-`12`).
+                          example: '12'
+                        year:
+                          type: string
+                          description: Card expiry year as a four-digit string.
+                          example: '2030'
+                    address:
+                      type: object
+                      description: 'Beneficiary postal address. Required for several VISAMASTER/SEPA configurations.
+
+                        '
+                      properties:
+                        line1:
+                          type: string
+                          description: Street address line 1.
+                          example: Martinez Campos 37
+                        line2:
+                          type: string
+                          description: Street address line 2.
+                          example: ''
+                        city:
+                          type: string
+                          description: City.
+                          example: Madrid
+                        zip:
+                          type: string
+                          description: Postal / ZIP code.
+                          example: '28010'
+                        country:
+                          type: string
+                          description: ISO country code.
+                          example: ES
+                    bank:
+                      type: object
+                      description: 'Beneficiary bank details for bank-rail withdrawals (used when the destination is an account number rather than an IBAN).
+
+                        '
+                      properties:
+                        routingNumber:
+                          type: string
+                          description: Bank routing number (ABA, BSB, sort code, or equivalent for the destination country).
+                          example: '021000021'
+                        name:
+                          type: string
+                          description: Bank name.
+                          example: Example Bank
+                        address:
+                          type: string
+                          description: Bank postal address.
+                          example: 1 Bank Street, London
+                        country:
+                          type: string
+                          description: Bank country (ISO code).
+                          example: GB
+                travelRule:
+                  type: object
+                  description: 'Travel Rule information for regulatory compliance.
+
+
+                    ⚠️ Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
+
+
+                    See [Travel Rule Overview](/api-reference/travel-rule/overview) for complete documentation.
+
+
+                    **Legacy format:** The API still accepts the old flat format (`type`, `vasp`, `name`, `address` fields), but this format will not pass Travel Rule verification. To complete Travel Rule compliance, use the new structured format with `walletType`, `beneficiary`, and `vasp` objects.
+
+                    '
+                  properties:
+                    walletType:
+                      type: string
+                      enum:
+                      - hosted
+                      - unhosted
+                      description: 'Destination wallet type:
+
+                        - `hosted` - VASP-hosted wallet (exchange, custodian). Requires `vasp` object.
+
+                        - `unhosted` - Self-custody wallet (hardware, software). No `vasp` required.
+
+                        '
+                      example: hosted
+                    beneficiary:
+                      type: object
+                      description: Beneficiary information.
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                          - individual
+                          - entity
+                          description: 'Beneficiary type:
+
+                            - `individual` - Natural person. Requires `firstName`, `lastName`.
+
+                            - `entity` - Legal entity. Requires `fullName`.
+
+                            '
+                          example: individual
+                        firstName:
+                          type: string
+                          description: First name. Required if `type` is `individual`.
+                          example: John
+                        lastName:
+                          type: string
+                          description: Last name. Required if `type` is `individual`.
+                          example: Doe
+                        fullName:
+                          type: string
+                          description: Full legal name. Required if `type` is `entity`.
+                          example: Acme Trading Ltd
+                        residenceCountry:
+                          type: string
+                          description: Beneficiary's country of residence. ISO 3166-1 alpha-3 code (3 letters).
+                          example: DEU
+                        address:
+                          type: object
+                          description: Physical address.
+                          properties:
+                            country:
+                              type: string
+                              description: ISO 3166-1 alpha-3 country code.
+                              example: DEU
+                            city:
+                              type: string
+                              description: City name.
+                              example: Berlin
+                            postCode:
+                              type: string
+                              description: Postal code.
+                              example: '10178'
+                            addressLine1:
+                              type: string
+                              description: Street address.
+                              example: Alexanderplatz 1
+                    vaspData:
+                      type: object
+                      description: 'VASP (Virtual Asset Service Provider) information. Required if `walletType` is `hosted`.
+
+
+                        Use `vaspId` if the destination VASP is in the list from [Get VASPs](/api-reference/travel-rule/get-vasps), otherwise use `vaspName`.
+
+                        '
+                      properties:
+                        vaspId:
+                          type: string
+                          description: VASP ID from the [Get VASPs](/api-reference/travel-rule/get-vasps) endpoint. Use this if the VASP is in the list.
+                          example: vasp-001
+                        vaspName:
+                          type: string
+                          description: VASP name as a string. Use this if the VASP is not in the list.
+                          example: Famous Vasp Inc
+                paymentDescription:
+                  type: string
+                  description: 'Description of withdrawal destination
+
+
+                    ⚠️ Required if currency is crypto and withdrawal from whitebit-tr.com
+
+                    '
+                  example: Payment description
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            examples:
+              crypto:
+                summary: Crypto withdrawal
+                value:
+                  ticker: ETH
+                  amount: '0.9'
+                  address: '0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c'
+                  uniqueId: '24529041'
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              multiNetwork:
+                summary: Multinetwork currency (USDT)
+                value:
+                  ticker: USDT
+                  amount: '0.9'
+                  address: '0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c'
+                  uniqueId: '24529042'
+                  network: ERC20
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              fiatUsdVisamaster:
+                summary: Fiat USD/EUR with VISAMASTER (customerIp required)
+                value:
+                  ticker: USD
+                  amount: '150.00'
+                  address: t6XIpyirkiLP+I++XHWfSeGrn5p38g==
+                  provider: VISAMASTER
+                  uniqueId: ab12cd34-9101-4abc-9def-1234567890ab
+                  customerIp: 203.0.113.42
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              fiatIban:
+                summary: Fiat IBAN transfer (EUR)
+                value:
+                  ticker: EUR
+                  amount: '500'
+                  address: DE89370400440532013000
+                  beneficiary:
+                    firstName: Firstname
+                    lastName: Lastname
+                  provider: SEPA_BCB_GROUP
+                  uniqueId: '24529046'
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              fiatVisamaster:
+                summary: Fiat USD/EUR VISAMASTER
+                value:
+                  ticker: USD
+                  amount: '30000'
+                  address: t6XIpyirkiLP+I++XHWfSeGrn5p38g==
+                  beneficiary:
+                    firstName: Firstname
+                    lastName: Lastname
+                    phone: '1234567891'
+                    email: john_doe@email.com
+                  provider: USD_VISAMASTER
+                  uniqueId: '24529045'
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              fiatSepa:
+                summary: Fiat SEPA / bank-rail (bankBic required)
+                value:
+                  ticker: EUR
+                  amount: '100'
+                  address: DE89370400440532013000
+                  provider: SEPA
+                  bankBic: DEUTDEFF
+                  beneficiary:
+                    firstName: Firstname
+                    lastName: Lastname
+                  uniqueId: '24529046'
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              travelRuleIndividualHosted:
+                summary: Travel rule - individual to hosted wallet
+                value:
+                  ticker: BTC
+                  amount: '0.5'
+                  address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+                  uniqueId: '24529048'
+                  travelRule:
+                    walletType: hosted
+                    beneficiary:
+                      type: individual
+                      firstName: John
+                      lastName: Doe
+                      residenceCountry: DEU
+                      address:
+                        country: DEU
+                        city: Berlin
+                        addressLine1: Alexanderplatz 1
+                    vaspData:
+                      vaspId: vasp-001
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              travelRuleEntityHosted:
+                summary: Travel rule - entity to hosted wallet
+                value:
+                  ticker: USDT
+                  amount: '10000'
+                  address: '0x742d35Cc6634C0532925a3b844Bc9e7595f8a2B1'
+                  network: ERC20
+                  uniqueId: '24529049'
+                  travelRule:
+                    walletType: hosted
+                    beneficiary:
+                      type: entity
+                      fullName: Acme Trading Ltd
+                      residenceCountry: GBR
+                      address:
+                        country: GBR
+                        city: London
+                        postCode: EC2A 4BX
+                        addressLine1: 123 Finsbury Square
+                    vaspData:
+                      vaspName: Famous Vasp Inc
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              travelRuleIndividualUnhosted:
+                summary: Travel rule - individual to unhosted wallet
+                value:
+                  ticker: ETH
+                  amount: '2.5'
+                  address: '0xabcdef1234567890abcdef1234567890abcdef12'
+                  uniqueId: '24529050'
+                  travelRule:
+                    walletType: unhosted
+                    beneficiary:
+                      type: individual
+                      firstName: Jane
+                      lastName: Smith
+                      residenceCountry: NLD
+                      address:
+                        country: NLD
+                        city: Amsterdam
+                        addressLine1: Damrak 1
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              travelRuleLegacyIndividual:
+                summary: Travel rule - legacy format (won't pass verification)
+                value:
+                  ticker: BTC
+                  amount: '0.5'
+                  address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+                  uniqueId: '24529051'
+                  travelRule:
+                    type: individual
+                    vasp: Binance
+                    name: John
+                    address: Doe
+                  request: '{{request}}'
+                  nonce: 1594297865000
+              travelRuleLegacyEntity:
+                summary: Travel rule - legacy format entity (won't pass verification)
+                value:
+                  ticker: BTC
+                  amount: '1.0'
+                  address: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+                  uniqueId: '24529052'
+                  travelRule:
+                    type: entity
+                    vasp: Kraken
+                    name: Acme Corp
+                    address: 123 Business Street, London, UK
+                  request: '{{request}}'
+                  nonce: 1594297865000
+      responses:
+        '201':
+          description: Validation succeeded and withdraw creation process is started. Check the request status by uniqueId in deposit/withdraw history.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+                description: Empty array indicates success
+              example: []
+        '400':
+          description: 'Request validation failed. Request-shape errors always carry `code: 0`; the
+
+            business-rule codes 1–9 are returned with HTTP 422 (see below), not 400.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      address:
+                      - The address field is required.
+                      amount:
+                      - The amount field is required.
+                      ticker:
+                      - The ticker field is required.
+                      uniqueId:
+                      - The unique id field is required.
+                duplicateUniqueId:
+                  summary: Duplicate uniqueId
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      uniqueId:
+                      - The unique id has already been taken.
+                unconfirmedUser:
+                  summary: Unconfirmed user (without KYC)
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - This currency has no active pairs or it may have been delisted. Its rate cannot be calculated at the moment.
+                      - Current limit exceeded
+                accountVerification:
+                  summary: Account must be verified for fiat currencies
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Your account must be verified
+                invalidTicker:
+                  summary: Invalid ticker
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - The selected ticker is invalid.
+                providerRequired:
+                  summary: Provider required for fiat currency
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      provider:
+                      - Provider is required for fiat currency
+                memoRequired:
+                  summary: Memo required for memoable currency
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      memo:
+                      - The memo field is required.
+                invalidPartialEnable:
+                  summary: Invalid partialEnable value
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      partialEnable:
+                      - The partial enable field must be true or false.
+                throttling:
+                  summary: Rate limiting/throttling
+                  value:
+                    message: Too Many Attempts.
+                    code: 0
+        '422':
+          description: "Inner validation failed.\n\nBusiness-rule codes (returned with HTTP 422):\n- 1 - currency is not withdrawable\n- 2 - specified address is invalid\n- 3 - amount is too small\n- 4 - amount is too small for the payment system\n- 5 - not enough balance\n- 6 - amount is less than or equals [fee](/glossary#fee)\n- 7 - amount should be integer (can happen for currencies with zero [precision](/glossary#precision) like Neo)\n- 8 - target withdraw amount without [fee](/glossary#fee) equals zero\n- 9 - address is unavailable (occurs for withdraws to own address)\n- 20 - the amount is not withdrawable yet because deposits credited before full network confirmation are still held back; see [Withdrawable balance](/api-reference/account-wallet/withdrawable-balance)\n\nAdditional account-state outcomes are also returned here with `code: 0`\n(the message is localized, so match on the condition rather than the exact string):\n- **Daily / monthly withdrawal limit reached** — on field `amount`.\n- **Withdrawals temporarily restricted** — after a security event (e.g. password\n  change); on field `error`, e.g. `Withdrawals restricted until {time}`.\n- **Address blocked by compliance** — the request is accepted but the withdrawal\n  transitions to an `AML_FROZEN` state (no distinct error body); check the request\n  status by `uniqueId` in deposit/withdraw history.\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                invalidAddress:
+                  summary: Invalid address
+                  value:
+                    code: 2
+                    message: Inner validation failed
+                    errors:
+                      address:
+                      - The address is invalid
+                pendingDeposit:
+                  summary: Amount still held back by an unconfirmed deposit
+                  value:
+                    code: 20
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Insufficient available balance. Recent deposits are awaiting final network confirmation.
+                notEnoughBalance:
+                  summary: Not enough balance
+                  value:
+                    code: 5
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Not enough money, Ethereum balance = 1
+        '412':
+          description: 'Two-Factor Authentication (2FA) is required for this action but is not enabled on
+
+            the account. Enable 2FA in account security settings, then retry. The HTTP 412
+
+            status distinguishes this precondition failure from the business-rule codes at 422.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              example:
+                code: 1
+                message: This action is unauthorized. Please, enable Two-Factor authentication.
+        '401':
+          description: 'The API key is not authorized for this endpoint. Occurs with a [sub-account](/glossary#sub-account)
+
+            key whose `/api/v4/main-account/withdraw` URL is still `enable: false`. Enable it with
+
+            [Edit Sub-Account API Key](/api-reference/sub-accounts/edit-sub-account-api-key), then retry.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 4
+                message: This API Key is not authorized to perform this action.
+  /api/v4/main-account/withdraw-pay:
+    post:
+      tags:
+      - Withdraw
+      summary: Create withdraw request with specific withdraw amount (fee not included)
+      description: 'The endpoint has the similar logic as /main-account/withdraw, but with the only difference: amount that is specified will not include fee (it will be calculated to make target withdraw amount equal to the specified amount).
+
+
+        **Example:**
+
+        - When creating a base withdraw with amount = 100 USD, the receiver receives 100 USD minus the fee, and the balance decreases by 100 USD.
+
+        - When using this endpoint with amount = 100 USD, the receiver receives 100 USD, and the balance decreases by 100 USD plus the fee.
+
+
+        Rate limit: 1000 requests/10 sec.
+
+
+        The API does not cache the response.'
+      operationId: createWithdrawPay
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WithdrawRequest'
+            example:
+              ticker: ETH
+              amount: '0.9'
+              address: '0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c'
+              uniqueId: '24529041'
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '201':
+          description: Validation succeeded and withdraw creation process is started. Check the request status by uniqueId in deposit/withdraw history.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {}
+                description: Empty array indicates success
+              example: []
+        '400':
+          description: 'Request validation failed. Request-shape errors always carry `code: 0`; the
+
+            business-rule codes 1–9 are returned with HTTP 422 (see below), not 400.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      address:
+                      - The address field is required.
+                      amount:
+                      - The amount field is required.
+                      ticker:
+                      - The ticker field is required.
+                      uniqueId:
+                      - The unique id field is required.
+                duplicateUniqueId:
+                  summary: Duplicate uniqueId
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      uniqueId:
+                      - The unique id has already been taken.
+                unconfirmedUser:
+                  summary: Unconfirmed user (without KYC)
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - This currency has no active pairs or it may have been delisted. Its rate cannot be calculated at the moment.
+                      - Current limit exceeded
+        '422':
+          description: 'Inner validation failed. This endpoint shares the validation pipeline of
+
+            /main-account/withdraw, so the error contract is identical — the same
+
+            business-rule codes and the same `code: 0` account-state outcomes apply.
+
+
+            Business-rule codes (returned with HTTP 422):
+
+            - 1 - currency is not withdrawable
+
+            - 2 - specified address is invalid
+
+            - 3 - amount is too small
+
+            - 4 - amount is too small for the payment system
+
+            - 5 - not enough balance
+
+            - 6 - amount is less than or equals [fee](/glossary#fee)
+
+            - 7 - amount should be integer (can happen for currencies with zero [precision](/glossary#precision) like Neo)
+
+            - 8 - target withdraw amount without [fee](/glossary#fee) equals zero
+
+            - 9 - address is unavailable (occurs for withdraws to own address)
+
+            - 20 - the amount is not withdrawable yet because deposits credited before full network confirmation are still held back; see [Withdrawable balance](/api-reference/account-wallet/withdrawable-balance)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              examples:
+                invalidAddress:
+                  summary: Invalid address
+                  value:
+                    code: 2
+                    message: Inner validation failed
+                    errors:
+                      address:
+                      - The address is invalid
+                pendingDeposit:
+                  summary: Amount still held back by an unconfirmed deposit
+                  value:
+                    code: 20
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Insufficient available balance. Recent deposits are awaiting final network confirmation.
+                notEnoughBalance:
+                  summary: Not enough balance
+                  value:
+                    code: 5
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Not enough money, Ethereum balance = 1
+        '412':
+          description: 'Two-Factor Authentication (2FA) is required for this action but is not enabled on
+
+            the account. Enable 2FA in account security settings, then retry. The HTTP 412
+
+            status distinguishes this precondition failure from the business-rule codes at 422.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+              example:
+                code: 1
+                message: This action is unauthorized. Please, enable Two-Factor authentication.
+  /api/v4/main-account/express-withdraw/token:
+    post:
+      tags:
+      - Withdraw
+      summary: Create express withdraw token
+      description: 'The endpoint creates a signed, single-use Express Withdraw payment token that charges a specific amount from a WhiteBIT user''s balance to the partner''s Main balance in an instant, off-chain, zero-fee internal transfer. The response returns a URL that embeds the token; the paying user confirms the exact ticker and amount on the WhiteBIT-hosted confirmation surface.
+
+
+        Token and payment constraints:
+
+        - Each token is single-use: WhiteBIT marks the token used at confirmation and rejects any replay.
+
+        - Each token expires 90 seconds after creation; the `expireAt` response field carries the authoritative expiry timestamp. Generate the token as close as possible to the moment of presenting the URL to the user.
+
+        - The ticker must be a withdrawal-enabled cryptocurrency; the endpoint rejects fiat tickers.
+
+        - Each payment is capped at the equivalent of 10,000 USDT; WhiteBIT enforces the cap at token creation and re-enforces the cap at confirmation.
+
+        - WhiteBIT rejects self-payments: the paying user and the token creator must be different WhiteBIT accounts.
+
+        - The endpoint is idempotent per `externalId`: re-submitting the same `externalId` with an identical `ticker` and `amount` while the token is still valid returns the same token instead of creating a duplicate charge. After the token expires, the same `externalId` receives a fresh token.
+
+
+        Standard private-API rate limits apply — see Rate limits. The endpoint carries no endpoint-specific limit.'
+      operationId: createExpressWithdrawToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - ticker
+              - amount
+              - externalId
+              - request
+              - nonce
+              properties:
+                ticker:
+                  type: string
+                  description: 'Currency [ticker](/glossary#ticker) to charge. Example: USDT
+
+
+                    ⚠️ The ticker must be a withdrawal-enabled cryptocurrency; the endpoint rejects [fiat](/glossary#fiat) tickers. Use [Asset Status endpoint](/public/http-v4/asset-status-list) to check the withdrawal status of a currency.
+
+                    '
+                  example: USDT
+                amount:
+                  type: string
+                  description: 'Amount to charge in the specified [ticker](/glossary#ticker). Numeric string.
+
+
+                    ⚠️ The amount converted to USDT-equivalent must not exceed 10,000; the endpoint rejects larger amounts with error code `191`.
+
+                    '
+                  example: '25.50'
+                externalId:
+                  type: string
+                  description: 'Partner-side reference for the payment (order or invoice identifier), unique per partner account. The identifier powers idempotency and replay protection: a pending `externalId` with an identical `ticker` and `amount` returns the same token; the endpoint rejects an already-paid `externalId` with error code `19`.
+
+                    '
+                  example: order-100294
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            examples:
+              expressWithdraw:
+                summary: Express Withdraw payment token
+                value:
+                  ticker: USDT
+                  amount: '25.50'
+                  externalId: order-100294
+                  request: '{{request}}'
+                  nonce: 1594297865000
+      responses:
+        '201':
+          description: Token created. Present the returned URL to the paying user before the expiry in `expireAt`.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: 'URL to present to the paying user (redirect, deep link, or QR code). The value is the WhiteBIT-hosted web confirmation page by default, or a mobile deep link when one is configured for the partner at onboarding; in both cases the unique token travels in the `token` query parameter. Treat the value as opaque.
+
+                      '
+                    example: https://whitebit.com/express-withdraw?token=8f3c0a7d4e21
+                  expireAt:
+                    type: string
+                    description: 'Absolute token expiry timestamp in `YYYY-MM-DD HH:MM:SS` format (UTC). The authoritative expiry: each token expires 90 seconds after creation.
+
+                      '
+                    example: '2026-07-10 12:34:56'
+              example:
+                url: https://whitebit.com/express-withdraw?token=8f3c0a7d4e21
+                expireAt: '2026-07-10 12:34:56'
+        '403':
+          description: 'The account does not have the Express Withdraw permission. WhiteBIT grants the permission through the B2B partner approval process — request access at https://institutional.whitebit.com/.
+
+            '
+        '422':
+          description: 'Inner validation failed.
+
+
+            Business-rule codes (returned with HTTP 422):
+
+            - 18 - token invalid: a pending `externalId` re-submitted with a different `ticker` or `amount`. Parameters of a pending payment cannot change — use a new `externalId`.
+
+            - 19 - token already used: the `externalId` belongs to a payment the user already confirmed.
+
+            - 191 - amount exceeds the limit: the amount converts to more than the 10,000 USDT-equivalent per-payment cap.
+
+            - 20 - the amount is not withdrawable yet because deposits credited before full network confirmation are still held back; see [Withdrawable balance](/api-reference/account-wallet/withdrawable-balance)
+
+
+            Additional outcomes returned with HTTP 422:
+
+            - **Currency not allowed** — the [ticker](/glossary#ticker) is [fiat](/glossary#fiat) or not withdrawal-enabled; the error is keyed to the currency field.
+
+            - **Unexpected server-side error** — a generic "Please try again later" message; retry the request.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInner'
+components:
+  schemas:
+    ErrorInner:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    WithdrawRequest:
+      type: object
+      required:
+      - ticker
+      - amount
+      - address
+      - uniqueId
+      - request
+      - nonce
+      properties:
+        ticker:
+          type: string
+          description: 'Currencies [ticker](/glossary#ticker). Example: BTC ⚠️ Currencies ticker must have "can_deposit" status equal to "true". Use [Asset Status endpoint](/public/http-v4/asset-status-list) to know more about currency.'
+          example: ETH
+        amount:
+          type: string
+          description: Withdraw amount (including [fee](/glossary#fee)). To add the fee to the specified amount, use the /main-account/withdraw-pay request
+          example: '0.9'
+        address:
+          type: string
+          description: Target address (wallet address for cryptocurrencies, identifier/[card token](/glossary#card-token) for [fiat](/glossary#fiat) currencies)
+          example: '0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c'
+        memo:
+          type: string
+          description: Required if currency is memoable. See [memo](/glossary#memodestination-tag) for details.
+          example: '48565488244493'
+        uniqueId:
+          type: string
+          description: Unique transaction identifier. Any string up to 255 characters; not validated as a UUID. ⚠️ Generate a new unique ID for each withdrawal request.
+          example: '24529041'
+        provider:
+          type: string
+          description: '[Fiat](/glossary#fiat) currency [provider](/glossary#provider). Example: VISAMASTER ⚠️ Currency provider should be taken from [Asset Status endpoint](/public/http-v4/asset-status-list) response. Required if currency is fiat.'
+          example: VISAMASTER
+        network:
+          type: string
+          description: 'Cryptocurrency network. Available for [multinetwork](/glossary#multinetwork) currencies. Example: OMNI ⚠️ Currency network should be taken from [Asset Status endpoint](/public/http-v4/asset-status-list) response. Default for USDT is ERC20'
+          example: ERC20
+        partialEnable:
+          type: boolean
+          description: Optional parameter for [FIAT](/glossary#fiat) withdrawals with increased Maximum Limit if set as "true". To use this parameter, the application must support "Partially successful" withdrawal status and latest updates in deposit/withdrawal history.
+          example: false
+        customerIp:
+          type: string
+          description: End-customer IP address forwarded to the [fiat](/glossary#fiat) [provider](/glossary#provider) for antifraud checks before the withdrawal is processed. ⚠️ Required if currency [ticker](/glossary#ticker) is USD or EUR with VISAMASTER [provider](/glossary#provider).
+          example: 203.0.113.42
+        bankBic:
+          type: string
+          description: 'Beneficiary bank''s BIC (SWIFT) code, identifying the destination bank for SEPA and other bank-rail [fiat](/glossary#fiat) withdrawals. ⚠️ Required if the fiat [provider](/glossary#provider) is one of: SEPA, SEPA_CLEAR_JUNCTION, SEPA_BCB_GROUP, FINCI, ZEN, BANKING_CIRCLE.'
+          example: DEUTDEFF
+        beneficiary:
+          type: object
+          description: 'Beneficiary information data. Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER, USD, EUR'
+        travelRule:
+          type: object
+          description: Travel Rule information data. Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
+        request:
+          type: string
+          description: Request signature
+          example: '{{request}}'
+        nonce:
+          type: integer
+          description: Unique request identifier
+          example: 1594297865000
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

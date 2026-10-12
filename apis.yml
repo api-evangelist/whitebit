@@ -1,23 +1,1488 @@
 aid: whitebit
+
 name: WhiteBIT
-description: 'WhiteBIT is a company surfaced via the API Evangelist harvest backlog (source: market-gap)
-  and added to the network as a stub for full-pipeline profiling.'
+
+image: https://static.whitebit.com/img/og-image-en.png
+
+description: WhiteBIT is a European centralized cryptocurrency exchange offering spot, collateral (margin/futures) trading, and account/wallet
+  services, with public and private REST APIs (v1/v4), OAuth 2.0, and a WebSocket API.
+
 url: https://raw.githubusercontent.com/api-evangelist/whitebit/refs/heads/main/apis.yml
+
 x-type: company
+
 x-source: harvest:market-gap
-x-tier: stub
+
+x-tier: enriched
+
 x-tier-reason: harvest
+
 specificationVersion: '0.20'
+
 created: '2026-10-13'
+
 modified: '2026-10-13'
+
 tags:
 - Company
-apis: []
+- Cryptocurrency
+- Exchange
+- Trading
+- WebSocket
+
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
+
 common:
+- type: AgenticAccess
+  url: agentic-access/whitebit-agentic-access.yml
+- type: Spectral
+  url: rules/whitebit-rules.yml
+- type: JSONLD
+  url: json-ld/whitebit-context.jsonld
+- type: Vocabulary
+  url: vocabulary/whitebit-vocabulary.yml
+- type: DataModel
+  url: data-model/whitebit-data-model.yml
+- type: Idempotency
+  url: conventions/whitebit-conventions.yml
+- type: Conventions
+  url: conventions/whitebit-conventions.yml
+- type: ErrorCatalog
+  url: errors/whitebit-problem-types.yml
+- type: Conformance
+  url: conformance/whitebit-conformance.yml
+- type: LLMsTxt
+  url: llms/whitebit-llms.txt
+- type: WellKnown
+  url: well-known/whitebit-well-known.yml
+- type: Hosts
+  url: hosts/whitebit-hosts.yml
+- type: Vendors
+  url: vendors/whitebit-vendors.yml
+- type: TermsOfService
+  url: https://whitebit.com/terms
+- type: PrivacyPolicy
+  url: https://whitebit.com/terms/privacy-policy
+- type: Newsroom
+  url: https://whitebit.com/m/media
+- type: Blog
+  url: https://blog.whitebit.com/en?utm_source=whitebit_exchange
+- type: Login
+  url: https://whitebit.com/auth/login
+- type: SignUp
+  url: https://whitebit.com/auth/register
+- type: Authentication
+  url: authentication/whitebit-authentication.yml
+- type: DomainSecurity
+  url: security/whitebit-domain-security.yml
 - type: Website
   url: https://whitebit.com
+- type: Documentation
+  url: https://docs.whitebit.com/
+- type: APIReference
+  url: https://docs.whitebit.com/api-reference/overview
+- type: GettingStarted
+  url: https://docs.whitebit.com/platform/overview
+- type: LLMs
+  url: https://docs.whitebit.com/llms.txt
+- type: StatusPage
+  url: https://status.whitebit.com
+- type: Support
+  url: https://help.whitebit.com
+- type: GitHubOrganization
+  url: https://github.com/whitebit-exchange
+- type: SourceCode
+  url: https://github.com/whitebit-exchange/docs
+- type: MCP
+  url: mcp/whitebit-mcp.yml
+- type: MCPServer
+  url: https://docs.whitebit.com/mcp
+- type: Packages
+  url: packages/whitebit-packages.yml
+- type: SDKs
+  url: packages/whitebit-packages.yml
+- type: CLI
+  url: cli/whitebit-cli.yml
+
+apis:
+- aid: whitebit:websocket
+  name: WhiteBIT WebSocket API
+  description: >-
+    Real-time market streams and private account streams over WebSocket (wss://api.whitebit.com/ws).
+  humanURL: https://docs.whitebit.com/websocket/overview
+  tags:
+  - WebSocket
+  - Streaming
+  properties:
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-adl-quantile-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-authorize-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-balance-margin-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-balance-spot-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-borrows-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-borrows-events-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-collateral-order-bbo-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-collateral-order-limit-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-collateral-order-market-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-collateral-order-oco-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-collateral-order-oto-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-collateral-order-stop-bbo-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-collateral-order-stop-limit-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-collateral-order-stop-market-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-collateral-order-tpsl-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-deals-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-margin-positions-events-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-bbo-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-cancel-all-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-cancel-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-cancel-conditional-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-limit-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-market-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-market-stock-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-modify-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-stop-bbo-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-stop-limit-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-stop-market-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-order-stop-market-stock-place-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-orders-executed-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-orders-pending-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-private-positions-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-public-book-ticker-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-public-depth-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-public-kline-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-public-lastprice-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-public-market-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-public-market-today-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-public-premium-index-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-public-service-asyncapi.yml
+  - type: AsyncAPI
+    url: asyncapi/whitebit-public-trades-asyncapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/websocket/overview
+- aid: whitebit:whitebit-account-endpoints-api
+  name: WhiteBIT Account Endpoints API
+  description: Endpoints for retrieving account information, balances, and transaction history
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Account Endpoints
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-account-endpoints-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-address-checker-api
+  name: WhiteBIT Address Checker API
+  description: Address Checker endpoints for B2B address screening
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Address Checker
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-address-checker-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-authentication-api
+  name: WhiteBIT Authentication API
+  description: >-
+    OAuth 2.0 authentication endpoints for obtaining and refreshing access tokens.
+
+
+    Available Scopes (requested during client setup):
+
+    - general: General API access
+
+    - show.userinfo: Access to basic user information
+
+    - users.read: Read user data
+
+    - users.email.read: Read user email information
+
+    - users.kyc.read: Information about whether a user has passed KYC verification
+
+    - orders.read: Read trading orders
+
+    - orders.create: Create trading orders
+
+    - orders.delete: Delete trading orders
+
+    - balances.read: Read account balances
+
+    - markets.read: Read market information
+
+    - deals.read: Read trading deals
+
+    - orders_history.read: Read order history
+
+    - users.transactions.read: Read user transactions
+
+    - users.converts.read: Read currency conversion history
+
+    - users.balances.read: Read user account balances
+
+    - users.orders.read: Read user orders
+
+    - users.deals.read: Read user deals
+
+    - apikeys.create: Issue an OAuth-bound API key during the consent flow
+
+    - apikeys.read: Read OAuth-issued API key state and retrieve its secret once
+
+    - apikeys.delete: Delete an OAuth-issued API key linked to the partner
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Authentication
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-authentication-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-codes-api
+  name: WhiteBIT Codes API
+  description: WhiteBIT codes operations
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Codes
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-codes-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-collateral-trading-api
+  name: WhiteBIT Collateral Trading API
+  description: Endpoints for collateral/margin trading operations
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Collateral Trading
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-collateral-trading-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-convert-api
+  name: WhiteBIT Convert API
+  description: The Convert API from WhiteBIT — 4 operation(s) for convert.
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Convert
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-convert-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-credit-line-api
+  name: WhiteBIT Credit Line API
+  description: Credit line information
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Credit Line
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-credit-line-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-crypto-lending-fixed-api
+  name: WhiteBIT Crypto Lending - Fixed API
+  description: Fixed crypto lending plans
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Crypto Lending - Fixed
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-crypto-lending-fixed-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-crypto-lending-flex-api
+  name: WhiteBIT Crypto Lending - Flex API
+  description: Flexible crypto lending plans
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Crypto Lending - Flex
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-crypto-lending-flex-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-deposit-api
+  name: WhiteBIT Deposit API
+  description: Cryptocurrency and fiat deposit operations
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Deposit
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-deposit-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-fees-api
+  name: WhiteBIT Fees API
+  description: Fee information
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Fees
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-fees-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-jwt-api
+  name: WhiteBIT JWT API
+  description: JWT token management
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - JWT
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-jwt-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-main-account-api
+  name: WhiteBIT Main Account API
+  description: Main account balance and operations
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Main Account
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-main-account-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-market-fee-api
+  name: WhiteBIT Market Fee API
+  description: Endpoints for querying trading fees
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Market Fee
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-market-fee-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-mining-pool-api
+  name: WhiteBIT Mining Pool API
+  description: Mining pool operations
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Mining Pool
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-mining-pool-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-oauth-api-keys-api
+  name: WhiteBIT OAuth API Keys API
+  description: >-
+    Partner-facing endpoints for managing API keys created via the OAuth API key flow.
+
+
+    Available on the global server (`https://whitebit.com`) only. The EU server (`https://whitebit.eu`)
+    does not expose these endpoints in this release.
+
+
+    Required scopes:
+
+    - `apikeys.read` for `GET /oauth2/api-key/info` and `GET /oauth2/api-key/{externalId}/secret`
+
+    - `apikeys.delete` for `DELETE /oauth2/api-key/{externalId}`
+
+
+    A third scope, `apikeys.create`, authorizes key creation on the WhiteBIT consent screen and is not
+    consumed by any endpoint here. Holding at least one of the three admits an OAuth2 client to the flow.
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - OAuth API Keys
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-oauth-api-keys-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-public-api-v1-api
+  name: WhiteBIT Public API V1 API
+  description: Public endpoints for market data and trading information
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Public API V1
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-public-api-v1-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-public-api-v4-api
+  name: WhiteBIT Public API V4 API
+  description: Public endpoints for market data, trading information, and platform status
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Public API V4
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-public-api-v4-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-spot-trading-api
+  name: WhiteBIT Spot Trading API
+  description: Endpoints for spot trading operations
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Spot Trading
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-spot-trading-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-sub-account-api-keys-api
+  name: WhiteBIT Sub-Account API Keys API
+  description: Sub-account API key management
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Sub-Account API Keys
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-sub-account-api-keys-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-sub-account-api
+  name: WhiteBIT Sub Account API
+  description: Sub-account management
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Sub-Account
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-sub-account-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-transfer-api
+  name: WhiteBIT Transfer API
+  description: Balance transfer operations
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Transfer
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-transfer-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-travel-rule-api
+  name: WhiteBIT Travel Rule API
+  description: Travel Rule compliance endpoints for deposits and withdrawals
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Travel Rule
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-travel-rule-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json
+- aid: whitebit:whitebit-withdraw-api
+  name: WhiteBIT Withdraw API
+  description: Cryptocurrency and fiat withdrawal operations
+  humanURL: https://docs.whitebit.com/api-reference/overview
+  tags:
+  - Withdraw
+  properties:
+  - type: OpenAPI
+    url: openapi/whitebit-withdraw-api-openapi.yml
+  - type: Documentation
+    url: https://docs.whitebit.com/api-reference/overview
+  - type: JSONSchema
+    url: json-schema/whitebit-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-futures-market-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-fee-info-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-orderbook-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-withdraw-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-mining-reward-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-refund-history-record-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-transaction-history-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-sub-account-api-key-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-order-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-bulk-order-item-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-oco-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-conditional-order-leg-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-stop-limit-order-request-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-result-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-balance-error-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-supported-asset-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-check-history-response-schema.json
+  - type: JSONSchema
+    url: json-schema/whitebit-create-check-response-schema.json

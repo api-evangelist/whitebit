@@ -1,0 +1,230 @@
+openapi: 3.2.0
+info:
+  title: WhiteBIT Private HTTP API V4 JWT API
+  description: 'WhiteBIT Private HTTP API V4 for Main balance changes.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.'
+  version: 4.0.0
+  contact:
+    name: WhiteBIT Support
+    email: support@whitebit.com
+    url: https://whitebit.com
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: JWT
+  description: JWT token management
+paths:
+  /api/v4/jwt:
+    post:
+      tags:
+      - JWT
+      summary: Issue JWT token
+      description: 'The endpoint issues a JWT token for the Fiat Gateway service.
+
+        The token is used to authenticate requests to the Fiat Gateway API.
+
+
+        The API does not cache the response.'
+      operationId: issueJwtToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonceWindow:
+                  type: boolean
+                  description: Nonce window setting
+                  example: false
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              request: '{{request}}'
+              nonceWindow: false
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: Validation succeeded and JWT token is returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        description: JWT token
+                      expires_at:
+                        type: integer
+                        description: Token expiration timestamp
+              example:
+                data:
+                  token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+                  expires_at: 1622551200
+        '400':
+          description: Missing required fields or invalid data
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                missingFields:
+                  summary: Missing required fields
+                  value:
+                    code: 0
+                    message: Validation failed
+                    errors:
+                      request:
+                      - The request field is required.
+                      nonce:
+                      - The nonce field is required.
+        '401':
+          description: Invalid API key, signature, or nonce
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                code: 0
+                message: Invalid API key, signature, or nonce
+        '500':
+          description: Server configuration issues
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                code: 0
+                message: Server configuration issues
+  /api/v4/profile/websocket_token:
+    post:
+      tags:
+      - JWT
+      summary: Get WebSocket Token
+      description: 'The V4 endpoint can be used to retrieve the WebSocket token for user.
+
+        The token is required to authorize WebSocket connections for private API access.
+
+
+        Beyond validation, this endpoint returns only the common authentication errors.
+
+
+        Rate limit: 10 requests/60 sec.
+
+
+        The API does not cache the response.'
+      operationId: getWebSocketToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                request:
+                  type: string
+                  description: Request signature
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  description: Unique request identifier
+                  example: 1594297865000
+            example:
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: WebSocket token retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  websocket_token:
+                    type: string
+                    description: WebSocket authentication token
+              example:
+                websocket_token: your_current_token
+        '401':
+          description: Invalid API key, signature, or nonce
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                userNotFound:
+                  summary: user not found
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      user:
+                      - user not found
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

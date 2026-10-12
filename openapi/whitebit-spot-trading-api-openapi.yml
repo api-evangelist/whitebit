@@ -1,0 +1,3499 @@
+openapi: 3.2.0
+info:
+  title: Private HTTP API V4 - Collateral Trading Spot Trading API
+  description: 'WhiteBIT Private HTTP API V4 for collateral/margin trading operations.
+
+
+    Base URL: https://whitebit.com
+
+
+    All endpoints return time in Unix-time format.
+
+    All endpoints return either a JSON object or array.
+
+    For receiving responses from API calls please use http method POST.
+
+
+    Authentication required for all endpoints.'
+  version: 4.0.0
+  license:
+    name: WhiteBIT Terms of Service
+    url: https://whitebit.com/terms
+servers:
+- url: https://whitebit.com
+  description: WhiteBIT Global Server
+- url: https://whitebit.eu
+  description: WhiteBIT EU Server
+- url: https://whitebit.tr
+  description: WhiteBIT TR Server
+- url: https://whitebit.ge
+  description: WhiteBIT GE Server
+security:
+- ApiKeyAuth: []
+  PayloadAuth: []
+  SignatureAuth: []
+tags:
+- name: Spot Trading
+  description: Endpoints for spot trading operations
+paths:
+  /api/v4/trade-account/balance:
+    post:
+      summary: Trading Balance
+      operationId: tradeAccountBalance
+      description: 'The endpoint retrieves the trade balance by currency ticker or all balances. When the `ticker` parameter is provided, the response contains a single currency entry. When omitted, the response contains all currencies with non-zero balances. Each entry includes the `available` balance (funds ready to trade) and the `freeze` balance (funds locked in open orders).
+
+
+        Rate limit: 12000 requests/10 sec.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticker:
+                  type: string
+                  description: 'Currency''s [ticker](/glossary#ticker). Example: BTC'
+                  example: BTC
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    available:
+                      type: string
+                      description: Available balance of currency for trading
+                    freeze:
+                      type: string
+                      description: Balance of currency that is currently in active orders
+              example:
+                BTC:
+                  available: '0.123'
+                  freeze: '0.01'
+                USDT:
+                  available: '1000.50'
+                  freeze: '100.00'
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                ticker30:
+                  summary: Ticker field should be a string
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - Ticker field should be a string.
+                ticker30_2:
+                  summary: Currency was not found
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      ticker:
+                      - Currency was not found.
+                amount1:
+                  summary: Invalid argument
+                  value:
+                    code: 1
+                    message: Inner validation failed
+                    errors:
+                      amount:
+                      - Invalid argument.
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/new:
+    post:
+      summary: Create Limit Order
+      operationId: createLimitOrder
+      description: 'The endpoint creates a limit trading order. The order remains on the order book until filled, cancelled, or expired. Minimum and maximum values for `amount` and `price` are market-dependent — query `GET /api/v4/public/markets` for per-market constraints.
+
+
+        **Order validation rules** (per-market, from `GET /api/v4/public/markets`):
+
+        - `amount` must have at most `stockPrec` decimal places
+
+        - `price` must have at most `moneyPrec` decimal places
+
+        - `amount` must be ≥ `minAmount`
+
+        - `amount × price` must be ≥ `minTotal`
+
+        - `amount × price` must be ≤ `maxTotal` (when `maxTotal` is not `"0"`)
+
+
+        **Price and amount steps:** from September 18, 2026, `price` must be a multiple of the market `tickSize` and `amount` a multiple of `stepSize`. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.
+
+
+        - RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
+
+        - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
+
+        - RPI orders apply post-only behavior automatically — do not also send `postOnly=true`: a request combining `rpi=true` with an explicit `postOnly=true` fails validation.
+
+        - `retail=true` marks the order as a retail-source taker eligible to match RPI-maker liquidity. The Retail flag must be enabled on the account; contact the account manager to enable it.
+
+        - `retail=true` has no effect on a `postOnly=true` or `rpi=true` order. Post-only and RPI orders are makers and cannot be retail takers; an order with both `rpi=true` and `retail=true` matches exactly like an RPI order.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LimitOrderRequest'
+      responses:
+        '200':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `33` - price validation failed
+
+            - `36` - clientOrderId validation failed
+
+            - `37` - `ioc=true` cannot be combined with `postOnly=true`
+
+            - `40` - `ioc=true` cannot be combined with `rpi=true`
+
+            - `42` - `retail=true` is not allowed for the account
+
+            - `43` - `rpi=true` is not allowed for the account
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                amount30:
+                  summary: Amount field is required
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount field is required.
+                      market:
+                      - Market field is required.
+                      price:
+                      - Price field is required.
+                      side:
+                      - Side field is required.
+                side30:
+                  summary: Side field should contain only
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      side:
+                      - Side field should contain only 'buy' or 'sell' values.
+                amount32:
+                  summary: Amount field should be numeric string or number
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount field should be numeric string or number.
+                price33:
+                  summary: Price field should be numeric string or number
+                  value:
+                    code: 33
+                    message: Validation failed
+                    errors:
+                      price:
+                      - Price field should be numeric string or number.
+                market31:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+                market31_2:
+                  summary: Market field should not be empty string
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field should not be empty string.
+                amount32_2:
+                  summary: Given amount is less than min amount 0.001
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Given amount is less than min amount 0.001
+                      - Min amount step = 0.000001
+                clientorderid36:
+                  summary: ClientOrderId field should be a string
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - ClientOrderId field should be a string.
+                clientorderid36_2:
+                  summary: ClientOrderId field should contain only latin letters, numbers and…
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - ClientOrderId field should contain only latin letters, numbers and dashes.
+                clientorderid36_3:
+                  summary: This client order id is already used by the current account
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - This client order id is already used by the current account.
+                ioc37:
+                  summary: Either IOC or PostOnly flag in true state is allowed
+                  value:
+                    code: 37
+                    message: Validation failed
+                    errors:
+                      ioc:
+                      - Either IOC or PostOnly flag in true state is allowed.
+                total30:
+                  summary: Total (amount * price) is less than 5.05
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      total:
+                      - Total (amount * price) is less than 5.05
+                amount32_3:
+                  summary: Min amount step = 0.01
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Min amount step = 0.01
+                price33_2:
+                  summary: Price field should be at least 10
+                  value:
+                    code: 33
+                    message: Validation failed
+                    errors:
+                      price:
+                      - Price field should be at least 10
+                      - Min price step = 0.000001
+                price33_3:
+                  summary: Price should be greater than 0
+                  value:
+                    code: 33
+                    message: Validation failed
+                    errors:
+                      price:
+                      - Price should be greater than 0.
+                makerFee35:
+                  summary: Incorrect maker fee
+                  value:
+                    code: 35
+                    message: Validation failed
+                    errors:
+                      maker_fee:
+                      - Incorrect maker fee
+                retail42:
+                  summary: api.validation.retail.not_allowed
+                  value:
+                    code: 42
+                    message: Validation failed
+                    errors:
+                      retail:
+                      - api.validation.retail.not_allowed
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/bulk:
+    post:
+      summary: Bulk limit order
+      operationId: createBulkLimitOrder
+      description: 'The endpoint creates bulk limit trading orders. Each order in the batch follows the same validation rules as a single limit order. The `stopOnFail` parameter controls whether processing stops at the first failure or continues through all orders. The response contains a result-or-error pair for each submitted order.
+
+
+        **Price and amount steps:** from September 18, 2026, the `price` of each order must be a multiple of the market `tickSize` and its `amount` a multiple of `stepSize`. See Price and amount steps.
+
+
+        Limit: From 1 to 20 orders per request.
+
+
+        - RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
+
+        - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
+
+        - RPI orders apply post-only behavior automatically — do not also send `postOnly=true`: a request combining `rpi=true` with an explicit `postOnly=true` fails validation.
+
+        - `retail=true` marks the order as a retail-source taker eligible to match RPI-maker liquidity. The Retail flag must be enabled on the account; contact the account manager to enable it.
+
+        - `retail=true` has no effect on a `postOnly=true` or `rpi=true` item. Post-only and RPI orders are makers and cannot be retail takers; an item with both `rpi=true` and `retail=true` matches exactly like an RPI order.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - orders
+              - request
+              - nonce
+              properties:
+                orders:
+                  type: array
+                  description: Array of limit orders. Each item is validated with the same rules as a single limit order.
+                  items:
+                    $ref: '#/components/schemas/BulkOrderItem'
+                stopOnFail:
+                  type: boolean
+                  default: false
+                  description: 'Controls how the bulk order processor handles failures.
+
+
+                    When true: Processing stops at the first order that fails validation or execution. Only orders up to (but not including) the failed order are processed.
+
+
+                    When false (default): All orders in the bulk request are processed regardless of individual failures. Each order result is returned in the response array.
+
+                    '
+                  example: true
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              orders:
+              - side: buy
+                amount: '0.02'
+                price: '40000'
+                market: BTC_USDT
+                postOnly: false
+                ioc: false
+                clientOrderId: ''
+                rpi: true
+                retail: false
+              - side: sell
+                amount: '0.0001'
+                price: '41000'
+                market: BTC_USDT
+                postOnly: false
+                ioc: false
+                clientOrderId: ''
+                rpi: false
+                retail: true
+              - side: sell
+                amount: '0.02'
+                price: '41000'
+                market: BTC_USDT
+                postOnly: false
+                ioc: false
+                clientOrderId: ''
+                rpi: false
+                retail: false
+      responses:
+        '200':
+          $ref: '#/components/responses/BulkLimitOrderResponse'
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `33` - price validation failed
+
+            - `36` - clientOrderId validation failed
+
+            - `37` - `ioc=true` cannot be combined with `postOnly=true`
+
+            - `40` - `ioc=true` cannot be combined with `rpi=true`
+
+            - `42` - `retail=true` is not allowed for the account
+
+            - `43` - `rpi=true` is not allowed for the account
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                orders30:
+                  summary: The orders must be an array
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      orders:
+                      - The orders must be an array.
+                amount30:
+                  summary: Amount field is required
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount field is required.
+                      market:
+                      - Market field is required.
+                      price:
+                      - Price field is required.
+                      side:
+                      - Side field is required.
+                side30:
+                  summary: Side field should contain only
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      side:
+                      - Side field should contain only 'buy' or 'sell' values.
+                amount32:
+                  summary: Amount field should be numeric string or number
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount field should be numeric string or number.
+                price33:
+                  summary: Price field should be numeric string or number
+                  value:
+                    code: 33
+                    message: Validation failed
+                    errors:
+                      price:
+                      - Price field should be numeric string or number.
+                retail42:
+                  summary: api.validation.retail.not_allowed
+                  value:
+                    code: 42
+                    message: Validation failed
+                    errors:
+                      retail:
+                      - api.validation.retail.not_allowed
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/market:
+    post:
+      summary: Create market order
+      operationId: createMarketOrder
+      description: 'The endpoint creates a market trading order. The matching engine executes the order immediately at the best available price. For buy orders, `amount` represents the total in quote (money) currency to spend. For sell orders, `amount` represents the quantity in base (stock) currency to sell. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, and `maxTotal`.
+
+
+        **Amount step:** from September 18, 2026, `amount` on a sell order must be a multiple of the market `stepSize`. A buy order carries the quote-currency total in `amount`, so the step does not apply to it. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarketOrderRequest'
+      responses:
+        '200':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `36` - clientOrderId validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                amount30:
+                  summary: Amount field is required
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount field is required.
+                      market:
+                      - Market field is required.
+                      side:
+                      - Side field is required.
+                side30:
+                  summary: Side field should contain only
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      side:
+                      - Side field should contain only 'buy' or 'sell' values.
+                amount32:
+                  summary: Amount field should be numeric string or number
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount field should be numeric string or number.
+                market31:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+                market31_2:
+                  summary: Market field should not be empty string
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field should not be empty string.
+                amount32_2:
+                  summary: Not enough balance
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Not enough balance.
+                amount32_3:
+                  summary: Given amount is less than min amount 0.001
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Given amount is less than min amount 0.001
+                      - Min amount step = 0.000001
+                clientorderid36:
+                  summary: ClientOrderId field should be a string
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - ClientOrderId field should be a string.
+                clientorderid36_2:
+                  summary: ClientOrderId field should contain only latin letters, numbers and…
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - ClientOrderId field should contain only latin letters, numbers and dashes.
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/stock_market:
+    post:
+      summary: Create buy stock market order
+      operationId: createStockMarketOrder
+      description: 'The endpoint creates a stock market trading order. Unlike `POST /api/v4/order/market`, the `amount` parameter always represents the quantity in the base (stock) currency for both buy and sell sides. The matching engine executes the order immediately at the best available price. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, and `maxTotal`.
+
+
+        **Amount step:** from September 18, 2026, `amount` must be a multiple of the market `stepSize` on both sides. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockMarketOrderRequest'
+      responses:
+        '200':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `36` - clientOrderId validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                amount30:
+                  summary: Amount field is required
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount field is required.
+                      market:
+                      - Market field is required.
+                      side:
+                      - Side field is required.
+                side30:
+                  summary: Side field should contain only
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      side:
+                      - Side field should contain only 'buy' or 'sell' values.
+                amount32:
+                  summary: Amount field should be numeric string or number
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount field should be numeric string or number.
+                market31:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+                market31_2:
+                  summary: Market field should not be empty string
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field should not be empty string.
+                amount32_2:
+                  summary: Not enough balance
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Not enough balance.
+                amount32_3:
+                  summary: Given amount is less than min amount 0.001
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Given amount is less than min amount 0.001
+                      - Min amount step = 0.000001
+                clientorderid36:
+                  summary: ClientOrderId field should be a string
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - ClientOrderId field should be a string.
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/stop_limit:
+    post:
+      summary: Create stop-limit order
+      operationId: createStopLimitOrder
+      description: 'The endpoint creates a stop-limit trading order. The order remains inactive until the market price reaches the `activation_price`, at which point the system places a limit order at the specified `price`. For buy orders, activation triggers when the market price rises to or above `activation_price`. For sell orders, activation triggers when the market price falls to or below `activation_price`. Minimum and maximum values for `amount`, `price`, and `activation_price` are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`, `stockPrec` (amount precision), and `moneyPrec` (price precision).
+
+
+        **Price and amount steps:** from September 18, 2026, `price` and `activation_price` must be multiples of the market `tickSize`, and `amount` a multiple of `stepSize`. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StopLimitOrderRequest'
+      responses:
+        '200':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `33` - price validation failed
+
+            - `36` - clientOrderId validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                activationPrice30:
+                  summary: Activation price field is required
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      activation_price:
+                      - Activation price field is required.
+                      amount:
+                      - Amount field is required.
+                      market:
+                      - Market field is required.
+                      price:
+                      - Price field is required.
+                      side:
+                      - Side field is required.
+                side30:
+                  summary: Side field should contain only
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      side:
+                      - Side field should contain only 'buy' or 'sell' values.
+                amount32:
+                  summary: Amount field should be numeric string or number
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount field should be numeric string or number.
+                price33:
+                  summary: Price field should be numeric string or number
+                  value:
+                    code: 33
+                    message: Validation failed
+                    errors:
+                      price:
+                      - Price field should be numeric string or number.
+                market31:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+                market31_2:
+                  summary: Market field should not be empty string
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field should not be empty string.
+                amount32_2:
+                  summary: Not enough balance
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Not enough balance.
+                amount32_3:
+                  summary: Given amount is less than min amount 0.001
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Given amount is less than min amount 0.001
+                      - Min amount step = 0.000001
+                total30:
+                  summary: Total (amount * price) is less than 5.05
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      total:
+                      - Total (amount * price) is less than 5.05
+                clientorderid36:
+                  summary: ClientOrderId field should be a string
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - ClientOrderId field should be a string.
+                clientorderid36_2:
+                  summary: ClientOrderId field should contain only latin letters, numbers and…
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - ClientOrderId field should contain only latin letters, numbers and dashes.
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/stop_market:
+    post:
+      summary: Create stop-market order
+      operationId: createStopMarketOrder
+      description: 'The endpoint creates a stop-market trading order. The order remains inactive until the market price reaches the `activation_price`, at which point the system executes a market order immediately at the best available price. For buy orders, `amount` represents the total in quote currency and activation triggers when the market price rises to or above `activation_price`. For sell orders, `amount` represents the quantity in base currency and activation triggers when the market price falls to or below `activation_price`. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, and `maxTotal`.
+
+
+        **Price and amount steps:** from September 18, 2026, `activation_price` must be a multiple of the market `tickSize` on both sides. `amount` on a sell order must be a multiple of `stepSize`; a buy order carries the quote-currency total in `amount`, so the step does not apply to it. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StopMarketOrderRequest'
+      responses:
+        '200':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '422':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            - `32` - amount validation failed
+
+            - `36` - clientOrderId validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                activationPrice30:
+                  summary: Activation price field is required
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      activation_price:
+                      - Activation price field is required.
+                      amount:
+                      - Amount field is required.
+                      market:
+                      - Market field is required.
+                      side:
+                      - Side field is required.
+                side30:
+                  summary: Side field should contain only
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      side:
+                      - Side field should contain only 'buy' or 'sell' values.
+                amount32:
+                  summary: Amount field should be numeric string or number
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount field should be numeric string or number.
+                market31:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+                market31_2:
+                  summary: Market field should not be empty string
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field should not be empty string.
+                amount32_2:
+                  summary: Not enough balance
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Not enough balance.
+                amount32_3:
+                  summary: Given amount is less than min amount 0.001
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Given amount is less than min amount 0.001
+                      - Min amount step = 0.000001
+                clientorderid36:
+                  summary: ClientOrderId field should be a string
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - ClientOrderId field should be a string.
+                clientorderid36_2:
+                  summary: ClientOrderId field should contain only latin letters, numbers and…
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - ClientOrderId field should contain only latin letters, numbers and dashes.
+                clientorderid36_3:
+                  summary: This client order id is already used by the current account
+                  value:
+                    code: 36
+                    message: Validation failed
+                    errors:
+                      clientOrderId:
+                      - This client order id is already used by the current account.
+                amount32_4:
+                  summary: Amount should be greater than 0
+                  value:
+                    code: 32
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Amount should be greater than 0.
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/cancel:
+    post:
+      summary: Cancel order
+      operationId: cancelOrder
+      description: 'The endpoint cancels an existing order. Provide either `orderId` or `clientOrderId` to identify the target order. The response returns the final state of the cancelled order.
+
+
+        Rate limit: 10000 requests/10 sec.
+
+
+        - The request accepts exactly one identifier: either `orderId` or `clientOrderId`.
+
+        - Sending both identifiers, or neither, returns a validation error.
+
+        - `timestamp` is the order''s creation time. `mtime` is the time the matching engine last modified the order, which on a cancellation is the moment the cancellation was processed.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Available [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                orderId:
+                  type: integer
+                  description: 'Order Id. Example: 4180284841. Required if clientOrderId is not set.'
+                  example: 123456
+                clientOrderId:
+                  type: string
+                  description: 'Custom client order id. Example: ''customId11''. Required if orderId is not set.'
+                  example: customId11
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Order cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelOrderResponse'
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                orderNotFound:
+                  summary: Unexecuted order was not found
+                  value:
+                    code: 2
+                    message: Inner validation failed
+                    errors:
+                      orderId:
+                      - Unexecuted order was not found.
+        '422':
+          description: 'Validation failed.
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                marketAndOrderIdRequired:
+                  summary: Market and orderId are required
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field is required.
+                      orderId:
+                      - OrderId field is required.
+                marketNotAvailable:
+                  summary: Market is not available
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+                marketValidationFailed:
+                  summary: Market validation failed (code 31)
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+                orderIdNotInteger:
+                  summary: OrderId must be an integer
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      orderId:
+                      - OrderId field should be an integer.
+                marketFormatInvalid:
+                  summary: Market field format is invalid
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field should be a string.
+                      - Market field format is invalid.
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/cancel/bulk:
+    post:
+      summary: Cancel bulk orders
+      operationId: cancelBulkOrders
+      description: 'The endpoint cancels up to 100 orders in a single request. Each item identifies a target order by `market` plus exactly one of `orderId` or `clientOrderId`. The response is an array whose items match the input order one-to-one — `response[i]` corresponds to `request.orders[i]`.
+
+
+        Rate limit: 10000 requests/10 sec.
+
+
+        Limit: From 1 to 100 orders per request.
+
+
+        - Provide exactly one of `orderId` or `clientOrderId` per item. Sending both, or neither, returns a per-item validation error.
+
+        - The endpoint always processes every item independently. There is no `stopOnFail`-style switch.
+
+        - When the caller is not authenticated, the API returns the standard authorization error and skips per-item validation.
+
+
+        **`timestamp` and `mtime` on a successful item:** a canceled item''s `result` may echo the order''s `timestamp` (creation time) and `mtime` (the last time the matching engine modified the order — the moment of cancellation, since a cancellation is an order''s final modification). Both are best-effort echoes: either may be omitted, so do not rely on either field''s presence. For a cancel response that always includes `mtime`, use the single Cancel order endpoint instead.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - orders
+              - request
+              - nonce
+              properties:
+                orders:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  description: Array of orders to cancel. From 1 to 100 items per request.
+                  items:
+                    $ref: '#/components/schemas/BulkCancelOrderItem'
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              orders:
+              - market: BTC_USDT
+                orderId: 4326248250
+              - market: ETH_USDT
+                clientOrderId: my-client-id
+              request: '{{request}}'
+              nonce: 1594297865000
+      responses:
+        '200':
+          description: "Bulk cancel result. The response is an array — `response[i]` corresponds to `request.orders[i]`. Each item contains either a `result` (cancellation succeeded) or an `error` (cancellation failed for that item). Partial failures within the array are normal; the request itself returns HTTP 200.\n\nPer-item error codes: `30` (validation failure), `404` (order not found), `500` (trade service unavailable). A failed item carries an `error` object following the standard error shape, for example:\n\n```json\n{\n  \"result\": null,\n  \"error\": {\n    \"code\": 30,\n    \"message\": \"Validation failed\",\n    \"errors\": { \"market\": [\"validation.required\"] }\n  }\n}\n```\n"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkCancelOrderResponse'
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/cancel/all:
+    post:
+      summary: Cancel all orders
+      operationId: cancelAllOrders
+      description: 'The endpoint cancels all open orders that match the specified filters. Use the `market` parameter to target a single trading pair, or omit the parameter to cancel across all markets. The `type` parameter filters by order type (`spot`, `margin`, `futures`). When omitted, the endpoint targets all order types.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - request
+              - nonce
+              properties:
+                market:
+                  type: string
+                  description: 'Available [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                type:
+                  type: array
+                  description: 'Order types to target. Valid values: "spot" — standard spot orders. "margin" — marginal orders placed on spot markets. Note: the "margin" value is not the same as the collateral account balance; "collateral" in other endpoints refers to the funding account, whereas "margin" here refers specifically to the order type. "futures" — marginal orders placed on futures markets (e.g., BTC_PERP). If omitted, the API targets all order types.'
+                  example:
+                  - spot
+                  - margin
+                  - futures
+                  items:
+                    type: string
+                    enum:
+                    - spot
+                    - margin
+                    - futures
+                positionSide:
+                  type: string
+                  enum:
+                  - both
+                  - long
+                  - short
+                  description: '[Position side](/glossary#position-side) scope. Accepted only when `market` is a perpetual futures market (e.g., BTC_PERP); values are lowercase on this endpoint.'
+                  example: both
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+            example:
+              market: BTC_USDT
+              type:
+              - spot
+              - margin
+              - futures
+      responses:
+        '200':
+          description: Orders cancelled successfully. The response body is a literal empty array.
+          content:
+            application/json:
+              schema:
+                type: array
+                description: Always an empty array (`[]`) on success.
+                maxItems: 0
+                items: {}
+              example: []
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                market31:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+                type30:
+                  summary: The type must be an array
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      type:
+                      - The type must be an array.
+                market30:
+                  summary: Market field should be a string
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field should be a string.
+                      - Market field format is invalid.
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/orders:
+    post:
+      summary: Query unexecuted(active) orders
+      operationId: getActiveOrders
+      description: 'The endpoint retrieves active orders (orders not yet executed) across spot, margin, and futures markets. The response includes limit, stop-limit, and stop-market orders that remain open on the order book. Use the `market` parameter to filter by trading pair, or omit the parameter to retrieve orders across all markets. The endpoint supports pagination with `limit` and `offset` parameters.
+
+
+        Rate limit: 12000 requests/10 sec.
+
+
+        Search across all markets is available only if clientOrderId and orderId are not provided.
+
+
+        This endpoint supports pagination. Use `limit` (default: 50, max: 100) and `offset` (default: 0, max: 4294967295) to page through results. The response does not include a `total` field — detect the last page when fewer than `limit` orders are returned. An empty array means you have paged past the end; receiving exactly `limit` orders does not guarantee that another page exists.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                market:
+                  type: string
+                  description: 'Trading pair to filter by. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Omit to retrieve orders across all markets.'
+                  example: BTC_USDT
+                orderId:
+                  type: integer
+                  description: Filter by a specific order identifier. Returns only the matching active order.
+                  example: 3134995325
+                clientOrderId:
+                  type: string
+                  description: Filter by custom client order identifier. Returns only the matching active order.
+                  example: customId11
+                offset:
+                  type: integer
+                  default: 0
+                  minimum: 0
+                  maximum: 4294967295
+                  description: 'Number of records to skip. Default: `0`. Maximum: `4294967295`.'
+                  example: 0
+                limit:
+                  type: integer
+                  default: 50
+                  minimum: 1
+                  maximum: 100
+                  description: 'Maximum number of records to return. Default: `50`. Minimum: `1`. Maximum: `100`.'
+                  example: 50
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: List of active orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                market31:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available
+                limit30:
+                  summary: The limit may not be greater than 100
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - The limit may not be greater than 100.
+                      offset:
+                      - The offset may not be greater than 4294967295.
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/trade-account/executed-history:
+    post:
+      summary: Query executed order history
+      operationId: getExecutedOrderHistory
+      description: 'The endpoint retrieves executed order history for all trading types — spot, margin, and futures — across all markets. Can be filtered by a single market if needed. Results are ordered by trade time, newest first.
+
+
+        Rate limit: 12000 requests/10 sec.
+
+
+        Requests with `limit` values above 100 return large payloads. Use high limits only when necessary and ensure the client application can handle large response sizes.
+
+
+        The endpoint can retrieve data not older than 6 months from the current month. For older data, use the Report on the History page.
+
+
+        This endpoint supports pagination. Use `limit` (default and max: 500) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when fewer than `limit` records are returned (sum the records across all markets when no `market` filter is set). An empty response means you have paged past the end; receiving exactly `limit` records does not guarantee that another page exists.
+
+
+        For B2B accounts, canceled orders are not recorded in the history. To obtain canceled-order data, contact support or the assigned account manager.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                market:
+                  type: string
+                  description: 'Requested [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                clientOrderId:
+                  type: string
+                  description: Look up by custom client order identifier. When supplied, the endpoint switches to single-order lookup mode and returns the matching order's deal history. Returns `422` with `"OrderHistory was not found."` if no order matches on the calling account.
+                  example: customId11
+                startDate:
+                  type: integer
+                  description: Start date in Unix-time format
+                  example: 1593233939
+                endDate:
+                  type: integer
+                  description: End date in Unix-time format
+                  example: 1593233939
+                offset:
+                  type: integer
+                  default: 0
+                  description: 'Starting line index (OFFSET). Default: 0, Min: 0'
+                  example: 0
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 500
+                  default: 500
+                  description: 'LIMIT is a special clause used to limit records a particular query can return. Default: 500, Min: 1, Max: 500'
+                  example: 500
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: 'Executed order history. Response shape depends on whether the market filter is provided: with market filter returns a flat array; without market filter returns an object keyed by market name.'
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - description: Returned when the market request parameter is provided. Flat array of deal objects for the specified market.
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ExecutedDeal'
+                - description: Returned when no market filter is provided. Object keyed by market name (e.g., "BTC_USDT"), each value is an array of deal objects for that market.
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ExecutedDeal'
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                limit30:
+                  summary: Limit field should be an integer
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      limit:
+                      - Limit field should be an integer.
+                      offset:
+                      - Offset field should be an integer.
+                market31:
+                  summary: Market field format is invalid
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field format is invalid.
+                orderhistory30:
+                  summary: OrderHistory was not found
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      orderHistory:
+                      - OrderHistory was not found.
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/trade-account/order:
+    post:
+      summary: Query executed order deals
+      operationId: getOrderDeals
+      description: 'The endpoint retrieves individual trade fills (deals) for a specific order, which may belong to a spot, margin, or futures market. Each deal represents a partial or full execution of the order against a counterparty. The response includes pagination and returns deal details such as price, amount, fee, and execution role (maker or taker).
+
+
+        Rate limit: 12000 requests/10 sec.
+
+
+        This endpoint supports pagination. Use `limit` (default: 500, max: 500) and `offset` (default: 0, max: 1000) to page through results. The response does not include a `total` field — detect the last page when `records.length
+
+
+        An unknown or not-owned `orderId` is **not** an error. The endpoint always returns HTTP 200 with the paged-list envelope; a non-matching `orderId` simply filters down to an empty `records` array.
+
+
+        The endpoint can retrieve data not older than 6 months from the current month. For older data, use the Report on the History page. An order older than this window returns an empty `records` array even when the order was filled.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - orderId
+              - request
+              - nonce
+              properties:
+                orderId:
+                  type: integer
+                  description: Identifier of the order to retrieve deals for.
+                  example: 3134995325
+                offset:
+                  type: integer
+                  default: 0
+                  minimum: 0
+                  maximum: 1000
+                  description: 'Number of records to skip. Default: `0`. Maximum: `1000`.'
+                  example: 0
+                limit:
+                  type: integer
+                  default: 500
+                  minimum: 1
+                  maximum: 500
+                  description: 'Maximum number of records to return. Default: `500`. Minimum: `1`. Maximum: `500`.'
+                  example: 50
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns paginated order deals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  records:
+                    type: array
+                    description: Array of deal records
+                    items:
+                      type: object
+                      properties:
+                        time:
+                          type: number
+                          description: Unix timestamp of the deal execution, with microsecond precision.
+                          example: 1593342324.613711
+                        fee:
+                          type: string
+                          description: Fee charged for the deal, denominated in the asset specified by `feeAsset`.
+                          example: '0.00000419198'
+                        price:
+                          type: string
+                          description: Execution price per unit in quote currency.
+                          example: '0.00000701'
+                        amount:
+                          type: string
+                          description: Executed quantity in base (stock) currency.
+                          example: '598'
+                        id:
+                          type: integer
+                          description: Unique deal identifier assigned by the matching engine.
+                          example: 149156519
+                        dealOrderId:
+                          type: integer
+                          description: Identifier of the counterparty order that matched against the queried order.
+                          example: 3134995325
+                        clientOrderId:
+                          type: string
+                          description: Custom order identifier supplied in the original order request. Returns an empty string when not specified.
+                          example: customId11
+                        role:
+                          type: integer
+                          description: Execution role in the deal. `1` = maker (order was resting on the book), `2` = taker (order matched immediately).
+                          enum:
+                          - 1
+                          - 2
+                          example: 2
+                        deal:
+                          type: string
+                          description: Total deal value in quote (money) currency. Equals `amount * price`.
+                          example: '0.00419198'
+                        feeAsset:
+                          type: string
+                          description: Currency ticker of the asset used to pay the trading fee.
+                          example: USDT
+                        rpi:
+                          type: boolean
+                          description: Retail Price Improvement flag. `true` when the deal executed under RPI pricing.
+                          example: true
+                  offset:
+                    type: integer
+                    description: Number of records skipped
+                    example: 0
+                  limit:
+                    type: integer
+                    description: Number of records per page
+                    example: 500
+              example:
+                records:
+                - time: 1593342324.613711
+                  fee: '0.00000419198'
+                  price: '0.00000701'
+                  amount: '598'
+                  id: 149156519
+                  dealOrderId: 3134995325
+                  clientOrderId: customId11
+                  role: 2
+                  deal: '0.00419198'
+                  feeAsset: USDT
+                  rpi: true
+                offset: 0
+                limit: 500
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code (for example, a missing or malformed `orderId`, or invalid pagination)
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/trade-account/order/history:
+    post:
+      summary: Query executed orders
+      operationId: getOrderHistory
+      description: 'The endpoint retrieves the history of executed and cancelled orders across spot, margin, and futures markets. The response groups orders by market name. Use the `market` parameter to filter by a single trading pair, or omit the parameter to retrieve orders across all markets. The endpoint supports pagination with `limit` (default 50, max 500) and `offset` parameters. Results are ordered by time, newest first.
+
+
+        Rate limit: 12000 requests/10 sec.
+
+
+        Requests with `limit` values above 100 return large payloads. Use high limits only when necessary and ensure the client application can handle large response sizes.
+
+
+        This endpoint supports pagination. Use `limit` (default: 50, max: 500) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when fewer than `limit` records are returned (sum the records across all markets when no `market` filter is set). An empty response means you have paged past the end; receiving exactly `limit` records does not guarantee that another page exists.
+
+
+        **Date filter window:** the maximum span between `startDate` and `endDate` is **31 days**, and the earliest reachable date is **6 months ago (00:00 UTC)**. Requests that exceed the 31-day window or fall below the 6-month floor are rejected with a validation error. `endDate` values greater than the current time are silently clamped to `now`.
+
+
+        For B2B accounts, canceled orders are not recorded in the history. To obtain canceled-order data, contact support or the assigned account manager.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                market:
+                  type: string
+                  description: 'Trading pair to filter by. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Omit to retrieve orders across all markets.'
+                  example: BTC_USDT
+                clientOrderId:
+                  type: string
+                  description: Look up a specific order by the custom client identifier. When supplied, the endpoint switches to single-order lookup mode and the `startDate`, `endDate`, and `status` filters are ignored. Returns `422` with `"OrderHistory was not found."` if no order matches. Ignored when `orderId` is also provided.
+                  example: customId11
+                orderId:
+                  type: integer
+                  description: Look up a specific order by the exchange-assigned identifier. When supplied, the endpoint switches to single-order lookup mode and the `startDate`, `endDate`, and `status` filters are ignored. Returns an empty result on no match (no `422`). Takes precedence over `clientOrderId` when both are supplied.
+                  example: 4986126152
+                status:
+                  type: string
+                  enum:
+                  - ALL
+                  - FILLED
+                  - CANCELED
+                  - PARTIALLY_FILLED
+                  - MAINTENANCE
+                  default: ALL
+                  description: Filter list-mode results by order status. Ignored when `orderId` or `clientOrderId` is supplied. `MAINTENANCE` returns only the orders the platform canceled during planned market maintenance; those orders are not part of the `CANCELED` result set, which covers user and automatic cancellations.
+                  example: FILLED
+                startDate:
+                  type: integer
+                  description: 'Start of the query window as a Unix timestamp in seconds. Default: `now - 1 month`. The earliest reachable date is 6 months ago (00:00 UTC) — requests with an older `startDate` are rejected with a validation error.'
+                  example: 1697000000
+                endDate:
+                  type: integer
+                  description: 'End of the query window as a Unix timestamp in seconds. Default: `now`. Values greater than the current time are silently clamped to `now`. The maximum span between `startDate` and `endDate` is 31 days.'
+                  example: 1699000000
+                offset:
+                  type: integer
+                  default: 0
+                  minimum: 0
+                  description: 'Number of records to skip. Default: `0`.'
+                  example: 0
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 500
+                  default: 50
+                  description: 'Maximum number of records to return. Default: `50`. Minimum: `1`. Maximum: `500`.'
+                  example: 50
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns order history grouped by market. Empty response if order is not yours.
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Object with market names as keys, each containing an array of orders
+                additionalProperties:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      amount:
+                        type: string
+                        description: Order quantity in base currency for limit orders, or in quote currency for buy market orders.
+                        example: '0.0009'
+                      price:
+                        type: string
+                        description: Limit price per unit in quote currency. Returns `"0"` for market orders.
+                        example: '40000'
+                      type:
+                        type: string
+                        description: 'Order type. Possible values: `limit`, `market`, `stock market`, `stop limit`, `stop market`.'
+                        example: limit
+                      id:
+                        type: integer
+                        description: Unique order identifier assigned by the matching engine.
+                        example: 4986126152
+                      clientOrderId:
+                        type: string
+                        description: Custom client order identifier supplied in the request. Returns an empty string when not specified.
+                        example: customId11
+                      side:
+                        type: string
+                        description: 'Order side. Possible values: `buy`, `sell`.'
+                        enum:
+                        - buy
+                        - sell
+                        example: sell
+                      ctime:
+                        type: number
+                        description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+                        example: 1597486960.311311
+                      ftime:
+                        type: number
+                        description: Unix timestamp when the order reached its final status (FILLED or CANCELED). For partially-filled orders that are subsequently canceled, the timestamp reflects the cancellation time, not the last fill time.
+                        example: 1597486960.311332
+                      dealFee:
+                        type: string
+                        description: Cumulative trading fee charged for filled portions, denominated in the fee asset.
+                        example: '0.041258268'
+                      dealStock:
+                        type: string
+                        description: Filled amount in base (stock) currency.
+                        example: '0.0009'
+                      dealMoney:
+                        type: string
+                        description: Filled amount in quote (money) currency.
+                        example: '41.258268'
+                      postOnly:
+                        type: boolean
+                        description: Post-only flag. When `true`, the order executed only as a maker order.
+                        example: false
+                      ioc:
+                        type: boolean
+                        description: Immediate-or-cancel flag. When `true`, the order executed available quantity immediately and cancelled the rest.
+                        example: false
+                      activated:
+                        type: integer
+                        description: Stop/conditional orders only — Unix timestamp at which the trigger price was reached and the order was activated. Absent for unconditional orders.
+                        example: 1597486960
+                      activationPrice:
+                        type: string
+                        description: Stop/conditional orders only — the trigger price that, when reached, activates the order. Absent for unconditional orders.
+                        example: '39500'
+                      activationCondition:
+                        type: string
+                        description: Stop/conditional orders only — comparison operator that decides when `activationPrice` is met. Absent for unconditional orders.
+                        example: <=
+                      status:
+                        $ref: '#/components/schemas/OrderHistoryStatus'
+                      feeAsset:
+                        type: string
+                        description: Currency ticker of the asset used to pay the trading fee.
+                        example: USDT
+                      positionSide:
+                        type: string
+                        description: Position side for futures/margin orders. Omitted for spot orders without position context.
+                        example: BOTH
+                      rpi:
+                        type: boolean
+                        description: Retail Price Improvement flag. `true` when the order used RPI pricing.
+                        example: false
+                      reduceOnly:
+                        type: boolean
+                        description: Reduce-only flag. When `true`, the order could only reduce or close an existing position. See [reduce-only](/glossary#reduce-only).
+                        example: false
+              example:
+                BTC_USDT:
+                - amount: '0.0009'
+                  price: '40000'
+                  type: limit
+                  id: 4986126152
+                  clientOrderId: customId11
+                  side: sell
+                  ctime: 1597486960.311311
+                  ftime: 1597486960.311332
+                  dealFee: '0.041258268'
+                  dealStock: '0.0009'
+                  dealMoney: '41.258268'
+                  postOnly: false
+                  ioc: false
+                  status: CANCELED
+                  feeAsset: USDT
+                  positionSide: BOTH
+                  rpi: false
+                  reduceOnly: false
+                - amount: '0.05'
+                  price: '39000'
+                  type: limit
+                  id: 4986126890
+                  clientOrderId: ''
+                  side: buy
+                  ctime: 1597486100.100011
+                  ftime: 1597486700.400022
+                  dealFee: '0'
+                  dealStock: '0'
+                  dealMoney: '0'
+                  postOnly: false
+                  ioc: false
+                  status: MAINTENANCE
+                  feeAsset: USDT
+                  positionSide: BOTH
+                  rpi: false
+                  reduceOnly: false
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                orderhistory30:
+                  summary: OrderHistory was not found
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      orderHistory:
+                      - OrderHistory was not found.
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/trade-account/order/history/query:
+    post:
+      summary: Query delisting and maintenance orders
+      operationId: getDelistingOrderHistory
+      description: 'The endpoint returns the authenticated account''s delisting- and maintenance-related order history across spot, margin, and futures markets, from the order-history index. The response combines three categories of orders: reverse close orders that the platform generates when a market is delisted (`delistingKind` = `reverse`, `clientOrderId` prefixed with `delisting-`), active orders canceled at the moment of delisting (`delistingKind` = `canceled`), and orders canceled when a market entered planned maintenance (response `status` = `maintenance`, `delistingKind` empty). The endpoint returns a flat array sorted by `finishAt` descending, then `id` descending.
+
+
+        Set the `status` parameter to narrow the response: `filled` returns only reverse close orders that reached the `filled` outcome, `delisting` returns only orders canceled during delisting, and `maintenance` returns only orders canceled during planned market maintenance. Omit `status` to return all three categories merged in a single array.
+
+
+        The endpoint supports pagination via `limit` (default: 500, max: 500) and `offset` (default: 0); the sum of `offset` and `limit` must not exceed 10000. A response that returns fewer than `limit` records indicates the last page.
+
+
+        **Date filter window:** the date range filters orders by the `finishAt` timestamp. The maximum span between `startDate` and `endDate` is **31 days**. `endDate` values greater than the current time are clamped to `now`.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                market:
+                  type: string
+                  description: 'Trading pair to filter by. Format: `BASE_QUOTE` (e.g., `BTC_USDT`), matching the pattern `^[A-Z0-9]+_[A-Z0-9]+$`. Omit to retrieve records across all markets.'
+                  example: BTC_USDT
+                status:
+                  type: string
+                  enum:
+                  - filled
+                  - delisting
+                  - maintenance
+                  description: Category filter — distinct from the response `status` field. `filled` returns only reverse close orders (`clientOrderId` prefixed with `delisting-`), which carry `delistingKind` = `reverse` and response `status` = `filled`. `delisting` returns only orders canceled at delisting, which carry `delistingKind` = `canceled` and response `status` = `canceled`. `maintenance` returns only orders canceled during planned market maintenance, which carry response `status` = `maintenance` and an empty `delistingKind`. Omit to return all three categories merged.
+                  example: filled
+                startDate:
+                  type: integer
+                  description: 'Start of the query window as a Unix timestamp in seconds. Default: `now - 30 days`. Must not be later than `endDate`.'
+                  example: 1731369600
+                endDate:
+                  type: integer
+                  description: 'End of the query window as a Unix timestamp in seconds. Default: `now`. Values greater than the current time are clamped to `now`. The maximum span between `startDate` and `endDate` is 31 days.'
+                  example: 1733961600
+                offset:
+                  type: integer
+                  default: 0
+                  minimum: 0
+                  maximum: 9999
+                  description: 'Number of records to skip. Default: `0`. The sum of `offset` and `limit` must not exceed 10000.'
+                  example: 0
+                limit:
+                  type: integer
+                  minimum: 1
+                  maximum: 500
+                  default: 500
+                  description: 'Maximum number of records to return. Default: `500`. Minimum: `1`. Maximum: `500`.'
+                  example: 500
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns a flat array of delisting- and maintenance-related orders sorted by `finishAt` descending, then `id` descending. Returns an empty array when no records match the filters.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: Unique order identifier assigned by the matching engine.
+                      example: 2286423327099
+                    clientOrderId:
+                      type: string
+                      description: Custom client order identifier. Reverse close orders carry the platform-generated value prefixed with `delisting-`. Returns an empty string when the original order had no client identifier.
+                      example: delisting-2286423327099
+                    createdAt:
+                      type: number
+                      description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+                      example: 1778077388.002424
+                    finishAt:
+                      type: number
+                      description: Unix timestamp in seconds (UTC) at which the order reached its final status, with microsecond precision. Primary sort key, descending.
+                      example: 1778077400.123456
+                    market:
+                      type: string
+                      description: 'Trading pair the order belongs to. Format: `BASE_QUOTE`.'
+                      example: BTC_USDT
+                    side:
+                      type: string
+                      enum:
+                      - buy
+                      - sell
+                      description: 'Order side. Possible values: `buy`, `sell`.'
+                      example: sell
+                    type:
+                      type: string
+                      description: 'Order type. Possible values: `limit`, `market`, `stock market`, `stop limit`, `stop market`.'
+                      example: market
+                    price:
+                      type: string
+                      description: Limit price per unit in quote currency. Returns `"0"` for market orders.
+                      example: '61234.5000000000'
+                    amount:
+                      type: string
+                      description: Order quantity in base currency for limit orders, or in quote currency for buy market orders.
+                      example: '0.0500000000'
+                    dealStock:
+                      type: string
+                      description: Filled amount in base (stock) currency.
+                      example: '0.0500000000'
+                    dealMoney:
+                      type: string
+                      description: Filled amount in quote (money) currency.
+                      example: '3061.7250000000'
+                    fee:
+                      type: string
+                      description: Cumulative trading fee charged for filled portions, denominated in the fee asset.
+                      example: '1.5308625000'
+                    feeAsset:
+                      type: string
+                      description: Currency ticker of the asset used to pay the trading fee.
+                      example: USDT
+                    status:
+                      type: string
+                      description: Execution outcome in lowercase. Reverse close orders that filled return `filled`. Orders canceled during delisting return `canceled`. Orders canceled during planned market maintenance return `maintenance`.
+                      example: filled
+                    delistingKind:
+                      type: string
+                      enum:
+                      - reverse
+                      - canceled
+                      - ''
+                      description: Delisting category discriminator. `reverse` marks a reverse close order generated by the platform. `canceled` marks an active order canceled at the moment of delisting. The field is always present and carries an empty string for records that are not delisting-related, which is the case for maintenance cancellations — read `status` to identify those.
+                      example: reverse
+              example:
+              - id: 2287000111222
+                clientOrderId: user-custom-id-7
+                createdAt: 1777991000.0
+                finishAt: 1778078000.0
+                market: BTC_USDT
+                side: buy
+                type: limit
+                price: '61000.0000000000'
+                amount: '0.0500000000'
+                dealStock: '0.0000000000'
+                dealMoney: '0.0000000000'
+                fee: '0.0000000000'
+                feeAsset: USDT
+                status: canceled
+                delistingKind: canceled
+              - id: 2286423327099
+                clientOrderId: delisting-2286423327099
+                createdAt: 1778077388.002424
+                finishAt: 1778077400.123456
+                market: BTC_USDT
+                side: sell
+                type: market
+                price: '61234.5000000000'
+                amount: '0.0500000000'
+                dealStock: '0.0500000000'
+                dealMoney: '3061.7250000000'
+                fee: '1.5308625000'
+                feeAsset: USDT
+                status: filled
+                delistingKind: reverse
+              - id: 2288100455333
+                clientOrderId: user-custom-id-9
+                createdAt: 1778090000.0
+                finishAt: 1778090400.0
+                market: ETH_USDT
+                side: buy
+                type: limit
+                price: '2450.0000000000'
+                amount: '1.5000000000'
+                dealStock: '0.0000000000'
+                dealMoney: '0.0000000000'
+                fee: '0.0000000000'
+                feeAsset: USDT
+                status: maintenance
+                delistingKind: ''
+        '400':
+          description: Inner validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Request validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/modify:
+    post:
+      summary: Modify order
+      operationId: modifyOrder
+      description: 'The endpoint modifies an existing order on spot, margin, and futures markets. There is no separate collateral path: collateral orders go through this endpoint, and the `market` parameter identifies which market the order belongs to.
+
+
+        Supported order types: limit, stop limit, stop market. On collateral markets the supported types are the collateral limit, collateral stop-limit, and collateral trigger-market orders.
+
+
+        Request must contain at least one of the following parameters: amount, total, price, activationPrice.
+
+
+        **Price and amount steps:** from September 18, 2026, a `price` or `activationPrice` sent in the request must be a multiple of the market `tickSize`, and `amount` a multiple of `stepSize`. A buy stop-market modification sends `total` in quote currency, which the step does not apply to. See Price and amount steps.
+
+
+        Rate limit: 10000 requests/10 sec.
+
+
+        - Use total parameter instead of amount for modify buy stop market order. `amount` and `total` are mutually exclusive — a request sending both is rejected.
+
+        - The request accepts exactly one identifier: either `orderId` or `clientOrderId`.
+
+        - Sending both identifiers, or neither, returns a validation error.
+
+        - Group legs cannot be modified. An OCO or OTO leg returns error `155`: cancel the group and place a new one. A TPSL leg returns error `160`: cancel the leg and attach a new pair.
+
+
+        **WebSocket impact:** Each call to the endpoint cancels the original order and
+
+        creates a replacement with a **new `orderId`**. Clients subscribed to the
+
+        `ordersPending_update` WebSocket channel will receive:
+
+        - `event_id=3` (cancel) for the old order
+
+        - `event_id=1` (new) for the replacement
+
+
+        Update any `orderId` references after a successful modify response.
+
+        Use `clientOrderId` for stable order tracking across modifications.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - request
+              - nonce
+              properties:
+                orderId:
+                  type: integer
+                  description: Active order id. Required if clientOrderId is not set.
+                  example: 4180284841
+                clientOrderId:
+                  type: string
+                  description: Identifier should be unique and contain letters, dashes, numbers, dots or underscores. Required if orderId is not set.
+                  example: order1987111
+                market:
+                  type: string
+                  description: 'Available [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                amount:
+                  type: string
+                  description: 'Amount of [stock](/glossary#stock) currency to buy or sell. Example: ''0.001'' or 0.001'
+                  example: '0.001'
+                total:
+                  type: string
+                  description: 'Total of [money](/glossary#money) currency to buy or sell. Example: ''0.001'' or 0.001'
+                  example: '100'
+                price:
+                  type: string
+                  description: 'Price in [money](/glossary#money) currency. Example: ''9800'' or 9800'
+                  example: '9800'
+                activationPrice:
+                  type: string
+                  description: 'Activation price in [money](/glossary#money) currency. Example: ''10000'' or 10000'
+                  example: '10000'
+                stp:
+                  type: string
+                  enum:
+                  - 'no'
+                  - cb
+                  - cn
+                  - co
+                  default: 'no'
+                  description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+                    Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+                    See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+                    '
+                  example: 'no'
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Order modified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: 'Bad request. Client errors: invalid arguments, order not found, quote expired, activation price issues.
+
+
+            Error codes: `1`, `2`, `6`, `20`, `24`, `101`, `158`.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                orderNotFound:
+                  summary: Order not found
+                  value:
+                    code: 2
+                    message: Inner validation failed
+                    errors:
+                      orderId:
+                      - Unexecuted order was not found.
+        '422':
+          description: 'Unprocessable entity. Business-logic validation failed: balance insufficient, trading restrictions, order type conflicts, price bands exceeded.
+
+
+            Error codes: `10`, `11`, `12`, `13`, `14`, `15`, `16`, `17`, `25`, `27`, `40`, `42`, `51`, `103`, `104`, `105`, `106`, `111`, `112`, `113`, `114`, `115`, `150`, `151`, `152`, `153`, `155`, `157`, `159`, `160`, `161`, `162`, `163`, `250`, `251`, `300`, `302`, `330`, `10011`.
+
+
+            `10011` is returned when the order being modified belongs to a TradFi market and TradFi trading is restricted for the account. Canceling such an order is always allowed.
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                marketUnavailable:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+                insufficientBalance:
+                  summary: Not enough balance
+                  value:
+                    code: 10
+                    message: Validation failed
+                    errors:
+                      amount:
+                      - Not enough balance.
+        '503':
+          description: Service temporarily unavailable
+  /api/v4/order/kill-switch:
+    post:
+      summary: Sync kill-switch timer
+      operationId: setKillSwitch
+      description: 'The endpoint creates, updates, or deletes a kill-switch timer. The kill-switch acts as a safety mechanism for automated trading systems — the timer automatically cancels all open orders for the specified market if the client fails to reset the timer before expiration. Set `timeout` to a value between `5` and `600` (seconds) to create or update a timer. Set `timeout` to `null` to delete an existing timer.
+
+
+        Rate limit: 10000 requests/10 sec.
+
+
+        - If timeout=null - delete existing timer by market.
+
+        - If types=null - create timer by market for all order types.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - market
+              - timeout
+              properties:
+                market:
+                  type: string
+                  description: 'Available [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                timeout:
+                  type:
+                  - string
+                  - 'null'
+                  description: Timer value in seconds ('5'-'600'), or `null` to delete the existing timer. The key must always be present — omitting it fails validation.
+                  example: '60'
+                types:
+                  type: array
+                  minItems: 1
+                  maxItems: 3
+                  description: 'Order types to target. Valid values: "spot" — standard spot orders. "margin" — marginal orders placed on spot markets. Note: the "margin" value is not the same as the collateral account balance; "collateral" in other endpoints refers to the funding account, whereas "margin" here refers specifically to the order type. "futures" — marginal orders placed on futures markets (e.g., BTC_PERP). If omitted, the API targets all order types.'
+                  example:
+                  - spot
+                  - margin
+                  items:
+                    type: string
+                    enum:
+                    - spot
+                    - margin
+                    - futures
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: 'Successful response — creating or updating a timer returns the timer object; deleting a timer (`timeout: null`) returns a literal empty array (`[]`).'
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - type: object
+                  title: Timer created or updated
+                  properties:
+                    market:
+                      type: string
+                      description: Trading pair the timer applies to.
+                      example: BTC_USDT
+                    startTime:
+                      type: integer
+                      description: Unix timestamp (seconds) when the timer was created or last reset.
+                      example: 1662478154
+                    cancellationTime:
+                      type: integer
+                      description: Unix timestamp (seconds) when the kill-switch will cancel orders. Equals `startTime + timeout`.
+                      example: 1662478154
+                    types:
+                      type:
+                      - array
+                      - 'null'
+                      description: 'Order types targeted by the kill-switch. Possible values: `spot`, `margin`, `futures`. Returns `null` when the timer was created without `types` (the kill-switch then targets all order types).'
+                      items:
+                        type: string
+                        enum:
+                        - spot
+                        - margin
+                        - futures
+                      example:
+                      - spot
+                      - margin
+                - type: array
+                  title: Timer deleted
+                  description: 'Deleting a timer (`timeout: null`) returns a literal empty array (`[]`).'
+                  maxItems: 0
+                  items: {}
+              examples:
+                timerSynced:
+                  summary: Timer created or updated
+                  value:
+                    market: BTC_USDT
+                    startTime: 1662478154
+                    cancellationTime: 1662478154
+                    types:
+                    - spot
+                    - margin
+                timerDeleted:
+                  summary: Timer deleted
+                  value: []
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                market30:
+                  summary: Market field is required
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market field is required.
+                      timeout:
+                      - Timeout field is required.
+                market31:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+                timeout30:
+                  summary: Timeout should be at least 5
+                  value:
+                    code: 30
+                    message: Validation failed
+                    errors:
+                      timeout:
+                      - Timeout should be at least 5.
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v4/order/kill-switch/status:
+    post:
+      summary: Status kill-switch timer
+      operationId: getKillSwitchStatus
+      description: 'The endpoint retrieves the status of active kill-switch timers. The response returns an array of timer objects for the specified market, or for all markets if the `market` parameter is omitted. Each timer object includes the start time, scheduled cancellation time, and targeted order types.
+
+
+        Rate limit: 10000 requests/10 sec.'
+      tags:
+      - Spot Trading
+      security:
+      - ApiKeyAuth: []
+        PayloadAuth: []
+        SignatureAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                market:
+                  type: string
+                  description: 'Available [market](/glossary#market). Example: BTC_USDT'
+                  example: BTC_USDT
+                request:
+                  type: string
+                  example: '{{request}}'
+                nonce:
+                  type: integer
+                  example: 1594297865000
+      responses:
+        '200':
+          description: Successful response - returns array of kill-switch timer statuses
+          content:
+            application/json:
+              schema:
+                type: array
+                description: Array of active kill-switch timers
+                items:
+                  type: object
+                  properties:
+                    market:
+                      type: string
+                      description: Trading pair the timer applies to.
+                      example: BTC_USDT
+                    startTime:
+                      type: integer
+                      description: Unix timestamp (seconds) when the timer was created or last reset.
+                      example: 1686127243
+                    cancellationTime:
+                      type: integer
+                      description: Unix timestamp (seconds) when the kill-switch will cancel orders. Equals `startTime + timeout`.
+                      example: 1686127343
+                    types:
+                      type:
+                      - array
+                      - 'null'
+                      description: 'Order types targeted by the kill-switch. Possible values: `spot`, `margin`, `futures`. Returns `null` when the timer was created without `types` (the kill-switch then targets all order types).'
+                      items:
+                        type: string
+                        enum:
+                        - spot
+                        - margin
+                        - futures
+                      example:
+                      - spot
+                      - margin
+              example:
+              - market: BTC_USDT
+                startTime: 1686127243
+                cancellationTime: 1686127343
+                types:
+                - spot
+                - margin
+        '400':
+          description: 'Inner validation failed
+
+
+            Error codes:
+
+            - `30` - default validation error code
+
+            - `31` - market validation failed
+
+            '
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                market31:
+                  summary: Market is not available
+                  value:
+                    code: 31
+                    message: Validation failed
+                    errors:
+                      market:
+                      - Market is not available.
+        '422':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    BulkCancelOrderResult:
+      type: object
+      description: Acknowledgement that a single item was canceled. The endpoint echoes the identifiers from the request item and, when available, the order's `timestamp` and `mtime`. Full order state is not returned. Use the single Cancel order endpoint when post-cancel order state is required.
+      properties:
+        orderId:
+          type: integer
+          description: System-assigned order ID of the canceled order.
+          example: 4326248250
+        clientOrderId:
+          type: string
+          description: Client-defined order ID of the canceled order, if one was set at order creation.
+          example: my-client-id
+        market:
+          type: string
+          description: 'Trading pair of the canceled order. Format: `BASE_QUOTE` (e.g. `BTC_USDT`).'
+          example: BTC_USDT
+        timestamp:
+          type: number
+          description: Unix timestamp in seconds (UTC), with microsecond precision, of order creation. Optional. May be omitted; do not rely on its presence.
+          example: 1595792396.165973
+        mtime:
+          type: number
+          description: Unix timestamp in seconds (UTC), with microsecond precision, of the last time the matching engine modified the order. When present, the value is the moment the engine processed the cancellation, because a cancellation is the order's final modification. Optional — may be omitted; do not rely on its presence.
+          example: 1595792412.443301
+    CancelOrderResponse:
+      type: object
+      description: Final state of a canceled order.
+      allOf:
+      - $ref: '#/components/schemas/OrderResponse'
+      - type: object
+        properties:
+          mtime:
+            type: number
+            description: Unix timestamp in seconds (UTC), with microsecond precision, of the last time the matching engine modified the order. On a cancel response the value is the moment the engine processed the cancellation, because a cancellation is the order's final modification. The cancel response always includes the field.
+            example: 1595792412.443301
+    OrderResponse:
+      type: object
+      description: Shared order shape returned by the order-creation, cancel, active-orders list, and modify endpoints. Field presence varies by endpoint and order type — see the per-field notes.
+      properties:
+        orderId:
+          type: integer
+          description: Unique identifier assigned to the order by the matching engine.
+          example: 4180284841
+        clientOrderId:
+          type: string
+          description: Custom client order identifier supplied in the request. Returns an empty string when not specified.
+          example: order1987111
+        market:
+          type: string
+          description: 'Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`).'
+          example: BTC_USDT
+        side:
+          type: string
+          description: 'Order side. Possible values: `buy`, `sell`.'
+          example: buy
+        type:
+          type: string
+          description: 'Order type. Possible values: `limit`, `market`, `stock market`, `stop limit`, `stop market`.'
+          example: limit
+        timestamp:
+          type: number
+          description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+          example: 1595792396.165973
+        dealMoney:
+          type: string
+          description: Filled amount in quote currency. Returns `"0"` while the order remains unfilled.
+          example: '0'
+        dealStock:
+          type: string
+          description: Filled amount in base currency. Returns `"0"` while the order remains unfilled.
+          example: '0'
+        amount:
+          type: string
+          description: Order quantity in base currency for limit and stop-limit orders, or in quote currency for buy market orders.
+          example: '0.01'
+        left:
+          type: string
+          description: Remaining unfilled quantity. Equals `amount` for new orders and `"0"` for fully filled orders.
+          example: '0.001'
+        dealFee:
+          type: string
+          description: Cumulative trading fee charged for filled portions, denominated in the fee asset.
+          example: '0'
+        feeAsset:
+          type: string
+          description: Currency ticker of the asset used to pay the trading fee. Omitted when empty.
+          example: USDT
+        price:
+          type: string
+          description: Limit price per unit in quote currency. Present for orders that carry a price (limit and stop-limit shapes); omitted on market and stop-market order shapes.
+          example: '40000'
+        postOnly:
+          type: boolean
+          description: Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Omitted when not set.
+          example: false
+        ioc:
+          type: boolean
+          description: 'Immediate-or-cancel flag. When `true`, the order executes available quantity immediately and cancels the unfilled remainder. Default: `false`.'
+          example: false
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        stp:
+          type: string
+          description: 'Self-trade prevention mode applied to the order. Possible values: `no`, `cb`, `cn`, `co`. The response always returns the abbreviated form, even when the request used a legacy value. Default: `no`.'
+          example: 'no'
+        positionSide:
+          type: string
+          description: Position side (for collateral orders). Returned on the cancel, active-orders list, and modify responses; omitted when not set. Spot order-creation responses do not include the field.
+          example: LONG
+        oto:
+          type: object
+          description: OTO order data. Present only when the order belongs to an [OTO](/glossary#one-triggers-the-other-oto) group — returned on the cancel, active-orders list, and modify responses.
+          properties:
+            otoId:
+              type: integer
+              description: OTO order identifier
+              example: 29457221
+            takeProfit:
+              type: string
+              description: Take profit order price
+              example: '50000'
+            stopLoss:
+              type: string
+              description: Stop loss order price
+              example: '30000'
+        rpi:
+          type: boolean
+          description: Indicates Retail Price Improvement (RPI) mode for the order.
+          example: true
+        retail:
+          type: boolean
+          description: Retail-source taker flag. The field is present only when the order was placed with `retail=true`. See [Retail flag](/glossary#retail-flag).
+          example: true
+        reduceOnly:
+          type: boolean
+          description: Reduce-only flag. When `true`, the order can only reduce or close an existing position. Returned on the cancel, active-orders list, and modify responses; spot order-creation responses do not include the field. See [reduce-only](/glossary#reduce-only).
+          example: false
+        activated:
+          type: integer
+          description: Activation status of the stop order. 0 = not yet triggered (waiting for the activation_price condition to be met). 1 = triggered (the stop condition has been met and the order is now active). Returned for stop orders; omitted on other order shapes.
+          example: 0
+        activationCondition:
+          type: string
+          enum:
+          - lte
+          - gte
+          description: 'Trigger condition for the stop order. Response-only — not accepted in the request body, and cannot be overridden. Derived from `side`:
+
+
+            - `side = buy` → `gte`. The order activates when the market price rises to or above `activation_price`.
+
+            - `side = sell` → `lte`. The order activates when the market price falls to or below `activation_price`.
+
+            '
+          example: lte
+        activation_price:
+          type: string
+          description: The trigger price for the stop order. Always equals the activation_price value submitted in the request. Returned for stop orders; omitted on other order shapes.
+          example: '40000'
+    BulkCancelOrderItem:
+      type: object
+      description: A single cancel target. Provide `market` and exactly one of `orderId` or `clientOrderId`. Sending both, or neither, returns a per-item validation error.
+      required:
+      - market
+      properties:
+        market:
+          type: string
+          description: 'Available [market](/glossary#market). Example: `BTC_USDT`.'
+          example: BTC_USDT
+        orderId:
+          type: integer
+          description: System-assigned order ID. Required if `clientOrderId` is not set; mutually exclusive with `clientOrderId`.
+          example: 4326248250
+        clientOrderId:
+          type: string
+          description: Client-defined order ID supplied at order creation. Required if `orderId` is not set; mutually exclusive with `orderId`.
+          example: my-client-id
+    BulkOrderItem:
+      type: object
+      required:
+      - market
+      - side
+      - amount
+      properties:
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side. Allowed values: `buy`, `sell`.'
+          example: buy
+        amount:
+          type: string
+          description: Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount` and precision (`stockPrec`).
+          example: '0.001'
+        price:
+          type: string
+          description: Limit price per unit in quote (money) currency. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for precision (`moneyPrec`).
+          example: '40000'
+        market:
+          type: string
+          description: 'Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`).'
+          example: BTC_USDT
+        postOnly:
+          type: boolean
+          default: false
+          description: 'Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Allowed only when `bboRole` is not set. Do not combine with `rpi=true` — RPI items apply post-only behavior automatically, and an item setting both flags fails validation. Default: `false`.'
+          example: false
+        ioc:
+          type: boolean
+          default: false
+          description: 'Immediate-or-cancel (IOC) executes all or part of an order immediately and cancels any unfilled portion. Default: `false`.
+
+
+            IOC does not support `rpi=true` because RPI uses post-only behavior by design.
+
+            The API returns error code `40` when an order item sets both `ioc=true` and `rpi=true`.
+
+            IOC cannot be combined with `postOnly=true` (error code `37`), and with `bboRole` it is allowed only for the Counterparty method (`2`).
+
+            '
+          example: false
+        clientOrderId:
+          type: string
+          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+          example: ''
+        bboRole:
+          type: integer
+          enum:
+          - 1
+          - 2
+          description: 'Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method for the item. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method.
+
+
+            When `bboRole` is set, the item''s `price` is not required — the BBO method determines the execution price. `postOnly` is allowed only when `bboRole` is not set; `ioc` can be combined only with the Counterparty method (`2`).
+
+            '
+        stp:
+          type: string
+          enum:
+          - 'no'
+          - cb
+          - cn
+          - co
+          default: 'no'
+          description: 'Self-trade prevention mode for the item. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+            See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+            '
+          example: 'no'
+        rpi:
+          type: boolean
+          default: false
+          description: 'Enables Retail Price Improvement (RPI) mode. Default: `false`.
+
+
+            RPI items apply post-only behavior automatically — do not also send an explicit `postOnly=true`: an item combining the two flags fails validation. An RPI order does not support `ioc=true`.
+
+            The API returns error code `40` when an order item sets both `rpi=true` and `ioc=true`.
+
+            '
+          example: true
+        retail:
+          type: boolean
+          default: false
+          description: 'Retail-source taker flag for the bulk-order item. When `true`, the item is eligible to match against orders submitted by RPI makers and may receive price improvement at execution. Default: `false`.
+
+
+            The Retail flag must be enabled on the account before a private-API request can set `retail=true`. Contact the account manager to enable the Retail flag.
+
+
+            The flag has no effect on a `postOnly=true` or `rpi=true` item. Post-only and RPI orders are [makers](/glossary#maker); only takers carry the retail designation. An item with both `rpi=true` and `retail=true` matches exactly like an RPI order.
+
+
+            Refer to [Retail flag](/glossary#retail-flag) and [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
+
+            '
+          example: false
+    LimitOrderRequest:
+      type: object
+      required:
+      - market
+      - side
+      - amount
+      - request
+      - nonce
+      properties:
+        market:
+          type: string
+          description: 'Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.'
+          example: BTC_USDT
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side. Allowed values: `buy`, `sell`.'
+          example: buy
+        amount:
+          type: string
+          description: 'Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`. Precision: `stockPrec`.'
+          example: '0.001'
+        price:
+          type: string
+          description: 'Limit price per unit in quote (money) currency. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.'
+          example: '9800'
+        clientOrderId:
+          type: string
+          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+          example: order1987111
+        postOnly:
+          type: boolean
+          default: false
+          description: 'Post-only flag. When `true`, the order executes only as a [maker](/glossary#maker) order and the system rejects the order if it would match immediately. Allowed only when `bboRole` is not set. Do not combine with `rpi=true` — RPI orders apply post-only behavior automatically, and a request setting both flags fails validation. Default: `false`.'
+          example: false
+        ioc:
+          type: boolean
+          default: false
+          description: 'Immediate-or-cancel (IOC) flag. When `true`, the matching engine executes all or part of the order immediately and cancels any unfilled portion. Default: `false`.
+
+
+            IOC does not support `rpi=true` because RPI uses post-only behavior by design.
+
+            The API returns error code `40` when a request sets both `ioc=true` and `rpi=true`.
+
+            IOC cannot be combined with `postOnly=true` (error code `37`), and with `bboRole` it is allowed only for the Counterparty method (`2`).
+
+
+            Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
+
+            '
+          example: false
+        bboRole:
+          type: integer
+          enum:
+          - 1
+          - 2
+          description: 'Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method.
+
+
+            When `bboRole` is set, `price` is not required — the BBO method determines the execution price. `postOnly` is allowed only when `bboRole` is not set; `ioc` can be combined only with the Counterparty method (`2`). Use method `2` with the `ioc` flag.
+
+
+            Refer to [Order Parameter Rules](/guides/order-parameter-rules) for the full interaction rules.
+
+            '
+        stp:
+          type: string
+          enum:
+          - 'no'
+          - cb
+          - cn
+          - co
+          default: 'no'
+          description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+            See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+            '
+          example: 'no'
+        rpi:
+          type: boolean
+          default: false
+          description: 'Enables Retail Price Improvement (RPI) mode. Default: `false`.
+
+
+            RPI orders apply post-only behavior automatically — do not also send an explicit `postOnly=true`: a request combining the two flags fails validation. An RPI order does not support `ioc=true`.
+
+            The API returns error code `40` when a request sets both `rpi=true` and `ioc=true`.
+
+            RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
+
+            RPI executions may apply custom fees or rebates, especially when trading via sub-accounts. Use Query Market Fees to verify effective fees.
+
+
+            Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
+
+            '
+          example: true
+        retail:
+          type: boolean
+          default: false
+          description: 'Retail-source taker flag. When `true`, the order is eligible to match against orders submitted by RPI makers and may receive price improvement at execution. Default: `false`.
+
+
+            The Retail flag must be enabled on the account before a private-API request can set `retail=true`. Contact the account manager to enable the Retail flag.
+
+
+            The flag has no effect on a `postOnly=true` or `rpi=true` order. Post-only and RPI orders are [makers](/glossary#maker); only takers carry the retail designation. An order with both `rpi=true` and `retail=true` matches exactly like an RPI order.
+
+
+            Refer to [Retail flag](/glossary#retail-flag) and [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
+
+            '
+          example: false
+        request:
+          type: string
+          example: '{{request}}'
+        nonce:
+          type: integer
+          example: 1594297865000
+    MarketOrderRequest:
+      type: object
+      required:
+      - market
+      - side
+      - amount
+      - request
+      - nonce
+      properties:
+        market:
+          type: string
+          description: 'Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.'
+          example: BTC_USDT
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side. Allowed values: `buy`, `sell`.'
+          example: buy
+        amount:
+          type: string
+          description: 'For buy orders: total in quote (money) currency to spend. For sell orders: quantity in base (stock) currency to sell. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`.'
+          example: '100'
+        clientOrderId:
+          type: string
+          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+          example: order1987111
+        stp:
+          type: string
+          enum:
+          - 'no'
+          - cb
+          - cn
+          - co
+          default: 'no'
+          description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+            See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+            '
+          example: 'no'
+        request:
+          type: string
+          example: '{{request}}'
+        nonce:
+          type: integer
+          example: 1594297865000
+    StopLimitOrderRequest:
+      type: object
+      required:
+      - market
+      - side
+      - amount
+      - activation_price
+      - request
+      - nonce
+      properties:
+        market:
+          type: string
+          description: 'Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.'
+          example: BTC_USDT
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side. Allowed values: `buy`, `sell`.'
+          example: buy
+        amount:
+          type: string
+          description: 'Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`. Precision: `stockPrec`.'
+          example: '0.001'
+        price:
+          type: string
+          description: 'Limit price per unit in quote (money) currency applied after the stop triggers. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.'
+          example: '9800'
+        activation_price:
+          type: string
+          description: 'Trigger price in quote (money) currency. For buy orders, the stop triggers when the market price rises to or above the specified price. For sell orders, the stop triggers when the market price falls to or below the specified price. Precision: `moneyPrec`.'
+          example: '10000'
+        clientOrderId:
+          type: string
+          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+          example: order1987111
+        bboRole:
+          type: integer
+          enum:
+          - 1
+          - 2
+          description: Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method. The system selects the best market price for execution after the stop triggers. `1` = Queue method, `2` = Counterparty method. When `bboRole` is set, `price` is not required — the BBO method determines the execution price.
+        stp:
+          type: string
+          enum:
+          - 'no'
+          - cb
+          - cn
+          - co
+          default: 'no'
+          description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+            See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+            '
+          example: 'no'
+        request:
+          type: string
+          example: '{{request}}'
+        nonce:
+          type: integer
+          example: 1594297865000
+    OrderStatus:
+      type: string
+      description: Order lifecycle status. `FILLED` — fully executed. `CANCELED` — canceled before execution. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED_TAKER_BAND` — partially filled up to the taker band limit, remainder canceled to protect against excessive order book slippage. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `AUTO_CANCELED_LIQUIDATION` — pending order auto-canceled because the associated position was force-liquidated. `CANCELED_STP` — order canceled by [Self-Trade Prevention](/platform/self-trade-prevention). REST returns the single-`L` spelling throughout; `NEW` and `PARTIAL_FILLED` are not REST values (`NEW` is WebSocket-only; the partially-filled state is `PARTIALLY_FILLED`).
+      example: FILLED
+    StopMarketOrderRequest:
+      type: object
+      required:
+      - market
+      - side
+      - amount
+      - activation_price
+      - request
+      - nonce
+      properties:
+        market:
+          type: string
+          description: 'Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.'
+          example: BTC_USDT
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side. Allowed values: `buy`, `sell`.'
+          example: buy
+        amount:
+          type: string
+          description: 'For buy orders: total in quote (money) currency to spend. For sell orders: quantity in base (stock) currency to sell. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`.'
+          example: '0.01'
+        activation_price:
+          type: string
+          description: 'Trigger price in quote (money) currency. For buy orders, the stop triggers when the market price rises to or above the specified price. For sell orders, the stop triggers when the market price falls to or below the specified price. Precision: `moneyPrec`.'
+          example: '10000'
+        clientOrderId:
+          type: string
+          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+          example: order1987111
+        stp:
+          type: string
+          enum:
+          - 'no'
+          - cb
+          - cn
+          - co
+          default: 'no'
+          description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+            See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+            '
+          example: 'no'
+        request:
+          type: string
+          example: '{{request}}'
+        nonce:
+          type: integer
+          example: 1594297865000
+    BulkLimitOrderResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          result:
+            type:
+            - object
+            - 'null'
+            allOf:
+            - $ref: '#/components/schemas/OrderResponse'
+          error:
+            type:
+            - object
+            - 'null'
+            allOf:
+            - $ref: '#/components/schemas/ErrorResponse'
+    OrderHistoryStatus:
+      type: string
+      description: Order status returned by this endpoint, in uppercase. `FILLED` — fully executed. `CANCELED` — canceled before full execution; the endpoint also returns `AUTO_CANCELED_MARGIN_EXCHANGE_BALANCE` (order auto-canceled on insufficient margin or exchange balance) collapsed into `CANCELED`. `AUTO_CANCELED_LIQUIDATION` — auto-canceled because the associated position was force-liquidated. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `CANCELED_STP` — canceled by [Self-Trade Prevention](/platform/self-trade-prevention). `MAINTENANCE` — canceled by the platform when the market entered planned maintenance; never collapsed into `CANCELED`, so an integration that treats cancellations as user-initiated must handle this value separately. This endpoint returns a narrower, uppercase status set than the account's other order surfaces.
+      enum:
+      - FILLED
+      - CANCELED
+      - AUTO_CANCELED_LIQUIDATION
+      - AUTO_CANCELED_REDUCE_ONLY
+      - CANCELED_STP
+      - MAINTENANCE
+      example: CANCELED
+    BulkCancelOrderResponse:
+      type: array
+      description: Per-item cancel results. `response[i]` corresponds to `request.orders[i]`. Each item contains either `result` (cancellation succeeded) or `error` (cancellation failed for that item) — never both.
+      items:
+        type: object
+        properties:
+          result:
+            type:
+            - object
+            - 'null'
+            allOf:
+            - $ref: '#/components/schemas/BulkCancelOrderResult'
+          error:
+            type:
+            - object
+            - 'null'
+            allOf:
+            - $ref: '#/components/schemas/ErrorResponse'
+    StockMarketOrderRequest:
+      type: object
+      required:
+      - market
+      - side
+      - amount
+      - request
+      - nonce
+      properties:
+        market:
+          type: string
+          description: 'Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.'
+          example: BTC_USDT
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side. Allowed values: `buy`, `sell`.'
+          example: buy
+        amount:
+          type: string
+          description: Order quantity in base (stock) currency for both buy and sell sides. To place a market order specifying the quote (money) currency amount instead, use `POST /api/v4/order/market`. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`.
+          example: '0.001'
+        clientOrderId:
+          type: string
+          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+          example: order1987111
+        stp:
+          type: string
+          enum:
+          - 'no'
+          - cb
+          - cn
+          - co
+          default: 'no'
+          description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+            See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+            '
+          example: 'no'
+        request:
+          type: string
+          example: '{{request}}'
+        nonce:
+          type: integer
+          example: 1594297865000
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Error code
+          example: 30
+        message:
+          type: string
+          description: Error message
+          example: Validation failed
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Detailed error information
+    ExecutedDeal:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique deal identifier assigned by the matching engine.
+        clientOrderId:
+          type: string
+          description: Custom order identifier supplied in the original order request. Returns an empty string when not specified.
+        time:
+          type: number
+          description: Unix timestamp of the deal execution, with microsecond precision.
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side that produced the deal. Possible values: `buy`, `sell`.'
+        role:
+          type: integer
+          description: Execution role in the deal. `1` = maker (order was resting on the book), `2` = taker (order matched immediately).
+        amount:
+          type: string
+          description: Executed quantity in base (stock) currency, regardless of order direction.
+        price:
+          type: string
+          description: Execution price per unit in quote currency.
+        deal:
+          type: string
+          description: Total deal value in quote (money) currency. Equals `amount * price`.
+        fee:
+          type: string
+          description: Fee charged for the deal, denominated in the asset specified by `feeAsset`.
+        orderId:
+          type: integer
+          description: Identifier of the parent order that produced the deal.
+        feeAsset:
+          type: string
+          description: Currency ticker of the asset used to pay the trading fee.
+  responses:
+    BulkLimitOrderResponse:
+      description: Orders created
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BulkLimitOrderResponse'
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-APIKEY
+      description: The public WhiteBIT API key.
+    PayloadAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-PAYLOAD
+      description: Base64-encoded JSON request body.
+    SignatureAuth:
+      type: apiKey
+      in: header
+      name: X-TXC-SIGNATURE
+      description: HMAC-SHA512 signature of the payload, hex-encoded. Computed as hex(HMAC-SHA512(payload, api_secret)).

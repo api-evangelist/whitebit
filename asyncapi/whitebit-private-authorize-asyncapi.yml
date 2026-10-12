@@ -1,0 +1,142 @@
+asyncapi: 3.0.0
+info:
+  title: WhiteBit Private API Authorization
+  version: 1.0.0
+  description: |
+    Authorize WebSocket connection using authentication token.
+
+    When establishing a WebSocket connection, authorize it via the `authorize` method.
+    After successful authorization, send requests for balances, [orders](/glossary#orders), and similar data.
+
+    It only needs to be done successfully once.
+  x-auth-required: true
+  x-rate-limits:
+    connections-per-minute: 1000
+    requests-per-10-seconds: 12000
+
+servers:
+  production:
+    host: wss.whitebit.com
+    protocol: wss
+    description: WhiteBIT Global Server
+  eu:
+    host: api.whitebit.eu
+    protocol: wss
+    description: WhiteBIT EU Server
+
+channels:
+  /ws:
+    address: /ws
+    description: Private API authorization channel
+    messages:
+      authorizeRequest:
+        $ref: '#/components/messages/authorizeRequest'
+      authorizeResponse:
+        $ref: '#/components/messages/authorizeResponse'
+
+operations:
+  sendAuthorizeRequest:
+    action: receive
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/authorizeRequest'
+
+  receiveAuthorizeResponse:
+    action: send
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/authorizeResponse'
+
+components:
+  messages:
+    authorizeRequest:
+      name: AuthorizeRequest
+      title: Authorize
+      summary: Authorize WebSocket connection with token
+      payload:
+        $ref: '#/components/schemas/AuthorizeRequest'
+      examples:
+        - name: authorizeRequest
+          summary: |
+            Authorize WebSocket connection with parameters:
+            - params[0]: WebSocket token (get via /api/v4/profile/websocket_token)
+            - params[1]: Constant string "public"
+          payload:
+            id: 0
+            method: authorize
+            params:
+              - "<WEB_SOCKET_TOKEN>"
+              - "public"
+
+    authorizeResponse:
+      name: AuthorizeResponse
+      title: Authorize Response
+      summary: "Confirmation (status: success)"
+      payload:
+        $ref: '#/components/schemas/AuthorizeResponse'
+      examples:
+        - name: authorizeSuccess
+          summary: Authorization successful
+          payload:
+            id: 0
+            result:
+              status: success
+            error: null
+
+  schemas:
+    AuthorizeRequest:
+      type: object
+      required:
+        - id
+        - method
+        - params
+      properties:
+        id:
+          type: integer
+          description: Unique request identifier
+        method:
+          type: string
+          const: authorize
+          description: "Method name. Fixed value: `authorize`."
+        params:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            - type: string
+              description: WebSocket Token (get via `/api/v4/profile/websocket_token` endpoint)
+              x-field-name: token
+              x-required: true
+              x-example: "<WEB_SOCKET_TOKEN>"
+            - type: string
+              enum: ["public"]
+              description: Constant string, always should be "public"
+              x-field-name: scope
+              x-required: true
+              x-example: "public"
+          description: Array with WebSocket token and constant "public" string
+
+    AuthorizeResponse:
+      type: object
+      required:
+        - id
+        - result
+        - error
+      properties:
+        id:
+          type: integer
+          description: Request identifier matching the request
+        result:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              const: success
+              description: "Fixed value: `success`."
+        error:
+          type: "null"
+          description: Error object (null on success)

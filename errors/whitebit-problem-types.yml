@@ -1,0 +1,112 @@
+generated: '2026-10-13'
+method: derived
+generator: derive-problem-types.py
+source:
+- openapi/whitebit-address-checker-openapi.yml
+- openapi/whitebit-http-trade-v4-openapi.yml
+- openapi/whitebit-http-v1-openapi.yml
+- openapi/whitebit-http-v4-openapi.yml
+- openapi/whitebit-main-api-v4-openapi.yml
+- openapi/whitebit-oauth2-openapi.yml
+format: custom
+envelope:
+  media_type: application/json
+  schema: ErrorResponse
+coverage:
+  operations: 153
+  statuses_declared: 13
+problems:
+- status: 400
+  title: Bad Request
+  description: Inner validation failed
+  operations: 92
+  media_types:
+  - application/json
+  schema: Error
+- status: 401
+  title: Unauthorized
+  description: The system returns this error when the API key does not have permission to access Address Checker
+    endpoints. Enable the Address Checker perm
+  operations: 15
+  media_types:
+  - application/json
+  schema: EndpointAuthError
+- status: 403
+  title: Forbidden
+  description: Lending API access is not enabled on the account. Request access via the institutional services form
+    (https://whitebit.com/institutional-ser
+  operations: 16
+  media_types:
+  - application/json
+  schema: Error
+- status: 404
+  title: Not Found
+  description: API key not found
+  operations: 17
+  media_types:
+  - application/json
+  schema: Error
+- status: 409
+  title: Conflict
+  description: Idempotency key conflict. The endpoint executed no conversion.
+  operations: 2
+  media_types:
+  - application/json
+  schema: ErrorResponse
+- status: 412
+  title: Precondition Failed
+  description: Two-Factor Authentication (2FA) is required for this action but is not enabled on
+  operations: 2
+  media_types:
+  - application/json
+  schema: ErrorInner
+- status: 422
+  title: Unprocessable Content
+  description: Request validation failed
+  operations: 80
+  media_types:
+  - application/json
+  schema: ErrorResponse
+- status: 423
+  title: Locked
+  description: A concurrent secret-retrieval attempt holds the lock. Retry after a short delay.
+  operations: 1
+  media_types:
+  - application/json
+  schema: null
+- status: 451
+  title: Unavailable For Legal Reasons
+  description: Returned when the service is not available in the caller's region.
+  operations: 2
+  media_types:
+  - application/json
+  schema: ErrorV4
+- status: 500
+  title: Internal Server Error
+  description: Internal error
+  operations: 7
+  media_types:
+  - application/json
+  schema: null
+- status: 502
+  title: Bad Gateway
+  description: The conversion service returned no usable verdict. The conversion may have executed. Two states produce
+    a `502` and the response does not di
+  operations: 1
+  media_types:
+  - application/json
+  schema: ErrorResponse
+- status: 503
+  title: Service Unavailable
+  description: Service temporarily unavailable
+  operations: 43
+  media_types:
+  - application/json
+  schema: ErrorResponse
+- status: default
+  title: null
+  description: Error response
+  operations: 11
+  media_types:
+  - application/json
+  schema: ErrorV1

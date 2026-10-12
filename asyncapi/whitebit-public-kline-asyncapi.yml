@@ -1,0 +1,414 @@
+asyncapi: 3.0.0
+info:
+  title: WhiteBit Kline Data
+  version: 1.0.0
+  description: Historical and real-time kline (candlestick) data for trading pairs. Supports both one-time queries and subscription-based updates.
+  x-auth-required: false
+  x-rate-limits:
+    connections-per-minute: 1000
+    requests-per-10-seconds: 12000
+
+servers:
+  production:
+    host: wss.whitebit.com
+    protocol: wss
+    description: WhiteBIT Global Server
+  eu:
+    host: api.whitebit.eu
+    protocol: wss
+    description: WhiteBIT EU Server
+
+channels:
+  /ws:
+    address: /ws
+    description: |
+      Candlestick data operations.
+    messages:
+      candlesRequest:
+        $ref: '#/components/messages/candlesRequest'
+      candlesResponse:
+        $ref: '#/components/messages/candlesResponse'
+      candlesSubscribe:
+        $ref: '#/components/messages/candlesSubscribe'
+      candlesSubscribeResponse:
+        $ref: '#/components/messages/candlesSubscribeResponse'
+      candlesUpdate:
+        $ref: '#/components/messages/candlesUpdate'
+      candlesUnsubscribe:
+        $ref: '#/components/messages/candlesUnsubscribe'
+
+operations:
+  sendCandlesRequest:
+    action: receive
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/candlesRequest'
+
+  receiveCandlesResponse:
+    action: send
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/candlesResponse'
+
+  sendCandlesSubscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/candlesSubscribe'
+
+  receiveCandlesSubscribeResponse:
+    action: send
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/candlesSubscribeResponse'
+
+  receiveCandlesUpdates:
+    action: send
+    description: Receive periodic candlestick updates every 0.5 seconds
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/candlesUpdate'
+
+  sendCandlesUnsubscribe:
+    action: receive
+    channel:
+      $ref: '#/channels/~1ws'
+    messages:
+      - $ref: '#/channels/~1ws/messages/candlesUnsubscribe'
+
+components:
+  messages:
+    candlesRequest:
+      name: CandlesRequest
+      title: Candlestick Query
+      summary: Request historical candlestick data for a market pair
+      payload:
+        $ref: '#/components/schemas/CandlesRequest'
+      examples:
+        - name: candlesQuery
+          summary: |
+            Request historical candlestick data with parameters:
+            - params[0]: Market name (ETH_BTC)
+            - params[1]: Start time (1659569940 Unix timestamp)
+            - params[2]: End time (1660894800 Unix timestamp)
+            - params[3]: Interval in seconds (3600 = 1 hour)
+          payload:
+            id: 2
+            method: candles_request
+            params:
+              - ETH_BTC
+              - 1659569940
+              - 1660894800
+              - 3600
+
+    candlesResponse:
+      name: CandlesResponse
+      title: Candlestick Response
+      summary: Array of candlestick records
+      payload:
+        $ref: '#/components/schemas/CandlesResponse'
+      examples:
+        - name: candlesData
+          summary: |
+            Candlestick data array where each candle contains:
+            - [0]: Time (1580860800 Unix timestamp)
+            - [1]: Open price (0.020543)
+            - [2]: Close price (0.020553)
+            - [3]: High price (0.020614)
+            - [4]: Low price (0.02054)
+            - [5]: Volume in stock (7342.597)
+            - [6]: Volume in deal/money (151.095481849)
+            - [7]: Market pair (ETH_BTC)
+          payload:
+            id: 2
+            result:
+              - - 1580860800
+                - "0.020543"
+                - "0.020553"
+                - "0.020614"
+                - "0.02054"
+                - "7342.597"
+                - "151.095481849"
+                - ETH_BTC
+            error: null
+
+    candlesSubscribe:
+      name: CandlesSubscribe
+      title: Subscribe to Candlesticks
+      summary: Subscribe to periodic candlestick updates
+      payload:
+        $ref: '#/components/schemas/CandlesSubscribe'
+      examples:
+        - name: subscribeCandles
+          summary: |
+            Subscribe to candlestick updates with parameters:
+            - params[0]: Market name (BTC_USD)
+            - params[1]: Interval in seconds (900 = 15 minutes)
+          payload:
+            id: 3
+            method: candles_subscribe
+            params:
+              - BTC_USD
+              - 900
+
+    candlesSubscribeResponse:
+      name: CandlesSubscribeResponse
+      title: Subscribe Response
+      summary: Subscription confirmation
+      payload:
+        $ref: '#/components/schemas/SubscriptionResponse'
+      examples:
+        - name: subscribeSuccess
+          summary: Subscription successful
+          payload:
+            id: 3
+            result:
+              status: success
+            error: null
+
+    candlesUpdate:
+      name: CandlesUpdate
+      title: Candlestick Update
+      summary: Periodic candlestick update (every 0.5 seconds)
+      payload:
+        $ref: '#/components/schemas/CandlesUpdate'
+      examples:
+        - name: candleUpdate
+          summary: |
+            Real-time candle update containing:
+            - [0]: Time (1580895000 Unix timestamp)
+            - [1]: Open (0.020683)
+            - [2]: Close (0.020683)
+            - [3]: High (0.020683)
+            - [4]: Low (0.020666)
+            - [5]: Volume in stock (504.701)
+            - [6]: Volume in money/deal (10.433600491)
+            - [7]: Market (ETH_BTC)
+          payload:
+            id: null
+            method: candles_update
+            params:
+              - - 1580895000
+                - "0.020683"
+                - "0.020683"
+                - "0.020683"
+                - "0.020666"
+                - "504.701"
+                - "10.433600491"
+                - ETH_BTC
+
+    candlesUnsubscribe:
+      name: CandlesUnsubscribe
+      title: Unsubscribe from Candlesticks
+      summary: Stop receiving candlestick updates
+      payload:
+        $ref: '#/components/schemas/UnsubscribeRequest'
+      examples:
+        - name: unsubscribeCandles
+          summary: Unsubscribe from candlestick updates
+          payload:
+            id: 4
+            method: candles_unsubscribe
+            params: []
+
+  schemas:
+    Candle:
+      type: array
+      description: |
+        Candlestick data tuple with 8 elements:
+        - [0] Time (Unix timestamp)
+        - [1] Open price
+        - [2] Close price
+        - [3] High price
+        - [4] Low price
+        - [5] Volume in stock currency
+        - [6] Volume in deal currency (money)
+        - [7] Market pair name
+      minItems: 8
+      maxItems: 8
+      items:
+        - type: integer
+          description: Candle open time (Unix timestamp)
+          x-field-name: time
+        - type: string
+          description: Open price
+          x-field-name: open
+        - type: string
+          description: Close price (current price for live candle)
+          x-field-name: close
+        - type: string
+          description: Highest price in the interval
+          x-field-name: high
+        - type: string
+          description: Lowest price in the interval
+          x-field-name: low
+        - type: string
+          description: "Volume in [stock](/glossary#stock) (base currency)"
+          x-field-name: volume
+        - type: string
+          description: "Volume in money (quote currency)"
+          x-field-name: deal
+        - type: string
+          description: "[Market](/glossary#market) name"
+          x-field-name: market
+
+    CandlesRequest:
+      type: object
+      required:
+        - id
+        - method
+        - params
+      properties:
+        id:
+          type: integer
+          description: Unique request identifier
+        method:
+          type: string
+          const: candles_request
+          description: "Method name. Fixed value: `candles_request`."
+        params:
+          type: array
+          description: |
+            Query parameters:
+            - [0] Market name (STRING, e.g., ETH_BTC)
+            - [1] Start time (INTEGER, Unix timestamp)
+            - [2] End time (INTEGER, Unix timestamp)
+            - [3] Interval in seconds (INTEGER, see interval constraints)
+          minItems: 4
+          maxItems: 4
+          items:
+            - type: string
+              description: "[Market](/glossary#market) name (e.g., ETH_BTC)"
+              x-field-name: market
+              x-required: true
+              x-example: "ETH_BTC"
+            - type: integer
+              description: Start time (Unix timestamp)
+              x-field-name: start_time
+              x-required: true
+              x-example: 1659569940
+            - type: integer
+              description: End time (Unix timestamp)
+              x-field-name: end_time
+              x-required: true
+              x-example: 1660894800
+            - type: integer
+              description: Interval in seconds
+              x-field-name: interval
+              x-required: true
+              x-example: 3600
+
+    CandlesResponse:
+      type: object
+      required:
+        - id
+        - result
+        - error
+      properties:
+        id:
+          type: integer
+          description: Request identifier matching the request
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/Candle'
+        error:
+          type: "null"
+
+    CandlesSubscribe:
+      type: object
+      required:
+        - id
+        - method
+        - params
+      properties:
+        id:
+          type: integer
+          description: Unique request identifier
+        method:
+          type: string
+          const: candles_subscribe
+          description: "Method name. Fixed value: `candles_subscribe`."
+        params:
+          type: array
+          description: |
+            Subscription parameters:
+            - [0] Market name (STRING, e.g., BTC_USD)
+            - [1] Interval in seconds (INTEGER, see interval constraints)
+          minItems: 2
+          maxItems: 2
+          items:
+            - type: string
+              description: "[Market](/glossary#market) name (e.g., BTC_USD)"
+              x-field-name: market
+              x-required: true
+              x-example: "BTC_USD"
+            - type: integer
+              description: Interval in seconds
+              x-field-name: interval
+              x-required: true
+              x-example: 900
+
+    SubscriptionResponse:
+      type: object
+      required:
+        - id
+        - result
+        - error
+      properties:
+        id:
+          type: integer
+        result:
+          type: object
+          required:
+            - status
+          properties:
+            status:
+              type: string
+              const: success
+              description: "Fixed value: `success`."
+        error:
+          type: "null"
+
+    CandlesUpdate:
+      type: object
+      required:
+        - id
+        - method
+        - params
+      properties:
+        id:
+          type: "null"
+        method:
+          type: string
+          const: candles_update
+          description: "Method name. Fixed value: `candles_update`."
+        params:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Candle'
+
+    UnsubscribeRequest:
+      type: object
+      required:
+        - id
+        - method
+        - params
+      properties:
+        id:
+          type: integer
+          description: Unique request identifier
+        method:
+          type: string
+          const: candles_unsubscribe
+          description: "Method name. Fixed value: `candles_unsubscribe`."
+        params:
+          type: array
+          items: {}
+          maxItems: 0

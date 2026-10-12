@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/api-evangelist/whitebit/main/json-schema/whitebit-orderbook-response-schema.json",
+  "title": "OrderbookResponse",
+  "x-generated": "2026-10-13",
+  "x-method": "derived",
+  "x-generator": "derive-json-schema.py",
+  "x-source": "openapi/whitebit-http-v4-openapi.yml#/components/schemas/OrderbookResponse",
+  "type": "object",
+  "properties": {
+    "ticker_id": {
+      "type": "string",
+      "description": "Market Name"
+    },
+    "timestamp": {
+      "type": "integer",
+      "description": "Current timestamp"
+    },
+    "asks": {
+      "type": "array",
+      "description": "Array of ask orders",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 2,
+        "maxItems": 2,
+        "description": "[price, quantity] — price in quote currency, quantity in base currency"
+      }
+    },
+    "bids": {
+      "type": "array",
+      "description": "Array of bid orders",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 2,
+        "maxItems": 2,
+        "description": "[price, quantity] — price in quote currency, quantity in base currency"
+      }
+    }
+  }
+}
