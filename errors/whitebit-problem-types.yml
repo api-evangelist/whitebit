@@ -2,12 +2,18 @@ generated: '2026-10-13'
 method: derived
 generator: derive-problem-types.py
 source:
-- openapi/whitebit-address-checker-openapi.yml
-- openapi/whitebit-http-trade-v4-openapi.yml
-- openapi/whitebit-http-v1-openapi.yml
-- openapi/whitebit-http-v4-openapi.yml
-- openapi/whitebit-main-api-v4-openapi.yml
-- openapi/whitebit-oauth2-openapi.yml
+- openapi/whitebit-account-endpoints-api-openapi.yml
+- openapi/whitebit-address-checker-api-openapi.yml
+- openapi/whitebit-authentication-api-openapi.yml
+- openapi/whitebit-codes-api-openapi.yml
+- openapi/whitebit-collateral-trading-api-openapi.yml
+- openapi/whitebit-convert-api-openapi.yml
+- openapi/whitebit-credit-line-api-openapi.yml
+- openapi/whitebit-crypto-lending-fixed-api-openapi.yml
+- openapi/whitebit-crypto-lending-flex-api-openapi.yml
+- openapi/whitebit-deposit-api-openapi.yml
+- openapi/whitebit-fees-api-openapi.yml
+- openapi/whitebit-jwt-api-openapi.yml
 format: custom
 envelope:
   media_type: application/json

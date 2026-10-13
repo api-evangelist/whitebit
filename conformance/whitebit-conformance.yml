@@ -1,11 +1,11 @@
 generated: '2026-10-13'
 method: derived
 generator: derive-conformance.py
-source: openapi/ (6 document(s), 129 mutating operations)
+source: openapi/ (24 document(s), 129 mutating operations)
 standards:
-- id: openapi-3.0
+- id: openapi-3.2
   conforms: true
-  evidence: the document declares 3.0.3
+  evidence: the document declares 3.2.0
 - id: oauth2
   conforms: false
   evidence: 'securitySchemes: ApiKeyAuth (apiKey), BearerAuth (http), PayloadAuth (apiKey), SignatureAuth (apiKey)'
