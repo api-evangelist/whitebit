@@ -1,12 +1,12 @@
 {
   "provider": "whitebit",
   "sources": [
-    "whitebit-address-checker-openapi.yml",
-    "whitebit-http-trade-v4-openapi.yml",
-    "whitebit-http-v1-openapi.yml",
-    "whitebit-http-v4-openapi.yml",
-    "whitebit-main-api-v4-openapi.yml",
-    "whitebit-oauth2-openapi.yml"
+    "_original/whitebit-address-checker-openapi.yml",
+    "_original/whitebit-http-trade-v4-openapi.yml",
+    "_original/whitebit-http-v1-openapi.yml",
+    "_original/whitebit-http-v4-openapi.yml",
+    "_original/whitebit-main-api-v4-openapi.yml",
+    "_original/whitebit-oauth2-openapi.yml"
   ],
   "outputs": [
     "whitebit-address-checker-api-openapi.yml",
@@ -34,17 +34,11 @@
     "whitebit-authentication-api-openapi.yml",
     "whitebit-oauth-api-keys-api-openapi.yml"
   ],
-  "archived": [
-    "archived openapi/whitebit-address-checker-openapi.yml",
-    "archived openapi/whitebit-http-trade-v4-openapi.yml",
-    "archived openapi/whitebit-http-v1-openapi.yml",
-    "archived openapi/whitebit-http-v4-openapi.yml",
-    "archived openapi/whitebit-main-api-v4-openapi.yml",
-    "archived openapi/whitebit-oauth2-openapi.yml"
-  ],
+  "archived": [],
   "errors": [],
   "warnings": [],
   "notes": [
+    "sourced from openapi/_original/ (6 archived document(s)); previously refined output at the top level was skipped rather than re-split",
     "whitebit-address-checker-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
     "whitebit-http-trade-v4-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
     "whitebit-http-trade-v4-openapi.yml: tagged paths POST /api/v4/convert/estimate -> Convert",
@@ -56,7 +50,32 @@
     "whitebit-http-v4-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
     "whitebit-main-api-v4-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
     "whitebit-oauth2-openapi.yml: upgraded openapi 3.0.3 -> OpenAPI 3.2.0",
-    "apis.yml register: written (+24 apis, 25 total)"
+    "apis.yml register: already-registered"
   ],
-  "skipped": []
+  "skipped": [
+    "whitebit-account-endpoints-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-address-checker-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-authentication-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-codes-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-collateral-trading-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-convert-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-credit-line-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-crypto-lending-fixed-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-crypto-lending-flex-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-deposit-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-fees-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-jwt-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-main-account-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-market-fee-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-mining-pool-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-oauth-api-keys-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-public-api-v1-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-public-api-v4-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-spot-trading-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-sub-account-api-keys-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-sub-account-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-transfer-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-travel-rule-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "whitebit-withdraw-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
 }

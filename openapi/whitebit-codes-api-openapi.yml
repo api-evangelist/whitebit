@@ -636,19 +636,6 @@ paths:
                 $ref: '#/components/schemas/ErrorInner'
 components:
   schemas:
-    ErrorInner:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
     CodeInfo:
       type: object
       properties:
@@ -704,6 +691,19 @@ components:
           description: Code external identifier
           example: id1
     Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    ErrorInner:
       type: object
       properties:
         code:

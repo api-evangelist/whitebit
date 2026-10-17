@@ -729,6 +729,19 @@ components:
             type: array
             items:
               type: string
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
     InterestPayment:
       type: object
       properties:
@@ -752,19 +765,6 @@ components:
           type: integer
           description: Transaction timestamp
           example: 1588345560
-    Error:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
     FixedPlan:
       type: object
       properties:

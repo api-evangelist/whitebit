@@ -1115,19 +1115,6 @@ paths:
                       - Address limit reached
 components:
   schemas:
-    ErrorInner:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
     RefundHistoryRecord:
       type: object
       required:
@@ -1221,6 +1208,19 @@ components:
           description: Time the refund reached its current status, Unix timestamp in seconds. `null` while `status` is `in_process`.
           example: 1756203600
     Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    ErrorInner:
       type: object
       properties:
         code:

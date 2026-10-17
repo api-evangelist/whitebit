@@ -4258,6 +4258,10 @@ paths:
           description: Service temporarily unavailable
 components:
   schemas:
+    OrderStatus:
+      type: string
+      description: Order lifecycle status. `FILLED` — fully executed. `CANCELED` — canceled before execution. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED_TAKER_BAND` — partially filled up to the taker band limit, remainder canceled to protect against excessive order book slippage. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `AUTO_CANCELED_LIQUIDATION` — pending order auto-canceled because the associated position was force-liquidated. `CANCELED_STP` — order canceled by [Self-Trade Prevention](/platform/self-trade-prevention). REST returns the single-`L` spelling throughout; `NEW` and `PARTIAL_FILLED` are not REST values (`NEW` is WebSocket-only; the partially-filled state is `PARTIALLY_FILLED`).
+      example: FILLED
     OcoOrderLeg:
       type: object
       description: OCO order leg as returned by `/api/v4/oco-orders` and `/api/v4/order/oco-cancel`. Field names use snake_case (`post_only`, `activation_price`) — unlike the camelCase legs returned by `/api/v4/conditional-orders`.
@@ -4462,6 +4466,32 @@ components:
           type: integer
           description: Activation status (0 - not activated, 1 - activated). Omitted when not set
           example: 0
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Error code
+          example: 30
+        message:
+          type: string
+          description: Error message
+          example: Validation failed
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Detailed error information
+    ActiveOrderStatus:
+      type: string
+      description: Order status. `FILLED` — fully executed. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED` — canceled before full execution. REST uses the single-`L` spelling `CANCELED`; the double-`L` `CANCELLED` and the WebSocket-only `NEW` state are not returned by this API.
+      enum:
+      - FILLED
+      - PARTIALLY_FILLED
+      - CANCELED
+      example: FILLED
     OrderResponse:
       type: object
       description: Shared order shape returned by the order-creation, cancel, active-orders list, and modify endpoints. Field presence varies by endpoint and order type — see the per-field notes.
@@ -4586,36 +4616,6 @@ components:
           type: string
           description: The trigger price for the stop order. Always equals the activation_price value submitted in the request. Returned for stop orders; omitted on other order shapes.
           example: '40000'
-    OrderStatus:
-      type: string
-      description: Order lifecycle status. `FILLED` — fully executed. `CANCELED` — canceled before execution. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED_TAKER_BAND` — partially filled up to the taker band limit, remainder canceled to protect against excessive order book slippage. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `AUTO_CANCELED_LIQUIDATION` — pending order auto-canceled because the associated position was force-liquidated. `CANCELED_STP` — order canceled by [Self-Trade Prevention](/platform/self-trade-prevention). REST returns the single-`L` spelling throughout; `NEW` and `PARTIAL_FILLED` are not REST values (`NEW` is WebSocket-only; the partially-filled state is `PARTIALLY_FILLED`).
-      example: FILLED
-    ErrorResponse:
-      type: object
-      properties:
-        code:
-          type: integer
-          description: Error code
-          example: 30
-        message:
-          type: string
-          description: Error message
-          example: Validation failed
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
-          description: Detailed error information
-    ActiveOrderStatus:
-      type: string
-      description: Order status. `FILLED` — fully executed. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED` — canceled before full execution. REST uses the single-`L` spelling `CANCELED`; the double-`L` `CANCELLED` and the WebSocket-only `NEW` state are not returned by this API.
-      enum:
-      - FILLED
-      - PARTIALLY_FILLED
-      - CANCELED
-      example: FILLED
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

@@ -2729,289 +2729,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
-    BulkCancelOrderResult:
-      type: object
-      description: Acknowledgement that a single item was canceled. The endpoint echoes the identifiers from the request item and, when available, the order's `timestamp` and `mtime`. Full order state is not returned. Use the single Cancel order endpoint when post-cancel order state is required.
-      properties:
-        orderId:
-          type: integer
-          description: System-assigned order ID of the canceled order.
-          example: 4326248250
-        clientOrderId:
-          type: string
-          description: Client-defined order ID of the canceled order, if one was set at order creation.
-          example: my-client-id
-        market:
-          type: string
-          description: 'Trading pair of the canceled order. Format: `BASE_QUOTE` (e.g. `BTC_USDT`).'
-          example: BTC_USDT
-        timestamp:
-          type: number
-          description: Unix timestamp in seconds (UTC), with microsecond precision, of order creation. Optional. May be omitted; do not rely on its presence.
-          example: 1595792396.165973
-        mtime:
-          type: number
-          description: Unix timestamp in seconds (UTC), with microsecond precision, of the last time the matching engine modified the order. When present, the value is the moment the engine processed the cancellation, because a cancellation is the order's final modification. Optional — may be omitted; do not rely on its presence.
-          example: 1595792412.443301
-    CancelOrderResponse:
-      type: object
-      description: Final state of a canceled order.
-      allOf:
-      - $ref: '#/components/schemas/OrderResponse'
-      - type: object
-        properties:
-          mtime:
-            type: number
-            description: Unix timestamp in seconds (UTC), with microsecond precision, of the last time the matching engine modified the order. On a cancel response the value is the moment the engine processed the cancellation, because a cancellation is the order's final modification. The cancel response always includes the field.
-            example: 1595792412.443301
-    OrderResponse:
-      type: object
-      description: Shared order shape returned by the order-creation, cancel, active-orders list, and modify endpoints. Field presence varies by endpoint and order type — see the per-field notes.
-      properties:
-        orderId:
-          type: integer
-          description: Unique identifier assigned to the order by the matching engine.
-          example: 4180284841
-        clientOrderId:
-          type: string
-          description: Custom client order identifier supplied in the request. Returns an empty string when not specified.
-          example: order1987111
-        market:
-          type: string
-          description: 'Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`).'
-          example: BTC_USDT
-        side:
-          type: string
-          description: 'Order side. Possible values: `buy`, `sell`.'
-          example: buy
-        type:
-          type: string
-          description: 'Order type. Possible values: `limit`, `market`, `stock market`, `stop limit`, `stop market`.'
-          example: limit
-        timestamp:
-          type: number
-          description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
-          example: 1595792396.165973
-        dealMoney:
-          type: string
-          description: Filled amount in quote currency. Returns `"0"` while the order remains unfilled.
-          example: '0'
-        dealStock:
-          type: string
-          description: Filled amount in base currency. Returns `"0"` while the order remains unfilled.
-          example: '0'
-        amount:
-          type: string
-          description: Order quantity in base currency for limit and stop-limit orders, or in quote currency for buy market orders.
-          example: '0.01'
-        left:
-          type: string
-          description: Remaining unfilled quantity. Equals `amount` for new orders and `"0"` for fully filled orders.
-          example: '0.001'
-        dealFee:
-          type: string
-          description: Cumulative trading fee charged for filled portions, denominated in the fee asset.
-          example: '0'
-        feeAsset:
-          type: string
-          description: Currency ticker of the asset used to pay the trading fee. Omitted when empty.
-          example: USDT
-        price:
-          type: string
-          description: Limit price per unit in quote currency. Present for orders that carry a price (limit and stop-limit shapes); omitted on market and stop-market order shapes.
-          example: '40000'
-        postOnly:
-          type: boolean
-          description: Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Omitted when not set.
-          example: false
-        ioc:
-          type: boolean
-          description: 'Immediate-or-cancel flag. When `true`, the order executes available quantity immediately and cancels the unfilled remainder. Default: `false`.'
-          example: false
-        status:
-          $ref: '#/components/schemas/OrderStatus'
-        stp:
-          type: string
-          description: 'Self-trade prevention mode applied to the order. Possible values: `no`, `cb`, `cn`, `co`. The response always returns the abbreviated form, even when the request used a legacy value. Default: `no`.'
-          example: 'no'
-        positionSide:
-          type: string
-          description: Position side (for collateral orders). Returned on the cancel, active-orders list, and modify responses; omitted when not set. Spot order-creation responses do not include the field.
-          example: LONG
-        oto:
-          type: object
-          description: OTO order data. Present only when the order belongs to an [OTO](/glossary#one-triggers-the-other-oto) group — returned on the cancel, active-orders list, and modify responses.
-          properties:
-            otoId:
-              type: integer
-              description: OTO order identifier
-              example: 29457221
-            takeProfit:
-              type: string
-              description: Take profit order price
-              example: '50000'
-            stopLoss:
-              type: string
-              description: Stop loss order price
-              example: '30000'
-        rpi:
-          type: boolean
-          description: Indicates Retail Price Improvement (RPI) mode for the order.
-          example: true
-        retail:
-          type: boolean
-          description: Retail-source taker flag. The field is present only when the order was placed with `retail=true`. See [Retail flag](/glossary#retail-flag).
-          example: true
-        reduceOnly:
-          type: boolean
-          description: Reduce-only flag. When `true`, the order can only reduce or close an existing position. Returned on the cancel, active-orders list, and modify responses; spot order-creation responses do not include the field. See [reduce-only](/glossary#reduce-only).
-          example: false
-        activated:
-          type: integer
-          description: Activation status of the stop order. 0 = not yet triggered (waiting for the activation_price condition to be met). 1 = triggered (the stop condition has been met and the order is now active). Returned for stop orders; omitted on other order shapes.
-          example: 0
-        activationCondition:
-          type: string
-          enum:
-          - lte
-          - gte
-          description: 'Trigger condition for the stop order. Response-only — not accepted in the request body, and cannot be overridden. Derived from `side`:
-
-
-            - `side = buy` → `gte`. The order activates when the market price rises to or above `activation_price`.
-
-            - `side = sell` → `lte`. The order activates when the market price falls to or below `activation_price`.
-
-            '
-          example: lte
-        activation_price:
-          type: string
-          description: The trigger price for the stop order. Always equals the activation_price value submitted in the request. Returned for stop orders; omitted on other order shapes.
-          example: '40000'
-    BulkCancelOrderItem:
-      type: object
-      description: A single cancel target. Provide `market` and exactly one of `orderId` or `clientOrderId`. Sending both, or neither, returns a per-item validation error.
-      required:
-      - market
-      properties:
-        market:
-          type: string
-          description: 'Available [market](/glossary#market). Example: `BTC_USDT`.'
-          example: BTC_USDT
-        orderId:
-          type: integer
-          description: System-assigned order ID. Required if `clientOrderId` is not set; mutually exclusive with `clientOrderId`.
-          example: 4326248250
-        clientOrderId:
-          type: string
-          description: Client-defined order ID supplied at order creation. Required if `orderId` is not set; mutually exclusive with `orderId`.
-          example: my-client-id
-    BulkOrderItem:
-      type: object
-      required:
-      - market
-      - side
-      - amount
-      properties:
-        side:
-          type: string
-          enum:
-          - buy
-          - sell
-          description: 'Order side. Allowed values: `buy`, `sell`.'
-          example: buy
-        amount:
-          type: string
-          description: Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount` and precision (`stockPrec`).
-          example: '0.001'
-        price:
-          type: string
-          description: Limit price per unit in quote (money) currency. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for precision (`moneyPrec`).
-          example: '40000'
-        market:
-          type: string
-          description: 'Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`).'
-          example: BTC_USDT
-        postOnly:
-          type: boolean
-          default: false
-          description: 'Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Allowed only when `bboRole` is not set. Do not combine with `rpi=true` — RPI items apply post-only behavior automatically, and an item setting both flags fails validation. Default: `false`.'
-          example: false
-        ioc:
-          type: boolean
-          default: false
-          description: 'Immediate-or-cancel (IOC) executes all or part of an order immediately and cancels any unfilled portion. Default: `false`.
-
-
-            IOC does not support `rpi=true` because RPI uses post-only behavior by design.
-
-            The API returns error code `40` when an order item sets both `ioc=true` and `rpi=true`.
-
-            IOC cannot be combined with `postOnly=true` (error code `37`), and with `bboRole` it is allowed only for the Counterparty method (`2`).
-
-            '
-          example: false
-        clientOrderId:
-          type: string
-          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
-          example: ''
-        bboRole:
-          type: integer
-          enum:
-          - 1
-          - 2
-          description: 'Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method for the item. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method.
-
-
-            When `bboRole` is set, the item''s `price` is not required — the BBO method determines the execution price. `postOnly` is allowed only when `bboRole` is not set; `ioc` can be combined only with the Counterparty method (`2`).
-
-            '
-        stp:
-          type: string
-          enum:
-          - 'no'
-          - cb
-          - cn
-          - co
-          default: 'no'
-          description: 'Self-trade prevention mode for the item. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
-
-
-            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
-
-
-            See [Self-Trade Prevention](/platform/self-trade-prevention).
-
-            '
-          example: 'no'
-        rpi:
-          type: boolean
-          default: false
-          description: 'Enables Retail Price Improvement (RPI) mode. Default: `false`.
-
-
-            RPI items apply post-only behavior automatically — do not also send an explicit `postOnly=true`: an item combining the two flags fails validation. An RPI order does not support `ioc=true`.
-
-            The API returns error code `40` when an order item sets both `rpi=true` and `ioc=true`.
-
-            '
-          example: true
-        retail:
-          type: boolean
-          default: false
-          description: 'Retail-source taker flag for the bulk-order item. When `true`, the item is eligible to match against orders submitted by RPI makers and may receive price improvement at execution. Default: `false`.
-
-
-            The Retail flag must be enabled on the account before a private-API request can set `retail=true`. Contact the account manager to enable the Retail flag.
-
-
-            The flag has no effect on a `postOnly=true` or `rpi=true` item. Post-only and RPI orders are [makers](/glossary#maker); only takers carry the retail designation. An item with both `rpi=true` and `retail=true` matches exactly like an RPI order.
-
-
-            Refer to [Retail flag](/glossary#retail-flag) and [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
-
-            '
-          example: false
     LimitOrderRequest:
       type: object
       required:
@@ -3139,6 +2856,271 @@ components:
         nonce:
           type: integer
           example: 1594297865000
+    OrderStatus:
+      type: string
+      description: Order lifecycle status. `FILLED` — fully executed. `CANCELED` — canceled before execution. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED_TAKER_BAND` — partially filled up to the taker band limit, remainder canceled to protect against excessive order book slippage. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `AUTO_CANCELED_LIQUIDATION` — pending order auto-canceled because the associated position was force-liquidated. `CANCELED_STP` — order canceled by [Self-Trade Prevention](/platform/self-trade-prevention). REST returns the single-`L` spelling throughout; `NEW` and `PARTIAL_FILLED` are not REST values (`NEW` is WebSocket-only; the partially-filled state is `PARTIALLY_FILLED`).
+      example: FILLED
+    BulkOrderItem:
+      type: object
+      required:
+      - market
+      - side
+      - amount
+      properties:
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side. Allowed values: `buy`, `sell`.'
+          example: buy
+        amount:
+          type: string
+          description: Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount` and precision (`stockPrec`).
+          example: '0.001'
+        price:
+          type: string
+          description: Limit price per unit in quote (money) currency. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for precision (`moneyPrec`).
+          example: '40000'
+        market:
+          type: string
+          description: 'Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`).'
+          example: BTC_USDT
+        postOnly:
+          type: boolean
+          default: false
+          description: 'Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Allowed only when `bboRole` is not set. Do not combine with `rpi=true` — RPI items apply post-only behavior automatically, and an item setting both flags fails validation. Default: `false`.'
+          example: false
+        ioc:
+          type: boolean
+          default: false
+          description: 'Immediate-or-cancel (IOC) executes all or part of an order immediately and cancels any unfilled portion. Default: `false`.
+
+
+            IOC does not support `rpi=true` because RPI uses post-only behavior by design.
+
+            The API returns error code `40` when an order item sets both `ioc=true` and `rpi=true`.
+
+            IOC cannot be combined with `postOnly=true` (error code `37`), and with `bboRole` it is allowed only for the Counterparty method (`2`).
+
+            '
+          example: false
+        clientOrderId:
+          type: string
+          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+          example: ''
+        bboRole:
+          type: integer
+          enum:
+          - 1
+          - 2
+          description: 'Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method for the item. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method.
+
+
+            When `bboRole` is set, the item''s `price` is not required — the BBO method determines the execution price. `postOnly` is allowed only when `bboRole` is not set; `ioc` can be combined only with the Counterparty method (`2`).
+
+            '
+        stp:
+          type: string
+          enum:
+          - 'no'
+          - cb
+          - cn
+          - co
+          default: 'no'
+          description: 'Self-trade prevention mode for the item. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+            See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+            '
+          example: 'no'
+        rpi:
+          type: boolean
+          default: false
+          description: 'Enables Retail Price Improvement (RPI) mode. Default: `false`.
+
+
+            RPI items apply post-only behavior automatically — do not also send an explicit `postOnly=true`: an item combining the two flags fails validation. An RPI order does not support `ioc=true`.
+
+            The API returns error code `40` when an order item sets both `rpi=true` and `ioc=true`.
+
+            '
+          example: true
+        retail:
+          type: boolean
+          default: false
+          description: 'Retail-source taker flag for the bulk-order item. When `true`, the item is eligible to match against orders submitted by RPI makers and may receive price improvement at execution. Default: `false`.
+
+
+            The Retail flag must be enabled on the account before a private-API request can set `retail=true`. Contact the account manager to enable the Retail flag.
+
+
+            The flag has no effect on a `postOnly=true` or `rpi=true` item. Post-only and RPI orders are [makers](/glossary#maker); only takers carry the retail designation. An item with both `rpi=true` and `retail=true` matches exactly like an RPI order.
+
+
+            Refer to [Retail flag](/glossary#retail-flag) and [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
+
+            '
+          example: false
+    OrderHistoryStatus:
+      type: string
+      description: Order status returned by this endpoint, in uppercase. `FILLED` — fully executed. `CANCELED` — canceled before full execution; the endpoint also returns `AUTO_CANCELED_MARGIN_EXCHANGE_BALANCE` (order auto-canceled on insufficient margin or exchange balance) collapsed into `CANCELED`. `AUTO_CANCELED_LIQUIDATION` — auto-canceled because the associated position was force-liquidated. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `CANCELED_STP` — canceled by [Self-Trade Prevention](/platform/self-trade-prevention). `MAINTENANCE` — canceled by the platform when the market entered planned maintenance; never collapsed into `CANCELED`, so an integration that treats cancellations as user-initiated must handle this value separately. This endpoint returns a narrower, uppercase status set than the account's other order surfaces.
+      enum:
+      - FILLED
+      - CANCELED
+      - AUTO_CANCELED_LIQUIDATION
+      - AUTO_CANCELED_REDUCE_ONLY
+      - CANCELED_STP
+      - MAINTENANCE
+      example: CANCELED
+    CancelOrderResponse:
+      type: object
+      description: Final state of a canceled order.
+      allOf:
+      - $ref: '#/components/schemas/OrderResponse'
+      - type: object
+        properties:
+          mtime:
+            type: number
+            description: Unix timestamp in seconds (UTC), with microsecond precision, of the last time the matching engine modified the order. On a cancel response the value is the moment the engine processed the cancellation, because a cancellation is the order's final modification. The cancel response always includes the field.
+            example: 1595792412.443301
+    StopMarketOrderRequest:
+      type: object
+      required:
+      - market
+      - side
+      - amount
+      - activation_price
+      - request
+      - nonce
+      properties:
+        market:
+          type: string
+          description: 'Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.'
+          example: BTC_USDT
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side. Allowed values: `buy`, `sell`.'
+          example: buy
+        amount:
+          type: string
+          description: 'For buy orders: total in quote (money) currency to spend. For sell orders: quantity in base (stock) currency to sell. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`.'
+          example: '0.01'
+        activation_price:
+          type: string
+          description: 'Trigger price in quote (money) currency. For buy orders, the stop triggers when the market price rises to or above the specified price. For sell orders, the stop triggers when the market price falls to or below the specified price. Precision: `moneyPrec`.'
+          example: '10000'
+        clientOrderId:
+          type: string
+          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+          example: order1987111
+        stp:
+          type: string
+          enum:
+          - 'no'
+          - cb
+          - cn
+          - co
+          default: 'no'
+          description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+            See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+            '
+          example: 'no'
+        request:
+          type: string
+          example: '{{request}}'
+        nonce:
+          type: integer
+          example: 1594297865000
+    BulkCancelOrderResult:
+      type: object
+      description: Acknowledgement that a single item was canceled. The endpoint echoes the identifiers from the request item and, when available, the order's `timestamp` and `mtime`. Full order state is not returned. Use the single Cancel order endpoint when post-cancel order state is required.
+      properties:
+        orderId:
+          type: integer
+          description: System-assigned order ID of the canceled order.
+          example: 4326248250
+        clientOrderId:
+          type: string
+          description: Client-defined order ID of the canceled order, if one was set at order creation.
+          example: my-client-id
+        market:
+          type: string
+          description: 'Trading pair of the canceled order. Format: `BASE_QUOTE` (e.g. `BTC_USDT`).'
+          example: BTC_USDT
+        timestamp:
+          type: number
+          description: Unix timestamp in seconds (UTC), with microsecond precision, of order creation. Optional. May be omitted; do not rely on its presence.
+          example: 1595792396.165973
+        mtime:
+          type: number
+          description: Unix timestamp in seconds (UTC), with microsecond precision, of the last time the matching engine modified the order. When present, the value is the moment the engine processed the cancellation, because a cancellation is the order's final modification. Optional — may be omitted; do not rely on its presence.
+          example: 1595792412.443301
+    StockMarketOrderRequest:
+      type: object
+      required:
+      - market
+      - side
+      - amount
+      - request
+      - nonce
+      properties:
+        market:
+          type: string
+          description: 'Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.'
+          example: BTC_USDT
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side. Allowed values: `buy`, `sell`.'
+          example: buy
+        amount:
+          type: string
+          description: Order quantity in base (stock) currency for both buy and sell sides. To place a market order specifying the quote (money) currency amount instead, use `POST /api/v4/order/market`. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`.
+          example: '0.001'
+        clientOrderId:
+          type: string
+          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+          example: order1987111
+        stp:
+          type: string
+          enum:
+          - 'no'
+          - cb
+          - cn
+          - co
+          default: 'no'
+          description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+
+            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+
+            See [Self-Trade Prevention](/platform/self-trade-prevention).
+
+            '
+          example: 'no'
+        request:
+          type: string
+          example: '{{request}}'
+        nonce:
+          type: integer
+          example: 1594297865000
     MarketOrderRequest:
       type: object
       required:
@@ -3191,6 +3173,116 @@ components:
         nonce:
           type: integer
           example: 1594297865000
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Error code
+          example: 30
+        message:
+          type: string
+          description: Error message
+          example: Validation failed
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Detailed error information
+    BulkCancelOrderItem:
+      type: object
+      description: A single cancel target. Provide `market` and exactly one of `orderId` or `clientOrderId`. Sending both, or neither, returns a per-item validation error.
+      required:
+      - market
+      properties:
+        market:
+          type: string
+          description: 'Available [market](/glossary#market). Example: `BTC_USDT`.'
+          example: BTC_USDT
+        orderId:
+          type: integer
+          description: System-assigned order ID. Required if `clientOrderId` is not set; mutually exclusive with `clientOrderId`.
+          example: 4326248250
+        clientOrderId:
+          type: string
+          description: Client-defined order ID supplied at order creation. Required if `orderId` is not set; mutually exclusive with `orderId`.
+          example: my-client-id
+    ExecutedDeal:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique deal identifier assigned by the matching engine.
+        clientOrderId:
+          type: string
+          description: Custom order identifier supplied in the original order request. Returns an empty string when not specified.
+        time:
+          type: number
+          description: Unix timestamp of the deal execution, with microsecond precision.
+        side:
+          type: string
+          enum:
+          - buy
+          - sell
+          description: 'Order side that produced the deal. Possible values: `buy`, `sell`.'
+        role:
+          type: integer
+          description: Execution role in the deal. `1` = maker (order was resting on the book), `2` = taker (order matched immediately).
+        amount:
+          type: string
+          description: Executed quantity in base (stock) currency, regardless of order direction.
+        price:
+          type: string
+          description: Execution price per unit in quote currency.
+        deal:
+          type: string
+          description: Total deal value in quote (money) currency. Equals `amount * price`.
+        fee:
+          type: string
+          description: Fee charged for the deal, denominated in the asset specified by `feeAsset`.
+        orderId:
+          type: integer
+          description: Identifier of the parent order that produced the deal.
+        feeAsset:
+          type: string
+          description: Currency ticker of the asset used to pay the trading fee.
+    BulkLimitOrderResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          result:
+            type:
+            - object
+            - 'null'
+            allOf:
+            - $ref: '#/components/schemas/OrderResponse'
+          error:
+            type:
+            - object
+            - 'null'
+            allOf:
+            - $ref: '#/components/schemas/ErrorResponse'
+    BulkCancelOrderResponse:
+      type: array
+      description: Per-item cancel results. `response[i]` corresponds to `request.orders[i]`. Each item contains either `result` (cancellation succeeded) or `error` (cancellation failed for that item) — never both.
+      items:
+        type: object
+        properties:
+          result:
+            type:
+            - object
+            - 'null'
+            allOf:
+            - $ref: '#/components/schemas/BulkCancelOrderResult'
+          error:
+            type:
+            - object
+            - 'null'
+            allOf:
+            - $ref: '#/components/schemas/ErrorResponse'
     StopLimitOrderRequest:
       type: object
       required:
@@ -3258,222 +3350,130 @@ components:
         nonce:
           type: integer
           example: 1594297865000
-    OrderStatus:
-      type: string
-      description: Order lifecycle status. `FILLED` — fully executed. `CANCELED` — canceled before execution. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELED_TAKER_BAND` — partially filled up to the taker band limit, remainder canceled to protect against excessive order book slippage. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `AUTO_CANCELED_LIQUIDATION` — pending order auto-canceled because the associated position was force-liquidated. `CANCELED_STP` — order canceled by [Self-Trade Prevention](/platform/self-trade-prevention). REST returns the single-`L` spelling throughout; `NEW` and `PARTIAL_FILLED` are not REST values (`NEW` is WebSocket-only; the partially-filled state is `PARTIALLY_FILLED`).
-      example: FILLED
-    StopMarketOrderRequest:
+    OrderResponse:
       type: object
-      required:
-      - market
-      - side
-      - amount
-      - activation_price
-      - request
-      - nonce
+      description: Shared order shape returned by the order-creation, cancel, active-orders list, and modify endpoints. Field presence varies by endpoint and order type — see the per-field notes.
       properties:
-        market:
-          type: string
-          description: 'Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.'
-          example: BTC_USDT
-        side:
-          type: string
-          enum:
-          - buy
-          - sell
-          description: 'Order side. Allowed values: `buy`, `sell`.'
-          example: buy
-        amount:
-          type: string
-          description: 'For buy orders: total in quote (money) currency to spend. For sell orders: quantity in base (stock) currency to sell. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`.'
-          example: '0.01'
-        activation_price:
-          type: string
-          description: 'Trigger price in quote (money) currency. For buy orders, the stop triggers when the market price rises to or above the specified price. For sell orders, the stop triggers when the market price falls to or below the specified price. Precision: `moneyPrec`.'
-          example: '10000'
-        clientOrderId:
-          type: string
-          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
-          example: order1987111
-        stp:
-          type: string
-          enum:
-          - 'no'
-          - cb
-          - cn
-          - co
-          default: 'no'
-          description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
-
-
-            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
-
-
-            See [Self-Trade Prevention](/platform/self-trade-prevention).
-
-            '
-          example: 'no'
-        request:
-          type: string
-          example: '{{request}}'
-        nonce:
-          type: integer
-          example: 1594297865000
-    BulkLimitOrderResponse:
-      type: array
-      items:
-        type: object
-        properties:
-          result:
-            type:
-            - object
-            - 'null'
-            allOf:
-            - $ref: '#/components/schemas/OrderResponse'
-          error:
-            type:
-            - object
-            - 'null'
-            allOf:
-            - $ref: '#/components/schemas/ErrorResponse'
-    OrderHistoryStatus:
-      type: string
-      description: Order status returned by this endpoint, in uppercase. `FILLED` — fully executed. `CANCELED` — canceled before full execution; the endpoint also returns `AUTO_CANCELED_MARGIN_EXCHANGE_BALANCE` (order auto-canceled on insufficient margin or exchange balance) collapsed into `CANCELED`. `AUTO_CANCELED_LIQUIDATION` — auto-canceled because the associated position was force-liquidated. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `CANCELED_STP` — canceled by [Self-Trade Prevention](/platform/self-trade-prevention). `MAINTENANCE` — canceled by the platform when the market entered planned maintenance; never collapsed into `CANCELED`, so an integration that treats cancellations as user-initiated must handle this value separately. This endpoint returns a narrower, uppercase status set than the account's other order surfaces.
-      enum:
-      - FILLED
-      - CANCELED
-      - AUTO_CANCELED_LIQUIDATION
-      - AUTO_CANCELED_REDUCE_ONLY
-      - CANCELED_STP
-      - MAINTENANCE
-      example: CANCELED
-    BulkCancelOrderResponse:
-      type: array
-      description: Per-item cancel results. `response[i]` corresponds to `request.orders[i]`. Each item contains either `result` (cancellation succeeded) or `error` (cancellation failed for that item) — never both.
-      items:
-        type: object
-        properties:
-          result:
-            type:
-            - object
-            - 'null'
-            allOf:
-            - $ref: '#/components/schemas/BulkCancelOrderResult'
-          error:
-            type:
-            - object
-            - 'null'
-            allOf:
-            - $ref: '#/components/schemas/ErrorResponse'
-    StockMarketOrderRequest:
-      type: object
-      required:
-      - market
-      - side
-      - amount
-      - request
-      - nonce
-      properties:
-        market:
-          type: string
-          description: 'Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.'
-          example: BTC_USDT
-        side:
-          type: string
-          enum:
-          - buy
-          - sell
-          description: 'Order side. Allowed values: `buy`, `sell`.'
-          example: buy
-        amount:
-          type: string
-          description: Order quantity in base (stock) currency for both buy and sell sides. To place a market order specifying the quote (money) currency amount instead, use `POST /api/v4/order/market`. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`.
-          example: '0.001'
-        clientOrderId:
-          type: string
-          description: Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
-          example: order1987111
-        stp:
-          type: string
-          enum:
-          - 'no'
-          - cb
-          - cn
-          - co
-          default: 'no'
-          description: 'Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
-
-
-            Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
-
-
-            See [Self-Trade Prevention](/platform/self-trade-prevention).
-
-            '
-          example: 'no'
-        request:
-          type: string
-          example: '{{request}}'
-        nonce:
-          type: integer
-          example: 1594297865000
-    ErrorResponse:
-      type: object
-      properties:
-        code:
-          type: integer
-          description: Error code
-          example: 30
-        message:
-          type: string
-          description: Error message
-          example: Validation failed
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
-          description: Detailed error information
-    ExecutedDeal:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Unique deal identifier assigned by the matching engine.
-        clientOrderId:
-          type: string
-          description: Custom order identifier supplied in the original order request. Returns an empty string when not specified.
-        time:
-          type: number
-          description: Unix timestamp of the deal execution, with microsecond precision.
-        side:
-          type: string
-          enum:
-          - buy
-          - sell
-          description: 'Order side that produced the deal. Possible values: `buy`, `sell`.'
-        role:
-          type: integer
-          description: Execution role in the deal. `1` = maker (order was resting on the book), `2` = taker (order matched immediately).
-        amount:
-          type: string
-          description: Executed quantity in base (stock) currency, regardless of order direction.
-        price:
-          type: string
-          description: Execution price per unit in quote currency.
-        deal:
-          type: string
-          description: Total deal value in quote (money) currency. Equals `amount * price`.
-        fee:
-          type: string
-          description: Fee charged for the deal, denominated in the asset specified by `feeAsset`.
         orderId:
           type: integer
-          description: Identifier of the parent order that produced the deal.
+          description: Unique identifier assigned to the order by the matching engine.
+          example: 4180284841
+        clientOrderId:
+          type: string
+          description: Custom client order identifier supplied in the request. Returns an empty string when not specified.
+          example: order1987111
+        market:
+          type: string
+          description: 'Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`).'
+          example: BTC_USDT
+        side:
+          type: string
+          description: 'Order side. Possible values: `buy`, `sell`.'
+          example: buy
+        type:
+          type: string
+          description: 'Order type. Possible values: `limit`, `market`, `stock market`, `stop limit`, `stop market`.'
+          example: limit
+        timestamp:
+          type: number
+          description: Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+          example: 1595792396.165973
+        dealMoney:
+          type: string
+          description: Filled amount in quote currency. Returns `"0"` while the order remains unfilled.
+          example: '0'
+        dealStock:
+          type: string
+          description: Filled amount in base currency. Returns `"0"` while the order remains unfilled.
+          example: '0'
+        amount:
+          type: string
+          description: Order quantity in base currency for limit and stop-limit orders, or in quote currency for buy market orders.
+          example: '0.01'
+        left:
+          type: string
+          description: Remaining unfilled quantity. Equals `amount` for new orders and `"0"` for fully filled orders.
+          example: '0.001'
+        dealFee:
+          type: string
+          description: Cumulative trading fee charged for filled portions, denominated in the fee asset.
+          example: '0'
         feeAsset:
           type: string
-          description: Currency ticker of the asset used to pay the trading fee.
+          description: Currency ticker of the asset used to pay the trading fee. Omitted when empty.
+          example: USDT
+        price:
+          type: string
+          description: Limit price per unit in quote currency. Present for orders that carry a price (limit and stop-limit shapes); omitted on market and stop-market order shapes.
+          example: '40000'
+        postOnly:
+          type: boolean
+          description: Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Omitted when not set.
+          example: false
+        ioc:
+          type: boolean
+          description: 'Immediate-or-cancel flag. When `true`, the order executes available quantity immediately and cancels the unfilled remainder. Default: `false`.'
+          example: false
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        stp:
+          type: string
+          description: 'Self-trade prevention mode applied to the order. Possible values: `no`, `cb`, `cn`, `co`. The response always returns the abbreviated form, even when the request used a legacy value. Default: `no`.'
+          example: 'no'
+        positionSide:
+          type: string
+          description: Position side (for collateral orders). Returned on the cancel, active-orders list, and modify responses; omitted when not set. Spot order-creation responses do not include the field.
+          example: LONG
+        oto:
+          type: object
+          description: OTO order data. Present only when the order belongs to an [OTO](/glossary#one-triggers-the-other-oto) group — returned on the cancel, active-orders list, and modify responses.
+          properties:
+            otoId:
+              type: integer
+              description: OTO order identifier
+              example: 29457221
+            takeProfit:
+              type: string
+              description: Take profit order price
+              example: '50000'
+            stopLoss:
+              type: string
+              description: Stop loss order price
+              example: '30000'
+        rpi:
+          type: boolean
+          description: Indicates Retail Price Improvement (RPI) mode for the order.
+          example: true
+        retail:
+          type: boolean
+          description: Retail-source taker flag. The field is present only when the order was placed with `retail=true`. See [Retail flag](/glossary#retail-flag).
+          example: true
+        reduceOnly:
+          type: boolean
+          description: Reduce-only flag. When `true`, the order can only reduce or close an existing position. Returned on the cancel, active-orders list, and modify responses; spot order-creation responses do not include the field. See [reduce-only](/glossary#reduce-only).
+          example: false
+        activated:
+          type: integer
+          description: Activation status of the stop order. 0 = not yet triggered (waiting for the activation_price condition to be met). 1 = triggered (the stop condition has been met and the order is now active). Returned for stop orders; omitted on other order shapes.
+          example: 0
+        activationCondition:
+          type: string
+          enum:
+          - lte
+          - gte
+          description: 'Trigger condition for the stop order. Response-only — not accepted in the request body, and cannot be overridden. Derived from `side`:
+
+
+            - `side = buy` → `gte`. The order activates when the market price rises to or above `activation_price`.
+
+            - `side = sell` → `lte`. The order activates when the market price falls to or below `activation_price`.
+
+            '
+          example: lte
+        activation_price:
+          type: string
+          description: The trigger price for the stop order. Always equals the activation_price value submitted in the request. Returned for stop orders; omitted on other order shapes.
+          example: '40000'
   responses:
     BulkLimitOrderResponse:
       description: Orders created

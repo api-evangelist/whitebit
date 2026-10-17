@@ -431,6 +431,17 @@ paths:
               example: {}
 components:
   schemas:
+    EndpointAuthError:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: WhiteBIT internal error code. `4` is `API_KEY_ENDPOINT_RESTRICT`.
+          example: 4
+        message:
+          type: string
+          description: Human-readable error message.
+          example: This API Key is not authorized to perform this action.
     CreateCheckBalanceError:
       type: object
       description: Returned with HTTP 200 when the main balance is insufficient to perform the address check. The account is not charged.
@@ -451,65 +462,19 @@ components:
           type: string
           description: Unique identifier of the created check.
           example: string
-    SupportedAsset:
+    CheckHistoryResponse:
       type: object
       properties:
-        asset:
-          type: string
-          description: Asset symbol supported for screening.
-          example: string
-        network:
-          type:
-          - string
-          - 'null'
-          description: Network identifier. Returns `null` when not applicable.
-          example: string
-    EndpointAuthError:
-      type: object
-      properties:
-        code:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckHistoryItem'
+        limit:
           type: integer
-          description: WhiteBIT internal error code. `4` is `API_KEY_ENDPOINT_RESTRICT`.
-          example: 4
-        message:
-          type: string
-          description: Human-readable error message.
-          example: This API Key is not authorized to perform this action.
-    CheckHistoryItem:
-      type: object
-      properties:
-        id:
-          type: string
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        asset:
-          type: string
-          example: ETH
-        network:
-          type: string
-          example: ERC20
-        address:
-          type: string
-          example: '0x7e4F2a9B3D6cE1A0F8b5C2D9E4a6F0b7c8D1e2Af'
-        riskLevel:
-          type: string
-          enum:
-          - low
-          - medium
-          - high
-          example: low
-        riskDescription:
-          type: string
-          example: The address is verified as secure and suitable for fund transfers.
-        status:
-          type: string
-          enum:
-          - in_progress
-          - success
-          - failed
-          example: success
-        checkedAt:
+          example: 100
+        offset:
           type: integer
-          example: 1704067200
+          example: 0
     CheckResultResponse:
       type: object
       properties:
@@ -547,19 +512,54 @@ components:
           - 'null'
           description: Risk explanation. Returns `null` when status is `In progress` or `Failed`.
           example: string
-    CheckHistoryResponse:
+    CheckHistoryItem:
       type: object
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/CheckHistoryItem'
-        limit:
+        id:
+          type: string
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        asset:
+          type: string
+          example: ETH
+        network:
+          type: string
+          example: ERC20
+        address:
+          type: string
+          example: '0x7e4F2a9B3D6cE1A0F8b5C2D9E4a6F0b7c8D1e2Af'
+        riskLevel:
+          type: string
+          enum:
+          - low
+          - medium
+          - high
+          example: low
+        riskDescription:
+          type: string
+          example: The address is verified as secure and suitable for fund transfers.
+        status:
+          type: string
+          enum:
+          - in_progress
+          - success
+          - failed
+          example: success
+        checkedAt:
           type: integer
-          example: 100
-        offset:
-          type: integer
-          example: 0
+          example: 1704067200
+    SupportedAsset:
+      type: object
+      properties:
+        asset:
+          type: string
+          description: Asset symbol supported for screening.
+          example: string
+        network:
+          type:
+          - string
+          - 'null'
+          description: Network identifier. Returns `null` when not applicable.
+          example: string
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

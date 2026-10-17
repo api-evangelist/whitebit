@@ -429,19 +429,6 @@ paths:
                       - The selected from_balance is invalid.
 components:
   schemas:
-    ErrorInner:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
     MainAccountBalanceTransfer:
       type: object
       properties:
@@ -479,6 +466,19 @@ components:
           description: Time the transfer was executed, as a Unix timestamp in seconds. Not the time the transfer request was accepted.
           example: 1755000000
     Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    ErrorInner:
       type: object
       properties:
         code:

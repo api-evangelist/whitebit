@@ -1093,32 +1093,6 @@ paths:
                 message: You don't have permission to use this endpoint. Please contact support for more details
 components:
   schemas:
-    ErrorInner:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
-    Error:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
     FlexInvestment:
       type: object
       properties:
@@ -1154,6 +1128,55 @@ components:
           type: integer
           description: Investment last update timestamp
           example: 1588345560
+    ErrorInner:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    FlexPlan:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Flex plan identifier
+          example: '12'
+        ticker:
+          type: string
+          description: Currency [ticker](/glossary#ticker)
+          example: USDT
+        minInvestment:
+          type: string
+          description: Minimum investment amount
+          example: '10.0'
+        maxInvestment:
+          type: string
+          description: Maximum investment amount
+          example: '100000.0'
+        maxRate:
+          type: string
+          description: Maximum interest rate
+          example: '0.0030'
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
     FlexInvestmentHistory:
       type: object
       properties:
@@ -1185,29 +1208,6 @@ components:
           type: integer
           description: 'Action type: 1-INVEST, 2-REINVEST, 3-WITHDRAW_FROM_INVESTMENT, 4-DAILY_EARNING, 5-CLOSE_INVESTMENT, 6-OPEN_INVESTMENT'
           example: 1
-    FlexPlan:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Flex plan identifier
-          example: '12'
-        ticker:
-          type: string
-          description: Currency [ticker](/glossary#ticker)
-          example: USDT
-        minInvestment:
-          type: string
-          description: Minimum investment amount
-          example: '10.0'
-        maxInvestment:
-          type: string
-          description: Maximum investment amount
-          example: '100000.0'
-        maxRate:
-          type: string
-          description: Maximum interest rate
-          example: '0.0030'
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

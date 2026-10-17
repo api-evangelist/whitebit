@@ -918,34 +918,6 @@ paths:
                 type: object
 components:
   schemas:
-    SubAccountTransfer:
-      type: object
-      properties:
-        transaction_id:
-          type: string
-          description: Transaction identifier. Same value as id. Correlate with the transfer endpoint response using the transaction_id field.
-          example: tx-abc123
-        id:
-          type: string
-          description: Transfer identifier
-          deprecated: true
-          example: tx-abc123
-        direction:
-          type: string
-          description: Transfer direction (main_to_sub or sub_to_main)
-          example: main_to_sub
-        currency:
-          type: string
-          description: Currency transferred
-          example: ETH
-        amount:
-          type: string
-          description: Transfer amount
-          example: '0.5'
-        createdAt:
-          type: integer
-          description: Transfer creation timestamp
-          example: 1641081600
     SubAccount:
       type: object
       properties:
@@ -1010,6 +982,34 @@ components:
             type: array
             items:
               type: string
+    SubAccountTransfer:
+      type: object
+      properties:
+        transaction_id:
+          type: string
+          description: Transaction identifier. Same value as id. Correlate with the transfer endpoint response using the transaction_id field.
+          example: tx-abc123
+        id:
+          type: string
+          description: Transfer identifier
+          deprecated: true
+          example: tx-abc123
+        direction:
+          type: string
+          description: Transfer direction (main_to_sub or sub_to_main)
+          example: main_to_sub
+        currency:
+          type: string
+          description: Currency transferred
+          example: ETH
+        amount:
+          type: string
+          description: Transfer amount
+          example: '0.5'
+        createdAt:
+          type: integer
+          description: Transfer creation timestamp
+          example: 1641081600
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

@@ -735,66 +735,19 @@ paths:
                     message: API key not found
 components:
   schemas:
-    SubAccountApiKeyList:
+    Error:
       type: object
       properties:
-        subAccountId:
-          type: string
-          example: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
-        id:
-          type: string
-          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
-        title:
-          type: string
-          example: Trading Bot Key
-        isEnabled:
-          type: boolean
-          example: true
-        apiKey:
-          type: string
-          example: pub-key-abc123
-        apiSecret:
-          type: string
-          description: Empty for security (only shown during creation)
-          example: ''
-        type:
-          type: string
-          example: '1'
-        lastActivity:
+        code:
           type: integer
-          example: 1641081600
-        restrictAccess:
-          type: boolean
-          example: false
-        accessEndpoints:
-          type: array
-          description: 'Permission groups for the key. Each group lists its individual endpoint URLs and whether
-
-            each is enabled. On a newly created key every URL defaults to `enable: false`; enable the
-
-            required URLs with [Edit Sub-Account API Key](/api-reference/sub-accounts/edit-sub-account-api-key).
-
-            '
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-                example: withdraw
-              title:
-                type: string
-                example: Withdraw
-              urls:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    url:
-                      type: string
-                      example: /api/v4/main-account/withdraw
-                    enable:
-                      type: boolean
-                      example: false
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
     SubAccountApiKey:
       type: object
       properties:
@@ -868,19 +821,66 @@ components:
                     enable:
                       type: boolean
                       example: false
-    Error:
+    SubAccountApiKeyList:
       type: object
       properties:
-        code:
-          type: integer
-        message:
+        subAccountId:
           type: string
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
+          example: 8e667b4a-0b71-4988-8af5-9474dbfaeb51
+        id:
+          type: string
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        title:
+          type: string
+          example: Trading Bot Key
+        isEnabled:
+          type: boolean
+          example: true
+        apiKey:
+          type: string
+          example: pub-key-abc123
+        apiSecret:
+          type: string
+          description: Empty for security (only shown during creation)
+          example: ''
+        type:
+          type: string
+          example: '1'
+        lastActivity:
+          type: integer
+          example: 1641081600
+        restrictAccess:
+          type: boolean
+          example: false
+        accessEndpoints:
+          type: array
+          description: 'Permission groups for the key. Each group lists its individual endpoint URLs and whether
+
+            each is enabled. On a newly created key every URL defaults to `enable: false`; enable the
+
+            required URLs with [Edit Sub-Account API Key](/api-reference/sub-accounts/edit-sub-account-api-key).
+
+            '
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: withdraw
+              title:
+                type: string
+                example: Withdraw
+              urls:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      example: /api/v4/main-account/withdraw
+                    enable:
+                      type: boolean
+                      example: false
   securitySchemes:
     ApiKeyAuth:
       type: apiKey

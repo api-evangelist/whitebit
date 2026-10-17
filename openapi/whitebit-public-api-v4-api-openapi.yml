@@ -1120,62 +1120,6 @@ paths:
       x-operation-id-source: derived
 components:
   schemas:
-    FeeInfo:
-      type: object
-      description: 'Fee and limit details for a single asset. For crypto assets, `withdraw` and `deposit` are flat fee objects. For fiat assets with providers, they are objects keyed by provider ID.
-
-        '
-      properties:
-        ticker:
-          type: string
-          description: Asset ticker symbol
-          example: BTC
-        name:
-          type: string
-          description: Human-readable asset name
-          example: Bitcoin
-        providers:
-          type: array
-          description: Payment provider identifiers used as the network parameter value for fiat deposits and withdrawals via the API. See GET /api/v4/public/assets providers field for context.
-          items:
-            type: string
-          example: []
-        deposit:
-          description: 'Deposit fee details. For crypto assets, this is a flat object with `max_amount`, `min_amount`, `fixed`, and `flex` fields. For fiat assets with providers, this is an object keyed by provider ID, where each value contains provider-specific fee details.
-
-            '
-          oneOf:
-          - $ref: '#/components/schemas/FeeDetails'
-          - type: object
-            description: Map of provider IDs to provider-specific deposit fee details
-            additionalProperties:
-              $ref: '#/components/schemas/ProviderFeeDetails'
-        withdraw:
-          description: 'Withdrawal fee details. For crypto assets, this is a flat object with `max_amount`, `min_amount`, `fixed`, and `flex` fields. For fiat assets with providers, this is an object keyed by provider ID, where each value contains provider-specific fee details.
-
-            '
-          oneOf:
-          - $ref: '#/components/schemas/FeeDetails'
-          - type: object
-            description: Map of provider IDs to provider-specific withdrawal fee details
-            additionalProperties:
-              $ref: '#/components/schemas/ProviderFeeDetails'
-        is_depositable:
-          type: boolean
-          description: Indicates whether deposits are enabled for the currency. May be absent from the response; absence should be treated as equivalent to false.
-          example: true
-        is_withdrawal:
-          type: boolean
-          description: Indicates whether withdrawals are enabled for the currency. May be absent from the response; absence should be treated as equivalent to false.
-          example: true
-        is_api_withdrawal:
-          type: boolean
-          description: Whether API withdrawals are enabled
-          example: true
-        is_api_depositable:
-          type: boolean
-          description: Whether API deposits are enabled
-          example: true
     ProviderFeeDetails:
       type: object
       description: Fee details for a specific fiat payment provider
@@ -1236,6 +1180,43 @@ components:
               type: string
               description: Maximum fee amount regardless of percentage calculation
               example: '7.25'
+    OrderbookResponse:
+      type: object
+      properties:
+        ticker_id:
+          type: string
+          description: Market Name
+          example: BTC_PERP
+        timestamp:
+          type: integer
+          description: Current timestamp
+          example: 1594391413
+        asks:
+          type: array
+          description: Array of ask orders
+          items:
+            type: array
+            items:
+              type: string
+            minItems: 2
+            maxItems: 2
+            example:
+            - '9184.41'
+            - '0.773162'
+            description: '[price, quantity] — price in quote currency, quantity in base currency'
+        bids:
+          type: array
+          description: Array of bid orders
+          items:
+            type: array
+            items:
+              type: string
+            minItems: 2
+            maxItems: 2
+            example:
+            - '9181.19'
+            - '0.010873'
+            description: '[price, quantity] — price in quote currency, quantity in base currency'
     ErrorV4:
       type: object
       description: Generic wrapped error envelope (fallback). Market-data validation errors use the flat PublicValidationError shape (HTTP 422) instead, and infrastructure-level failures (maintenance, rate limit, internal error, unknown route) are non-JSON or flat. See the API description for the full set of public error shapes.
@@ -1252,6 +1233,173 @@ components:
           items:
             type: string
           example: []
+    FeeInfo:
+      type: object
+      description: 'Fee and limit details for a single asset. For crypto assets, `withdraw` and `deposit` are flat fee objects. For fiat assets with providers, they are objects keyed by provider ID.
+
+        '
+      properties:
+        ticker:
+          type: string
+          description: Asset ticker symbol
+          example: BTC
+        name:
+          type: string
+          description: Human-readable asset name
+          example: Bitcoin
+        providers:
+          type: array
+          description: Payment provider identifiers used as the network parameter value for fiat deposits and withdrawals via the API. See GET /api/v4/public/assets providers field for context.
+          items:
+            type: string
+          example: []
+        deposit:
+          description: 'Deposit fee details. For crypto assets, this is a flat object with `max_amount`, `min_amount`, `fixed`, and `flex` fields. For fiat assets with providers, this is an object keyed by provider ID, where each value contains provider-specific fee details.
+
+            '
+          oneOf:
+          - $ref: '#/components/schemas/FeeDetails'
+          - type: object
+            description: Map of provider IDs to provider-specific deposit fee details
+            additionalProperties:
+              $ref: '#/components/schemas/ProviderFeeDetails'
+        withdraw:
+          description: 'Withdrawal fee details. For crypto assets, this is a flat object with `max_amount`, `min_amount`, `fixed`, and `flex` fields. For fiat assets with providers, this is an object keyed by provider ID, where each value contains provider-specific fee details.
+
+            '
+          oneOf:
+          - $ref: '#/components/schemas/FeeDetails'
+          - type: object
+            description: Map of provider IDs to provider-specific withdrawal fee details
+            additionalProperties:
+              $ref: '#/components/schemas/ProviderFeeDetails'
+        is_depositable:
+          type: boolean
+          description: Indicates whether deposits are enabled for the currency. May be absent from the response; absence should be treated as equivalent to false.
+          example: true
+        is_withdrawal:
+          type: boolean
+          description: Indicates whether withdrawals are enabled for the currency. May be absent from the response; absence should be treated as equivalent to false.
+          example: true
+        is_api_withdrawal:
+          type: boolean
+          description: Whether API withdrawals are enabled
+          example: true
+        is_api_depositable:
+          type: boolean
+          description: Whether API deposits are enabled
+          example: true
+    FuturesMarket:
+      type: object
+      properties:
+        ticker_id:
+          type: string
+          description: Identifier of a ticker with delimiter to separate base/target
+          example: BTC_PERP
+        stock_currency:
+          type: string
+          description: Symbol/currency code of base pair
+          example: BTC
+        money_currency:
+          type: string
+          description: Symbol/currency code of target pair
+          example: USDT
+        last_price:
+          type: string
+          description: Last transacted price of base currency based on given target currency
+          example: '24005.5'
+        stock_volume:
+          type: string
+          description: 24 hour trading volume in base pair volume
+          example: '196965.591'
+        money_volume:
+          type: string
+          description: 24 hour trading volume in target pair volume
+          example: '4737879075.7817'
+        bid:
+          type: string
+          description: Current highest bid price
+          example: '24005.4'
+        ask:
+          type: string
+          description: Current lowest ask price
+          example: '24005.6'
+        high:
+          type: string
+          description: Rolling 24-hours highest transaction price
+          example: '24295.1'
+        low:
+          type: string
+          description: Rolling 24-hours lowest transaction price
+          example: '23765.3'
+        product_type:
+          type: string
+          description: Derivative product type for the market. Currently always `Perpetual`.
+          enum:
+          - Perpetual
+          example: Perpetual
+        open_interest:
+          type: string
+          description: Current open interest in contracts (point-in-time snapshot, not a 24-hour delta or volume).
+          example: '6000'
+        mark_price:
+          type: string
+          description: Fair value of the perpetual contract, derived from the underlying index price and the futures basis. Mark price — not `last_price` — is what a liquidation is evaluated against, so a temporary wick in the order book does not by itself trigger one. Point-in-time value from the latest premium index snapshot; returns an empty string while no fresh snapshot is available for the market.
+          example: '24012.75'
+        index_price:
+          type: string
+          description: Price of the underlying index the contract tracks, taken from the same premium index snapshot as `mark_price`. While the index is unavailable the field falls back to the last traded price of the corresponding spot market, then to the last traded price of the futures market itself, and returns `"0"` when neither has traded.
+          example: '24019.25'
+        index_name:
+          type: string
+          description: Name of the underlying index if any
+          example: Bitcoin
+        index_currency:
+          type: string
+          description: Underlying currency for index
+          example: BTC
+        funding_rate:
+          type: string
+          description: Predicted funding rate for the next settlement interval. Fluctuates in real time until settlement occurs. See GET /api/v4/public/funding-history/{market} for historical funding rate records.
+          example: '0.000044889033693137'
+        funding_cap:
+          type:
+          - string
+          - 'null'
+          description: Upper bound that the funding rate can reach for the market. Served from the last successfully refreshed funding snapshot, so a temporary source outage does not drop the field. Returns `null` only when no snapshot has been loaded since service start.
+          example: '0.0003'
+        funding_floor:
+          type:
+          - string
+          - 'null'
+          description: Lower bound that the funding rate can reach for the market. Served from the last successfully refreshed funding snapshot, so a temporary source outage does not drop the field. Returns `null` only when no snapshot has been loaded since service start.
+          example: '-0.0003'
+        next_funding_rate_timestamp:
+          type: string
+          description: Unix timestamp in milliseconds of the next funding settlement. 13-digit value (millisecond precision).
+          example: '1660665600000'
+        brackets:
+          type: object
+          description: Leverage brackets defining position size limits. Object keys are leverage multipliers (e.g., "1", "2", "5", "10", "20", "50", "100"). Values are the maximum allowed open position size in USDT equivalent at the corresponding leverage level.
+          additionalProperties:
+            type: integer
+          example:
+            '1': 0
+            '2': 0
+            '3': 0
+            '5': 0
+            '10': 0
+            '20': 0
+            '50': 20
+            '100': 50
+        max_leverage:
+          type: integer
+          description: Maximum leverage multiplier allowed for the market.
+          example: 100
+        funding_interval_minutes:
+          type: integer
+          description: Funding interval in minutes
+          example: 300
     FeeDetails:
       type: object
       description: Fee amounts and transfer limits for a crypto asset
@@ -1288,16 +1436,6 @@ components:
               type: string
               description: Maximum fee amount regardless of percentage calculation
               example: '150'
-    PublicValidationError:
-      type: object
-      description: Flat field-keyed validation error (HTTP 422) returned by the market-data endpoints. Each key is the offending request field and the value is an array of human-readable messages. There is no success/message envelope and no `params` field.
-      additionalProperties:
-        type: array
-        items:
-          type: string
-      example:
-        market:
-        - Market is not available.
     Asset:
       type: object
       properties:
@@ -1441,151 +1579,13 @@ components:
               example:
               - VISAMASTER
               - GEOPAY
-    OrderbookResponse:
+    PublicValidationError:
       type: object
-      properties:
-        ticker_id:
+      description: Flat field-keyed validation error (HTTP 422) returned by the market-data endpoints. Each key is the offending request field and the value is an array of human-readable messages. There is no success/message envelope and no `params` field.
+      additionalProperties:
+        type: array
+        items:
           type: string
-          description: Market Name
-          example: BTC_PERP
-        timestamp:
-          type: integer
-          description: Current timestamp
-          example: 1594391413
-        asks:
-          type: array
-          description: Array of ask orders
-          items:
-            type: array
-            items:
-              type: string
-            minItems: 2
-            maxItems: 2
-            example:
-            - '9184.41'
-            - '0.773162'
-            description: '[price, quantity] — price in quote currency, quantity in base currency'
-        bids:
-          type: array
-          description: Array of bid orders
-          items:
-            type: array
-            items:
-              type: string
-            minItems: 2
-            maxItems: 2
-            example:
-            - '9181.19'
-            - '0.010873'
-            description: '[price, quantity] — price in quote currency, quantity in base currency'
-    FuturesMarket:
-      type: object
-      properties:
-        ticker_id:
-          type: string
-          description: Identifier of a ticker with delimiter to separate base/target
-          example: BTC_PERP
-        stock_currency:
-          type: string
-          description: Symbol/currency code of base pair
-          example: BTC
-        money_currency:
-          type: string
-          description: Symbol/currency code of target pair
-          example: USDT
-        last_price:
-          type: string
-          description: Last transacted price of base currency based on given target currency
-          example: '24005.5'
-        stock_volume:
-          type: string
-          description: 24 hour trading volume in base pair volume
-          example: '196965.591'
-        money_volume:
-          type: string
-          description: 24 hour trading volume in target pair volume
-          example: '4737879075.7817'
-        bid:
-          type: string
-          description: Current highest bid price
-          example: '24005.4'
-        ask:
-          type: string
-          description: Current lowest ask price
-          example: '24005.6'
-        high:
-          type: string
-          description: Rolling 24-hours highest transaction price
-          example: '24295.1'
-        low:
-          type: string
-          description: Rolling 24-hours lowest transaction price
-          example: '23765.3'
-        product_type:
-          type: string
-          description: Derivative product type for the market. Currently always `Perpetual`.
-          enum:
-          - Perpetual
-          example: Perpetual
-        open_interest:
-          type: string
-          description: Current open interest in contracts (point-in-time snapshot, not a 24-hour delta or volume).
-          example: '6000'
-        mark_price:
-          type: string
-          description: Fair value of the perpetual contract, derived from the underlying index price and the futures basis. Mark price — not `last_price` — is what a liquidation is evaluated against, so a temporary wick in the order book does not by itself trigger one. Point-in-time value from the latest premium index snapshot; returns an empty string while no fresh snapshot is available for the market.
-          example: '24012.75'
-        index_price:
-          type: string
-          description: Price of the underlying index the contract tracks, taken from the same premium index snapshot as `mark_price`. While the index is unavailable the field falls back to the last traded price of the corresponding spot market, then to the last traded price of the futures market itself, and returns `"0"` when neither has traded.
-          example: '24019.25'
-        index_name:
-          type: string
-          description: Name of the underlying index if any
-          example: Bitcoin
-        index_currency:
-          type: string
-          description: Underlying currency for index
-          example: BTC
-        funding_rate:
-          type: string
-          description: Predicted funding rate for the next settlement interval. Fluctuates in real time until settlement occurs. See GET /api/v4/public/funding-history/{market} for historical funding rate records.
-          example: '0.000044889033693137'
-        funding_cap:
-          type:
-          - string
-          - 'null'
-          description: Upper bound that the funding rate can reach for the market. Served from the last successfully refreshed funding snapshot, so a temporary source outage does not drop the field. Returns `null` only when no snapshot has been loaded since service start.
-          example: '0.0003'
-        funding_floor:
-          type:
-          - string
-          - 'null'
-          description: Lower bound that the funding rate can reach for the market. Served from the last successfully refreshed funding snapshot, so a temporary source outage does not drop the field. Returns `null` only when no snapshot has been loaded since service start.
-          example: '-0.0003'
-        next_funding_rate_timestamp:
-          type: string
-          description: Unix timestamp in milliseconds of the next funding settlement. 13-digit value (millisecond precision).
-          example: '1660665600000'
-        brackets:
-          type: object
-          description: Leverage brackets defining position size limits. Object keys are leverage multipliers (e.g., "1", "2", "5", "10", "20", "50", "100"). Values are the maximum allowed open position size in USDT equivalent at the corresponding leverage level.
-          additionalProperties:
-            type: integer
-          example:
-            '1': 0
-            '2': 0
-            '3': 0
-            '5': 0
-            '10': 0
-            '20': 0
-            '50': 20
-            '100': 50
-        max_leverage:
-          type: integer
-          description: Maximum leverage multiplier allowed for the market.
-          example: 100
-        funding_interval_minutes:
-          type: integer
-          description: Funding interval in minutes
-          example: 300
+      example:
+        market:
+        - Market is not available.

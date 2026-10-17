@@ -1041,19 +1041,6 @@ paths:
                 $ref: '#/components/schemas/ErrorInner'
 components:
   schemas:
-    ErrorInner:
-      type: object
-      properties:
-        code:
-          type: integer
-        message:
-          type: string
-        errors:
-          type: object
-          additionalProperties:
-            type: array
-            items:
-              type: string
     WithdrawRequest:
       type: object
       required:
@@ -1119,6 +1106,19 @@ components:
           description: Unique request identifier
           example: 1594297865000
     Error:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+    ErrorInner:
       type: object
       properties:
         code:
