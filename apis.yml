@@ -1287,6 +1287,8 @@ apis:
   description: Sub-account management
   humanURL: https://docs.whitebit.com/api-reference/overview
   tags:
+  - Sub Account
+  tags_raw:
   - Sub-Account
   properties:
   - type: OpenAPI
