@@ -7,10 +7,17 @@ source:
 - https://monid.ai/tools/whitebit
 checked:
 - https://api.coingecko.com/api/v3/exchanges
+- https://api.nuget.org/v3
 - https://composio.dev/toolkits/whitebit
+- https://crates.io/api/v1
 - https://monid.ai/tools/whitebit
 - https://n8n.io/integrations/whitebit/
+- https://proxy.golang.org
+- https://pypi.org/pypi
 - https://raw.githubusercontent.com/ccxt/ccxt/master/exchanges.json
+- https://registry.npmjs.org
+- https://repo1.maven.org/maven2
+- https://rubygems.org/api/v1
 - https://zapier.com/apps/whitebit/integrations
 summary: null
 marketplace_apps: []
@@ -43,4 +50,64 @@ edges:
   trust_score: 8
   detected_by: sweep-crypto.py
   first_seen: '2026-10-14'
+- partner_name: Go module proxy
+  partner: null
+  partner_match: null
+  type: register
+  direction: provider-built
+  category: official SDK (Go)
+  evidence: https://pkg.go.dev/github.com/whitebit-exchange/go-sdk
+  channel: package-registry
+  relationship: distribution-channel
+  contract_reference:
+    register: Go module proxy (public registry JSON)
+    spec_file: null
+    language: Go
+    packages:
+    - name: github.com/whitebit-exchange/go-sdk
+      version: v0.0.0-20260804143023-fc0de6e86a5e
+      released: '2026-08-04'
+      released_field: Time
+      lapsed: false
+      page: https://pkg.go.dev/github.com/whitebit-exchange/go-sdk
+      repo_leg: github-org:whitebit-exchange
+      publisher_leg: org:whitebit-exchange
+      matched_by: github-org
+    current: true
+    signal_note: 'an official package on the registry: distribution, not an integration; lapsed = no release in
+      24 months'
+    detected_by: sweep-official-sdks.py
+    detected: '2026-10-18'
+  detected_by: sweep-official-sdks.py
+  first_seen: '2026-10-18'
+- partner_name: npm registry
+  partner: npm
+  partner_match: register
+  type: register
+  direction: provider-built
+  category: official SDK (JavaScript/TypeScript)
+  evidence: https://www.npmjs.com/package/whitebit-cli
+  channel: package-registry
+  relationship: distribution-channel
+  contract_reference:
+    register: npm registry (public registry JSON)
+    spec_file: null
+    language: JavaScript/TypeScript
+    packages:
+    - name: whitebit-cli
+      version: 1.0.9
+      released: '2026-08-03'
+      released_field: modified
+      lapsed: false
+      page: https://www.npmjs.com/package/whitebit-cli
+      repo_leg: github-org:whitebit-exchange
+      publisher_leg: email:whitebit.com
+      matched_by: domain
+    current: true
+    signal_note: 'an official package on the registry: distribution, not an integration; lapsed = no release in
+      24 months'
+    detected_by: sweep-official-sdks.py
+    detected: '2026-10-18'
+  detected_by: sweep-official-sdks.py
+  first_seen: '2026-10-18'
 templates: []
